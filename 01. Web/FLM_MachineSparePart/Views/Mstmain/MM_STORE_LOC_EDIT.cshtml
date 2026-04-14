@@ -1,0 +1,162 @@
+﻿@model UserMMModel.StoreLocation
+@{
+    var url = @Url.Action("MM_STORE_LOC_LST", "Mstmain").ToString();
+    ViewBag.Title = "MM Storage Location - Edit";
+    Layout = "~/Views/Shared/_Layout_iFrame.cshtml";
+}
+
+
+@if (!string.IsNullOrEmpty(ViewBag.Result))
+{
+    <script type="text/javascript">
+        var chkmsg = "@ViewBag.Result";
+        var url = "";
+        //alert("viewbag");
+        alert(chkmsg);
+        if (chkmsg == "Data is successfully saved.") {
+            url= '@Url.Action("MM_STORE_LOC_LST", "Mstmain")';
+        } else {
+            url = '@Url.Action("MM_STORE_LOC_EDIT", "Mstmain" , new { id = ViewBag.ID })';
+        }
+        window.location.href = url;
+    </script>
+}
+
+@*@{
+        if (ViewBag.Result != "" && ViewBag.Result != null)
+        {
+            <script type="text/javascript" language="javascript">
+            alert("@ViewBag.Result");
+            var url = '@Url.Action("MM_STORE_LOC_LST", "Mstmain")';
+            window.location.href = url;
+            </script>
+        }
+    }*@
+
+@section scripts
+{
+    <script src="~/Scripts/jquery-ui.js"></script>
+    <script src="~/Scripts/jquery-3.3.1.min.js"></script>
+
+    <script type="text/javascript">
+        function postback() {
+            var elem = document.getElementById("postbackBtn");
+            if (typeof elem.onsubmit == "function") {
+                elem.onsubmit.apply(elem);
+            }
+        }
+
+        $(function (){
+            $(document).on('change', '#txtreaderid', (function ()
+            {
+                var valueofDropDown = $(this).val();
+                //alert($(this).val());
+                $.ajax({
+                    url: '@Url.Action("GetReaderName")',
+                    type: 'POST',
+                    data: { readerid: $(this).val() },
+                    success: function (result) {
+                        //alert(result.myResult);
+                        var readername = result.myResult;
+                        $('#txtreadername').val(readername);
+                    },
+                    error: function (result) {
+                        //alert(result.myResult);
+                        $('#txtreadername').val(result.myResult);
+                    }
+                });
+            }));
+        });
+    </script>
+
+
+}
+
+<h2>Storage Location Master Maintenance - Edit</h2>
+
+<hr />
+<table style="width:100%;">
+    <tr>
+        <td>
+            @using (Html.BeginForm())
+            {
+
+                @Html.AntiForgeryToken()
+                <div class="form-horizontal">
+                    <div class="form-group">
+                        @Html.HiddenFor(a => a.STORAGE_ID)
+                    </div>
+
+                    <div class="form-group">
+                        <label class="col-sm-2">Storage Code</label>
+                        <label class="labelW10">:</label>
+                        <div class="col-md-4">
+                            @Html.DropDownListFor(m => m.Reader_ID, Model.DropdownStorageCode, "Select Storage Code", new { @class = "form-control", id = "txtreaderid" })
+                            @Html.ValidationMessageFor(a => a.Reader_ID, "", new { @style = "color:red" })
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="col-sm-2">Storage Description 1</label>
+                        <label class="labelW10">:</label>
+                        <div class="col-md-4">
+                            @Html.TextBoxFor(a => a.Storage_Desc_1, null, new { @class = "form-control txtbox" })
+                            @Html.ValidationMessageFor(a => a.Storage_Desc_1)
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="col-sm-2">Storage Description 2</label>
+                        <label class="labelW10">:</label>
+                        <div class="col-md-4">
+                            @Html.TextBoxFor(a => a.Storage_Desc_2, null, new { @class = "form-control txtbox" })
+                            @Html.ValidationMessageFor(a => a.Storage_Desc_2)
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="col-sm-2">Reader ID</label>
+                        <label class="labelW10">:</label>
+                        <div class="col-md-4">
+                            @Html.TextBoxFor(a => a.Reader_Name, null, new { @class = "form-control", @readonly = "true", id = "txtreadername" })
+                            @Html.ValidationMessageFor(a => a.Reader_Name)
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="col-sm-2">Remarks</label>
+                        <label class="labelW10">:</label>
+                        <div class="col-md-4">
+                            @Html.TextBoxFor(a => a.Remarks, null, new { @class = "form-control txtbox" })
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <input id="Submit" type="submit" class="btn btn-primary" value="Submit" />
+                    @Html.BackButton(url)
+                </div>
+
+            }
+        </td>
+    </tr>
+</table>
+
+<table style="border:1px solid; border-radius:20px; width:50%;">
+    <tr>
+        <td style="padding-left:0.5em; width:15%;"><label>Created By:</label></td>
+        <td style="width:35%;">@Html.TextBoxFor(a => a.Created_By, null, new { @class = "form-control", @readonly = "true" })</td>
+    </tr>
+    <tr>
+        <td style="padding-left:0.5em; width:15%;"><label>Created Date:</label></td>
+        <td style="width:35%;">@Html.TextBoxFor(a => a.Created_Date, null, new { @class = "form-control", @readonly = "true" })</td>
+    </tr>
+    <tr>
+        <td style="padding-left:0.5em; width:15%;"><label>Updated By:</label></td>
+        <td style="width:35%;">@Html.TextBoxFor(a => a.Updated_By, null, new { @class = "form-control", @readonly = "true" })</td>
+    </tr>
+    <tr>
+        <td style="padding-left:0.5em; width:15%;"><label>Updated Date:</label></td>
+        <td style="width:35%;">@Html.TextBoxFor(a => a.Updated_Date, null, new { @class = "form-control", @readonly = "true" })</td>
+    </tr>
+</table>

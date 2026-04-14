@@ -1,0 +1,47 @@
+﻿@using DBModel
+@model IEnumerable<RoleRegModel>
+
+@{
+    ViewBag.Title = "RoleRegistration";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var grid = new WebGrid(source: Model,
+    defaultSort: "id",
+    canPage: true,
+    ajaxUpdateContainerId: "grid",
+    rowsPerPage: 5);
+}
+<h2>
+    Role Registration
+</h2>
+<hr />
+@{
+    @Html.Partial("_Header",
+    new ViewDataDictionary(this.ViewData) {
+        { "Act", "RoleRegistrationAdd" },
+        { "Ctrl", "Mstmain" },
+        { "SrcAct", "RoleRegistration" },
+        { "SrcVal", "SEARCH_VALUE" }
+    })
+}
+@{
+    <div id="grid">
+        @grid.GetHtml(
+        tableStyle: "table table-bordered",
+        headerStyle: "head",
+        numericLinksCount:5,
+        mode: WebGridPagerModes.All,
+        firstText:"First",
+        previousText: "Previous",
+        nextText: "Next",
+        lastText:"Last",
+        alternatingRowStyle: "alt",
+        columns: grid.Columns(
+        grid.Column("Role Name", format: @<text> @item.ROLE_NAME </text>),
+        grid.Column("Role Desc", format: @<text> @item.ROLE_DESC </text>),
+        grid.Column("Resource Name", format: @<text> @item.RESOURCE_NAME </text>),
+        grid.Column("Status", format: @<text> @item.ROLE_STATUS </text>),
+        grid.Column("Edit", format: @<a href="@Url.Action("RoleRegistrationEdit", "Mstmain",
+                    new { id = item.ID_ACL_ROLE })"><i class="fa fa-pencil"></i></a>))
+        )
+    </div>
+}

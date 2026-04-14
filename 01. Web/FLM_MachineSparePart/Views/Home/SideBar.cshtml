@@ -1,0 +1,153 @@
+﻿@using HomeModel
+@model List<HomeModel.SideBarContent>
+
+@{
+    Layout = null;
+}
+
+@{
+    int count = 0;
+    string classd = "";
+}
+<div class="panel-group" id="accordion">       
+    @foreach (var row in Model)
+    {
+        if (row.LAYER == 1)
+        {
+            count++;
+            <div class="panel">
+                <div class="panel-heading">
+                    <h4 class="panel-title">
+                        <a data-toggle="collapse" data-parent="#accordion" href="#collapse_@count">
+                            @if (row.ACTION == 1)
+                            {
+                                @*<div style="padding-left:15px; padding-bottom:5px">@Html.ActionLink(row.RESOURCE_name, row.RESOURCE_VIEW, row.RESOURCE_CONTROLLER, "", new { target = "iframe" })</div>*@
+                                <label>@Html.ActionLink(row.RESOURCE_name, row.RESOURCE_VIEW, row.RESOURCE_CONTROLLER, "", new { target = "iframe" })</label>
+                            }
+                            else
+                            {
+                                <label>@row.RESOURCE_name</label>
+                            }
+                        </a>
+                    </h4>
+                </div>
+                @if (count == 1)
+                {
+                classd = "panel-collapse collapse in";
+                }
+                else
+                {
+                classd = "panel-collapse collapse";
+                }
+                <div id="collapse_@count" class="@classd">
+                    <div class="panel-body">
+                        @foreach (var row2 in Model)
+                        {
+                            if (row2.RESOURCE_PARENT_ID == row.ID_ACL_RESOURCE && row2.LAYER == 2)
+                            {
+                                if (row2.ACTION == 1)
+                                {
+                                    @*<div style="padding-left:15px; padding-bottom:5px">@Html.ActionLink(row2.RESOURCE_name, row2.RESOURCE_VIEW, row2.RESOURCE_CONTROLLER, "", new { target = "iframe" })</div>*@
+                                    <label><i class="fa fa-file" style="padding-right:10px"></i>@Html.ActionLink(row2.RESOURCE_name, row2.RESOURCE_VIEW, row2.RESOURCE_CONTROLLER, "", new { target = "iframe" })</label>
+                                    @*<div style="padding-left:5px;padding-bottom:5px">@Html.ActionLink(row2.RESOURCE_NAME, row2.RESOURCE_VIEW, row2.RESOURCE_CONTROLLER, new { target = "iframe" })</div>*@
+                                }
+                                else
+                                {
+                                    <label>
+                                        <i class="fa fa-file" style="padding-right:10px"></i>@row2.RESOURCE_name
+                                    </label>
+
+                                    foreach (var row3 in Model)
+                                    {
+                                        if (row3.RESOURCE_PARENT_ID == row2.ID_ACL_RESOURCE && row3.LAYER == 3)
+                                        {
+                                            if (row3.ACTION == 1)
+                                            {
+                                                @*<div style="padding-left:15px; padding-bottom:5px">@Html.ActionLink(row3.RESOURCE_name, row3.RESOURCE_VIEW, row3.RESOURCE_CONTROLLER, "", new { target = "iframe" })</div>*@
+                                                <label><i class="fa fa-file" style="padding-right:10px"></i>@Html.ActionLink(row3.RESOURCE_name, row3.RESOURCE_VIEW, row3.RESOURCE_CONTROLLER, "", new { target = "iframe" })</label>
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    }       
+    @{ count++; }
+    <div class="panel">
+        <div class="panel-heading">
+            <h4 class="panel-title">
+                <a data-toggle="collapse" data-parent="#accordion" href="#collapse_@count">
+                    <label for="Settings">Settings</label>
+                </a>
+            </h4>
+        </div>
+        <div id="collapse_@count" class="panel-collapse collapse">
+            <div class="panel-body">
+                <label><i class="fa fa-cog"></i>@Html.ActionLink(" Change Password", "ChangePassword", "Home")</label>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@*<div class="accordionHeader">
+        <div class="panel-group" id="accordion">
+            <div class="panel">
+                @foreach (var row in Model)
+                {
+                    if (row.LAYER == 1)
+                    {
+                        count++;
+
+
+                        <div class="panel-heading">
+                            <div class="panel-title">
+                                <a data-toggle="collapse" data-parent="#accordion" href="#collapse_@count">
+                                    @if (row.ACTION == 1)
+                                    {
+                                        <i class="fa fa-file" style="padding-right:10px"></i>@Html.ActionLink(row.RESOURCE_name, row.RESOURCE_VIEW, row.RESOURCE_CONTROLLER, "", new { target = "iframe" })
+                                    }
+                                    else
+                                    {
+                                        <i class="fa fa-file" style="padding-right:10px"></i><b>@row.RESOURCE_name</b>
+                                    }
+                                </a>
+                            </div>
+                        </div>
+                        <div id="collapse_@count" class="panel-collapse collapse">
+                            <div class="panel-body">
+                                @foreach (var row2 in Model)
+                                {
+                                    if (row2.RESOURCE_PARENT_ID == row.ID_ACL_RESOURCE && row2.LAYER == 2)
+                                    {
+                                        if (row2.ACTION == 1)
+                                        {
+                                            <div style="padding-left:5px;padding-bottom:5px">@Html.ActionLink(row2.RESOURCE_name, row2.RESOURCE_VIEW, row2.RESOURCE_CONTROLLER, "", new { target = "iframe" })</div>
+                                        }
+                                        else
+                                        {
+                                            <div><i class="fa fa-file" style="padding-right:10px"></i>@row2.RESOURCE_name</div>
+                                            foreach (var row3 in Model)
+                                            {
+                                                if (row3.RESOURCE_PARENT_ID == row2.ID_ACL_RESOURCE && row3.LAYER == 3)
+                                                {
+                                                    if (row3.ACTION == 1)
+                                                    {
+                                                        <div style="padding-left:15px; padding-bottom:5px">@Html.ActionLink(row3.RESOURCE_name, row3.RESOURCE_VIEW, row3.RESOURCE_CONTROLLER, "", new { target = "iframe" })</div>
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>*@

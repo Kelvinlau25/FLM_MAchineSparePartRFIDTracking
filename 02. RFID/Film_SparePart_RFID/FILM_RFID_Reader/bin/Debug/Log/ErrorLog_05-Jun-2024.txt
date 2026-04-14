@@ -1,0 +1,6 @@
+Starting Error Log for today 05/06/24 11:03:24
+pTRAN_TYPE: t1;pRFID: t2; pReader: t3;pIPADDR: t4
+pTRAN_TYPE: t1;pRFID: t2; pReader: t3;pIPADDR: t4
+New() >> Init done.
+New() >> Init done. - 05/06/24 12:16:15
+New() >> Init done - 05/06/24 12:16:58

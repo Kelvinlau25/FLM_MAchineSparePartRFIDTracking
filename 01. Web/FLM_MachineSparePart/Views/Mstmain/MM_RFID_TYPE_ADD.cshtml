@@ -1,0 +1,83 @@
+﻿@model UserMMModel.RfidType
+@{
+    var url = @Url.Action("MM_RFID_TYPE_LST", "Mstmain").ToString();
+    ViewBag.Title = "MM RFID Type - Add";
+    Layout = "~/Views/Shared/_Layout_iFrame.cshtml";
+}
+
+@{
+    if (ViewBag.Result != "" && ViewBag.Result != null)
+    {
+        <script type="text/javascript" language="javascript">
+        alert("@ViewBag.Result");
+        var url = '@Url.Action("MM_RFID_TYPE_LST", "Mstmain")';
+        window.location.href = url;
+        </script>
+    }
+}
+
+<script type="text/javascript">
+            var popup;
+            function SelectParentID() {
+                var url = '@Url.Action("ResourceParentPopUp", "Mstmain")';
+                popup = window.open(url, "Popup", "scrollbars=yes,resizable=yes,location=no,toolbar=no,width=500,height=500");
+                popup.focus();
+            }
+</script>
+
+<h2>RFID Type Machine Master Maintenance - Add</h2>
+<hr />
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    @*<div class="form-horizontal">
+            <div class="form-group">
+                <label class="col-sm-2" style="width:120px;">RFID Type</label>
+                <label class="labelW10">:</label>
+                <div class="col-sm-5">
+                    @Html.TextBoxFor(a => a.Rfid_Type, null, new { @class = "form-control txtbox" })
+                    @Html.ValidationMessageFor(a => a.Rfid_Type)
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-sm-2" style="width:120px;">Remarks</label>
+                <label class="labelW10">:</label>
+                <div class="col-sm-5">
+                    @Html.TextBoxFor(a => a.Remarks, null, new { @class = "form-control txtbox" })
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <input id="Submit" type="submit" class="btn btn-primary" value="Submit" />
+            @Html.BackButton(url)
+        </div>*@
+    <div class="col-100">
+
+        <div class="col-md-8">
+            <label>RFID Type</label>
+        </div>
+
+        <div class="col-md-8">
+            <div class="form-group">
+                @Html.TextBoxFor(a => a.Rfid_Type, null, new { @class = "form-control txtbox" })
+                @Html.ValidationMessageFor(a => a.Rfid_Type, "", new { @style = "color:red" })
+            </div>
+        </div>
+        <div class="col-md-8">
+            @Html.LabelFor(a => a.Remarks)
+        </div>
+        <div class="col-md-8">
+            <div class="form-group">
+                @Html.TextBoxFor(a => a.Remarks, null, new { @class = "form-control txtbox" })
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <input id="Submit" type="submit" class="btn btn-primary" value="Submit" />
+            @Html.BackButton(url)
+        </div>
+
+    </div>
+
+}

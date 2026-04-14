@@ -1,0 +1,87 @@
+C:\Users\Beh_Poh_Hock\Desktop\SCM Go Live\M2\New RFID\SCM_RFID_Reader\M4_RFID_READER_DEPLOY\obj\Debug\M4_RFID_READER_DEPLOY.vbprojResolveAssemblyReference.cache
+C:\Users\Beh_Poh_Hock\Desktop\SCM Go Live\M2\New RFID\SCM_RFID_Reader\M4_RFID_READER_DEPLOY\obj\Debug\M4_RFID_READER_DEPLOY.Form1.resources
+C:\Users\Beh_Poh_Hock\Desktop\SCM Go Live\M2\New RFID\SCM_RFID_Reader\M4_RFID_READER_DEPLOY\obj\Debug\M4_RFID_READER_DEPLOY.Loading.resources
+C:\Users\Beh_Poh_Hock\Desktop\SCM Go Live\M2\New RFID\SCM_RFID_Reader\M4_RFID_READER_DEPLOY\obj\Debug\M4_RFID_READER_DEPLOY.Resources.resources
+C:\Users\Beh_Poh_Hock\Desktop\SCM Go Live\M2\New RFID\SCM_RFID_Reader\M4_RFID_READER_DEPLOY\obj\Debug\M4_RFID_READER_DEPLOY.vbproj.GenerateResource.cache
+C:\Users\Beh_Poh_Hock\Desktop\SCM Go Live\M2\New RFID\SCM_RFID_Reader\M4_RFID_READER_DEPLOY\obj\Debug\M4_RFID_READER_DEPLOY.vbproj.CoreCompileInputs.cache
+C:\Users\Beh_Poh_Hock\Desktop\SCM Go Live\M2\New RFID\SCM_RFID_Reader\M4_RFID_READER_DEPLOY\bin\Debug\M4_RFID_READER_DEPLOY.exe.config
+C:\Users\Beh_Poh_Hock\Desktop\SCM Go Live\M2\New RFID\SCM_RFID_Reader\M4_RFID_READER_DEPLOY\bin\Debug\M4_RFID_READER_DEPLOY.exe
+C:\Users\Beh_Poh_Hock\Desktop\SCM Go Live\M2\New RFID\SCM_RFID_Reader\M4_RFID_READER_DEPLOY\bin\Debug\M4_RFID_READER_DEPLOY.pdb
+C:\Users\Beh_Poh_Hock\Desktop\SCM Go Live\M2\New RFID\SCM_RFID_Reader\M4_RFID_READER_DEPLOY\bin\Debug\M4_RFID_READER_DEPLOY.xml
+C:\Users\Beh_Poh_Hock\Desktop\SCM Go Live\M2\New RFID\SCM_RFID_Reader\M4_RFID_READER_DEPLOY\bin\Debug\Library.Database.dll
+C:\Users\Beh_Poh_Hock\Desktop\SCM Go Live\M2\New RFID\SCM_RFID_Reader\M4_RFID_READER_DEPLOY\bin\Debug\Oracle.DataAccess.dll
+C:\Users\Beh_Poh_Hock\Desktop\SCM Go Live\M2\New RFID\SCM_RFID_Reader\M4_RFID_READER_DEPLOY\bin\Debug\Library.Database.pdb
+C:\Users\Beh_Poh_Hock\Desktop\SCM Go Live\M2\New RFID\SCM_RFID_Reader\M4_RFID_READER_DEPLOY\bin\Debug\Library.Database.xml
+C:\Users\Beh_Poh_Hock\Desktop\SCM Go Live\M2\New RFID\SCM_RFID_Reader\M4_RFID_READER_DEPLOY\obj\Debug\M4_RFID_READER_DEPLOY.vbproj.CopyComplete
+C:\Users\Beh_Poh_Hock\Desktop\SCM Go Live\M2\New RFID\SCM_RFID_Reader\M4_RFID_READER_DEPLOY\obj\Debug\M4_RFID_READER_DEPLOY.exe
+C:\Users\Beh_Poh_Hock\Desktop\SCM Go Live\M2\New RFID\SCM_RFID_Reader\M4_RFID_READER_DEPLOY\obj\Debug\M4_RFID_READER_DEPLOY.xml
+C:\Users\Beh_Poh_Hock\Desktop\SCM Go Live\M2\New RFID\SCM_RFID_Reader\M4_RFID_READER_DEPLOY\obj\Debug\M4_RFID_READER_DEPLOY.pdb
+C:\Users\Ong_Yeong_Zih\Desktop\4.0\SCM_RFID_Program\SCM_RFID_Reader\M4_RFID_READER_DEPLOY\bin\Debug\M4_RFID_READER_DEPLOY.exe.config
+C:\Users\Ong_Yeong_Zih\Desktop\4.0\SCM_RFID_Program\SCM_RFID_Reader\M4_RFID_READER_DEPLOY\bin\Debug\M4_RFID_READER_DEPLOY.exe
+C:\Users\Ong_Yeong_Zih\Desktop\4.0\SCM_RFID_Program\SCM_RFID_Reader\M4_RFID_READER_DEPLOY\bin\Debug\M4_RFID_READER_DEPLOY.pdb
+C:\Users\Ong_Yeong_Zih\Desktop\4.0\SCM_RFID_Program\SCM_RFID_Reader\M4_RFID_READER_DEPLOY\bin\Debug\M4_RFID_READER_DEPLOY.xml
+C:\Users\Ong_Yeong_Zih\Desktop\4.0\SCM_RFID_Program\SCM_RFID_Reader\M4_RFID_READER_DEPLOY\bin\Debug\Library.Database.dll
+C:\Users\Ong_Yeong_Zih\Desktop\4.0\SCM_RFID_Program\SCM_RFID_Reader\M4_RFID_READER_DEPLOY\bin\Debug\Library.Reader.dll
+C:\Users\Ong_Yeong_Zih\Desktop\4.0\SCM_RFID_Program\SCM_RFID_Reader\M4_RFID_READER_DEPLOY\bin\Debug\Oracle.DataAccess.dll
+C:\Users\Ong_Yeong_Zih\Desktop\4.0\SCM_RFID_Program\SCM_RFID_Reader\M4_RFID_READER_DEPLOY\bin\Debug\Library.Database.pdb
+C:\Users\Ong_Yeong_Zih\Desktop\4.0\SCM_RFID_Program\SCM_RFID_Reader\M4_RFID_READER_DEPLOY\bin\Debug\Library.Database.xml
+C:\Users\Ong_Yeong_Zih\Desktop\4.0\SCM_RFID_Program\SCM_RFID_Reader\M4_RFID_READER_DEPLOY\bin\Debug\Library.Reader.pdb
+C:\Users\Ong_Yeong_Zih\Desktop\4.0\SCM_RFID_Program\SCM_RFID_Reader\M4_RFID_READER_DEPLOY\bin\Debug\Library.Reader.xml
+C:\Users\Ong_Yeong_Zih\Desktop\4.0\SCM_RFID_Program\SCM_RFID_Reader\M4_RFID_READER_DEPLOY\obj\Debug\M4_RFID_READER_DEPLOY.vbprojAssemblyReference.cache
+C:\Users\Ong_Yeong_Zih\Desktop\4.0\SCM_RFID_Program\SCM_RFID_Reader\M4_RFID_READER_DEPLOY\obj\Debug\M4_RFID_READER_DEPLOY.Form1.resources
+C:\Users\Ong_Yeong_Zih\Desktop\4.0\SCM_RFID_Program\SCM_RFID_Reader\M4_RFID_READER_DEPLOY\obj\Debug\M4_RFID_READER_DEPLOY.Loading.resources
+C:\Users\Ong_Yeong_Zih\Desktop\4.0\SCM_RFID_Program\SCM_RFID_Reader\M4_RFID_READER_DEPLOY\obj\Debug\M4_RFID_READER_DEPLOY.Resources.resources
+C:\Users\Ong_Yeong_Zih\Desktop\4.0\SCM_RFID_Program\SCM_RFID_Reader\M4_RFID_READER_DEPLOY\obj\Debug\M4_RFID_READER_DEPLOY.vbproj.GenerateResource.cache
+C:\Users\Ong_Yeong_Zih\Desktop\4.0\SCM_RFID_Program\SCM_RFID_Reader\M4_RFID_READER_DEPLOY\obj\Debug\M4_RFID_READER_DEPLOY.vbproj.CoreCompileInputs.cache
+C:\Users\Ong_Yeong_Zih\Desktop\4.0\SCM_RFID_Program\SCM_RFID_Reader\M4_RFID_READER_DEPLOY\obj\Debug\M4_RFID_READER_DEPLOY.vbproj.CopyComplete
+C:\Users\Ong_Yeong_Zih\Desktop\4.0\SCM_RFID_Program\SCM_RFID_Reader\M4_RFID_READER_DEPLOY\obj\Debug\M4_RFID_READER_DEPLOY.exe
+C:\Users\Ong_Yeong_Zih\Desktop\4.0\SCM_RFID_Program\SCM_RFID_Reader\M4_RFID_READER_DEPLOY\obj\Debug\M4_RFID_READER_DEPLOY.xml
+C:\Users\Ong_Yeong_Zih\Desktop\4.0\SCM_RFID_Program\SCM_RFID_Reader\M4_RFID_READER_DEPLOY\obj\Debug\M4_RFID_READER_DEPLOY.pdb
+C:\Users\Ong_Yeong_Zih\Desktop\4.0\SCM_RFID_Program\SCM_RFID_Reader\M4_RFID_READER_DEPLOY\bin\Debug\Symbol.RFID3.Host.dll
+C:\Users\Ong_Yeong_Zih\Desktop\4.0\SCM_RFID_Program\SCM_RFID_Reader\M4_RFID_READER_DEPLOY\bin\Debug\Symbol.RFID3.Host.xml
+C:\Users\beh_poh_hock\Desktop\Recently Project\SCM\SCM_RFID_Reader - LocalDebug\M4_RFID_READER_DEPLOY\bin\Debug\M4_RFID_READER_DEPLOY.exe.config
+C:\Users\beh_poh_hock\Desktop\Recently Project\SCM\SCM_RFID_Reader - LocalDebug\M4_RFID_READER_DEPLOY\bin\Debug\M4_RFID_READER_DEPLOY.exe
+C:\Users\beh_poh_hock\Desktop\Recently Project\SCM\SCM_RFID_Reader - LocalDebug\M4_RFID_READER_DEPLOY\bin\Debug\M4_RFID_READER_DEPLOY.pdb
+C:\Users\beh_poh_hock\Desktop\Recently Project\SCM\SCM_RFID_Reader - LocalDebug\M4_RFID_READER_DEPLOY\bin\Debug\M4_RFID_READER_DEPLOY.xml
+C:\Users\beh_poh_hock\Desktop\Recently Project\SCM\SCM_RFID_Reader - LocalDebug\M4_RFID_READER_DEPLOY\bin\Debug\Library.Database.dll
+C:\Users\beh_poh_hock\Desktop\Recently Project\SCM\SCM_RFID_Reader - LocalDebug\M4_RFID_READER_DEPLOY\bin\Debug\Library.Reader.dll
+C:\Users\beh_poh_hock\Desktop\Recently Project\SCM\SCM_RFID_Reader - LocalDebug\M4_RFID_READER_DEPLOY\bin\Debug\Symbol.RFID3.Host.dll
+C:\Users\beh_poh_hock\Desktop\Recently Project\SCM\SCM_RFID_Reader - LocalDebug\M4_RFID_READER_DEPLOY\bin\Debug\Oracle.DataAccess.dll
+C:\Users\beh_poh_hock\Desktop\Recently Project\SCM\SCM_RFID_Reader - LocalDebug\M4_RFID_READER_DEPLOY\bin\Debug\Library.Database.pdb
+C:\Users\beh_poh_hock\Desktop\Recently Project\SCM\SCM_RFID_Reader - LocalDebug\M4_RFID_READER_DEPLOY\bin\Debug\Library.Database.xml
+C:\Users\beh_poh_hock\Desktop\Recently Project\SCM\SCM_RFID_Reader - LocalDebug\M4_RFID_READER_DEPLOY\bin\Debug\Library.Reader.pdb
+C:\Users\beh_poh_hock\Desktop\Recently Project\SCM\SCM_RFID_Reader - LocalDebug\M4_RFID_READER_DEPLOY\bin\Debug\Library.Reader.xml
+C:\Users\beh_poh_hock\Desktop\Recently Project\SCM\SCM_RFID_Reader - LocalDebug\M4_RFID_READER_DEPLOY\bin\Debug\Symbol.RFID3.Host.xml
+C:\Users\beh_poh_hock\Desktop\Recently Project\SCM\SCM_RFID_Reader - LocalDebug\M4_RFID_READER_DEPLOY\obj\Debug\M4_RFID_READER_DEPLOY.vbprojAssemblyReference.cache
+C:\Users\beh_poh_hock\Desktop\Recently Project\SCM\SCM_RFID_Reader - LocalDebug\M4_RFID_READER_DEPLOY\obj\Debug\M4_RFID_READER_DEPLOY.Form1.resources
+C:\Users\beh_poh_hock\Desktop\Recently Project\SCM\SCM_RFID_Reader - LocalDebug\M4_RFID_READER_DEPLOY\obj\Debug\M4_RFID_READER_DEPLOY.Loading.resources
+C:\Users\beh_poh_hock\Desktop\Recently Project\SCM\SCM_RFID_Reader - LocalDebug\M4_RFID_READER_DEPLOY\obj\Debug\M4_RFID_READER_DEPLOY.Resources.resources
+C:\Users\beh_poh_hock\Desktop\Recently Project\SCM\SCM_RFID_Reader - LocalDebug\M4_RFID_READER_DEPLOY\obj\Debug\M4_RFID_READER_DEPLOY.vbproj.GenerateResource.cache
+C:\Users\beh_poh_hock\Desktop\Recently Project\SCM\SCM_RFID_Reader - LocalDebug\M4_RFID_READER_DEPLOY\obj\Debug\M4_RFID_READER_DEPLOY.vbproj.CoreCompileInputs.cache
+C:\Users\beh_poh_hock\Desktop\Recently Project\SCM\SCM_RFID_Reader - LocalDebug\M4_RFID_READER_DEPLOY\obj\Debug\M4_RFID_READER_DEPLOY.vbproj.CopyComplete
+C:\Users\beh_poh_hock\Desktop\Recently Project\SCM\SCM_RFID_Reader - LocalDebug\M4_RFID_READER_DEPLOY\obj\Debug\M4_RFID_READER_DEPLOY.exe
+C:\Users\beh_poh_hock\Desktop\Recently Project\SCM\SCM_RFID_Reader - LocalDebug\M4_RFID_READER_DEPLOY\obj\Debug\M4_RFID_READER_DEPLOY.xml
+C:\Users\beh_poh_hock\Desktop\Recently Project\SCM\SCM_RFID_Reader - LocalDebug\M4_RFID_READER_DEPLOY\obj\Debug\M4_RFID_READER_DEPLOY.pdb
+C:\Users\Rosmieza_Rosli\Desktop\Kar Seng\New folder (2)\Film_RFID_Reader - 11g\M4_RFID_READER_DEPLOY\bin\Debug\M4_RFID_READER_DEPLOY.exe.config
+C:\Users\Rosmieza_Rosli\Desktop\Kar Seng\New folder (2)\Film_RFID_Reader - 11g\M4_RFID_READER_DEPLOY\bin\Debug\M4_RFID_READER_DEPLOY.exe
+C:\Users\Rosmieza_Rosli\Desktop\Kar Seng\New folder (2)\Film_RFID_Reader - 11g\M4_RFID_READER_DEPLOY\bin\Debug\M4_RFID_READER_DEPLOY.pdb
+C:\Users\Rosmieza_Rosli\Desktop\Kar Seng\New folder (2)\Film_RFID_Reader - 11g\M4_RFID_READER_DEPLOY\bin\Debug\M4_RFID_READER_DEPLOY.xml
+C:\Users\Rosmieza_Rosli\Desktop\Kar Seng\New folder (2)\Film_RFID_Reader - 11g\M4_RFID_READER_DEPLOY\bin\Debug\Library.Database.dll
+C:\Users\Rosmieza_Rosli\Desktop\Kar Seng\New folder (2)\Film_RFID_Reader - 11g\M4_RFID_READER_DEPLOY\bin\Debug\Library.Reader.dll
+C:\Users\Rosmieza_Rosli\Desktop\Kar Seng\New folder (2)\Film_RFID_Reader - 11g\M4_RFID_READER_DEPLOY\bin\Debug\Symbol.RFID3.Host.dll
+C:\Users\Rosmieza_Rosli\Desktop\Kar Seng\New folder (2)\Film_RFID_Reader - 11g\M4_RFID_READER_DEPLOY\bin\Debug\Oracle.DataAccess.dll
+C:\Users\Rosmieza_Rosli\Desktop\Kar Seng\New folder (2)\Film_RFID_Reader - 11g\M4_RFID_READER_DEPLOY\bin\Debug\Library.Database.pdb
+C:\Users\Rosmieza_Rosli\Desktop\Kar Seng\New folder (2)\Film_RFID_Reader - 11g\M4_RFID_READER_DEPLOY\bin\Debug\Library.Database.xml
+C:\Users\Rosmieza_Rosli\Desktop\Kar Seng\New folder (2)\Film_RFID_Reader - 11g\M4_RFID_READER_DEPLOY\bin\Debug\Library.Reader.pdb
+C:\Users\Rosmieza_Rosli\Desktop\Kar Seng\New folder (2)\Film_RFID_Reader - 11g\M4_RFID_READER_DEPLOY\bin\Debug\Library.Reader.xml
+C:\Users\Rosmieza_Rosli\Desktop\Kar Seng\New folder (2)\Film_RFID_Reader - 11g\M4_RFID_READER_DEPLOY\bin\Debug\Symbol.RFID3.Host.xml
+C:\Users\Rosmieza_Rosli\Desktop\Kar Seng\New folder (2)\Film_RFID_Reader - 11g\M4_RFID_READER_DEPLOY\obj\Debug\M4_RFID_READER_DEPLOY.vbprojAssemblyReference.cache
+C:\Users\Rosmieza_Rosli\Desktop\Kar Seng\New folder (2)\Film_RFID_Reader - 11g\M4_RFID_READER_DEPLOY\obj\Debug\M4_RFID_READER_DEPLOY.Form1.resources
+C:\Users\Rosmieza_Rosli\Desktop\Kar Seng\New folder (2)\Film_RFID_Reader - 11g\M4_RFID_READER_DEPLOY\obj\Debug\M4_RFID_READER_DEPLOY.Loading.resources
+C:\Users\Rosmieza_Rosli\Desktop\Kar Seng\New folder (2)\Film_RFID_Reader - 11g\M4_RFID_READER_DEPLOY\obj\Debug\M4_RFID_READER_DEPLOY.Resources.resources
+C:\Users\Rosmieza_Rosli\Desktop\Kar Seng\New folder (2)\Film_RFID_Reader - 11g\M4_RFID_READER_DEPLOY\obj\Debug\M4_RFID_READER_DEPLOY.vbproj.GenerateResource.cache
+C:\Users\Rosmieza_Rosli\Desktop\Kar Seng\New folder (2)\Film_RFID_Reader - 11g\M4_RFID_READER_DEPLOY\obj\Debug\M4_RFID_READER_DEPLOY.vbproj.CoreCompileInputs.cache
+C:\Users\Rosmieza_Rosli\Desktop\Kar Seng\New folder (2)\Film_RFID_Reader - 11g\M4_RFID_READER_DEPLOY\obj\Debug\M4_RFID_READER_DEPLOY.vbproj.CopyComplete
+C:\Users\Rosmieza_Rosli\Desktop\Kar Seng\New folder (2)\Film_RFID_Reader - 11g\M4_RFID_READER_DEPLOY\obj\Debug\M4_RFID_READER_DEPLOY.exe
+C:\Users\Rosmieza_Rosli\Desktop\Kar Seng\New folder (2)\Film_RFID_Reader - 11g\M4_RFID_READER_DEPLOY\obj\Debug\M4_RFID_READER_DEPLOY.xml
+C:\Users\Rosmieza_Rosli\Desktop\Kar Seng\New folder (2)\Film_RFID_Reader - 11g\M4_RFID_READER_DEPLOY\obj\Debug\M4_RFID_READER_DEPLOY.pdb

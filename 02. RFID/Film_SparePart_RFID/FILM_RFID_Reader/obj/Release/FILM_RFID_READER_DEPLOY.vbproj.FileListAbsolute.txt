@@ -1,0 +1,66 @@
+\\10.200.0.19\temp\fromFarhana\RFID\Film_SparePart_RFID - New\FILM_RFID_Reader\bin\Release\FILM_RFID_READER_DEPLOY.exe.config
+\\10.200.0.19\temp\fromFarhana\RFID\Film_SparePart_RFID - New\FILM_RFID_Reader\bin\Release\FILM_RFID_READER_DEPLOY.exe
+\\10.200.0.19\temp\fromFarhana\RFID\Film_SparePart_RFID - New\FILM_RFID_Reader\bin\Release\FILM_RFID_READER_DEPLOY.pdb
+\\10.200.0.19\temp\fromFarhana\RFID\Film_SparePart_RFID - New\FILM_RFID_Reader\bin\Release\FILM_RFID_READER_DEPLOY.xml
+\\10.200.0.19\temp\fromFarhana\RFID\Film_SparePart_RFID - New\FILM_RFID_Reader\bin\Release\Library.Database.dll
+\\10.200.0.19\temp\fromFarhana\RFID\Film_SparePart_RFID - New\FILM_RFID_Reader\bin\Release\Library.Reader.dll
+\\10.200.0.19\temp\fromFarhana\RFID\Film_SparePart_RFID - New\FILM_RFID_Reader\bin\Release\Symbol.RFID3.Host.dll
+\\10.200.0.19\temp\fromFarhana\RFID\Film_SparePart_RFID - New\FILM_RFID_Reader\bin\Release\Library.Database.pdb
+\\10.200.0.19\temp\fromFarhana\RFID\Film_SparePart_RFID - New\FILM_RFID_Reader\bin\Release\Library.Database.xml
+\\10.200.0.19\temp\fromFarhana\RFID\Film_SparePart_RFID - New\FILM_RFID_Reader\bin\Release\Library.Reader.pdb
+\\10.200.0.19\temp\fromFarhana\RFID\Film_SparePart_RFID - New\FILM_RFID_Reader\bin\Release\Library.Reader.xml
+\\10.200.0.19\temp\fromFarhana\RFID\Film_SparePart_RFID - New\FILM_RFID_Reader\bin\Release\Symbol.RFID3.Host.xml
+\\10.200.0.19\temp\fromFarhana\RFID\Film_SparePart_RFID - New\FILM_RFID_Reader\obj\Release\FILM_RFID_READER_DEPLOY.vbprojAssemblyReference.cache
+\\10.200.0.19\temp\fromFarhana\RFID\Film_SparePart_RFID - New\FILM_RFID_Reader\obj\Release\FILM_RFID_READER_DEPLOY.TagDetails.resources
+\\10.200.0.19\temp\fromFarhana\RFID\Film_SparePart_RFID - New\FILM_RFID_Reader\obj\Release\FILM_RFID_READER_DEPLOY.Loading.resources
+\\10.200.0.19\temp\fromFarhana\RFID\Film_SparePart_RFID - New\FILM_RFID_Reader\obj\Release\FILM_RFID_READER_DEPLOY.Resources.resources
+\\10.200.0.19\temp\fromFarhana\RFID\Film_SparePart_RFID - New\FILM_RFID_Reader\obj\Release\FILM_RFID_READER_DEPLOY.vbproj.GenerateResource.cache
+\\10.200.0.19\temp\fromFarhana\RFID\Film_SparePart_RFID - New\FILM_RFID_Reader\obj\Release\FILM_RFID_READER_DEPLOY.vbproj.CoreCompileInputs.cache
+\\10.200.0.19\temp\fromFarhana\RFID\Film_SparePart_RFID - New\FILM_RFID_Reader\obj\Release\FILM_RFID_READER_DEPLOY.vbproj.CopyComplete
+\\10.200.0.19\temp\fromFarhana\RFID\Film_SparePart_RFID - New\FILM_RFID_Reader\obj\Release\FILM_RFID_READER_DEPLOY.exe
+\\10.200.0.19\temp\fromFarhana\RFID\Film_SparePart_RFID - New\FILM_RFID_Reader\obj\Release\FILM_RFID_READER_DEPLOY.xml
+\\10.200.0.19\temp\fromFarhana\RFID\Film_SparePart_RFID - New\FILM_RFID_Reader\obj\Release\FILM_RFID_READER_DEPLOY.pdb
+C:\Users\nurfarhanah_azli\Desktop\RFID New\Film_SparePart_RFID - New\FILM_RFID_Reader\bin\Release\FILM_RFID_READER_DEPLOY.exe.config
+C:\Users\nurfarhanah_azli\Desktop\RFID New\Film_SparePart_RFID - New\FILM_RFID_Reader\bin\Release\FILM_RFID_READER_DEPLOY.exe
+C:\Users\nurfarhanah_azli\Desktop\RFID New\Film_SparePart_RFID - New\FILM_RFID_Reader\bin\Release\FILM_RFID_READER_DEPLOY.pdb
+C:\Users\nurfarhanah_azli\Desktop\RFID New\Film_SparePart_RFID - New\FILM_RFID_Reader\bin\Release\FILM_RFID_READER_DEPLOY.xml
+C:\Users\nurfarhanah_azli\Desktop\RFID New\Film_SparePart_RFID - New\FILM_RFID_Reader\bin\Release\Library.Database.dll
+C:\Users\nurfarhanah_azli\Desktop\RFID New\Film_SparePart_RFID - New\FILM_RFID_Reader\bin\Release\Library.Reader.dll
+C:\Users\nurfarhanah_azli\Desktop\RFID New\Film_SparePart_RFID - New\FILM_RFID_Reader\bin\Release\Symbol.RFID3.Host.dll
+C:\Users\nurfarhanah_azli\Desktop\RFID New\Film_SparePart_RFID - New\FILM_RFID_Reader\bin\Release\Library.Database.pdb
+C:\Users\nurfarhanah_azli\Desktop\RFID New\Film_SparePart_RFID - New\FILM_RFID_Reader\bin\Release\Library.Database.xml
+C:\Users\nurfarhanah_azli\Desktop\RFID New\Film_SparePart_RFID - New\FILM_RFID_Reader\bin\Release\Library.Reader.pdb
+C:\Users\nurfarhanah_azli\Desktop\RFID New\Film_SparePart_RFID - New\FILM_RFID_Reader\bin\Release\Library.Reader.xml
+C:\Users\nurfarhanah_azli\Desktop\RFID New\Film_SparePart_RFID - New\FILM_RFID_Reader\bin\Release\Symbol.RFID3.Host.xml
+C:\Users\nurfarhanah_azli\Desktop\RFID New\Film_SparePart_RFID - New\FILM_RFID_Reader\obj\Release\FILM_RFID_READER_DEPLOY.vbprojAssemblyReference.cache
+C:\Users\nurfarhanah_azli\Desktop\RFID New\Film_SparePart_RFID - New\FILM_RFID_Reader\obj\Release\FILM_RFID_READER_DEPLOY.TagDetails.resources
+C:\Users\nurfarhanah_azli\Desktop\RFID New\Film_SparePart_RFID - New\FILM_RFID_Reader\obj\Release\FILM_RFID_READER_DEPLOY.Loading.resources
+C:\Users\nurfarhanah_azli\Desktop\RFID New\Film_SparePart_RFID - New\FILM_RFID_Reader\obj\Release\FILM_RFID_READER_DEPLOY.Resources.resources
+C:\Users\nurfarhanah_azli\Desktop\RFID New\Film_SparePart_RFID - New\FILM_RFID_Reader\obj\Release\FILM_RFID_READER_DEPLOY.vbproj.GenerateResource.cache
+C:\Users\nurfarhanah_azli\Desktop\RFID New\Film_SparePart_RFID - New\FILM_RFID_Reader\obj\Release\FILM_RFID_READER_DEPLOY.vbproj.CoreCompileInputs.cache
+C:\Users\nurfarhanah_azli\Desktop\RFID New\Film_SparePart_RFID - New\FILM_RFID_Reader\obj\Release\FILM_RFID_READER_DEPLOY.vbproj.CopyComplete
+C:\Users\nurfarhanah_azli\Desktop\RFID New\Film_SparePart_RFID - New\FILM_RFID_Reader\obj\Release\FILM_RFID_READER_DEPLOY.exe
+C:\Users\nurfarhanah_azli\Desktop\RFID New\Film_SparePart_RFID - New\FILM_RFID_Reader\obj\Release\FILM_RFID_READER_DEPLOY.xml
+C:\Users\nurfarhanah_azli\Desktop\RFID New\Film_SparePart_RFID - New\FILM_RFID_Reader\obj\Release\FILM_RFID_READER_DEPLOY.pdb
+C:\Users\nurfarhanah_azli\Desktop\RFID New 2\Film_SparePart_RFID - New\FILM_RFID_Reader\bin\Release\FILM_RFID_READER_DEPLOY.exe.config
+C:\Users\nurfarhanah_azli\Desktop\RFID New 2\Film_SparePart_RFID - New\FILM_RFID_Reader\bin\Release\FILM_RFID_READER_DEPLOY.exe
+C:\Users\nurfarhanah_azli\Desktop\RFID New 2\Film_SparePart_RFID - New\FILM_RFID_Reader\bin\Release\FILM_RFID_READER_DEPLOY.pdb
+C:\Users\nurfarhanah_azli\Desktop\RFID New 2\Film_SparePart_RFID - New\FILM_RFID_Reader\bin\Release\FILM_RFID_READER_DEPLOY.xml
+C:\Users\nurfarhanah_azli\Desktop\RFID New 2\Film_SparePart_RFID - New\FILM_RFID_Reader\bin\Release\Library.Database.dll
+C:\Users\nurfarhanah_azli\Desktop\RFID New 2\Film_SparePart_RFID - New\FILM_RFID_Reader\bin\Release\Library.Reader.dll
+C:\Users\nurfarhanah_azli\Desktop\RFID New 2\Film_SparePart_RFID - New\FILM_RFID_Reader\bin\Release\Symbol.RFID3.Host.dll
+C:\Users\nurfarhanah_azli\Desktop\RFID New 2\Film_SparePart_RFID - New\FILM_RFID_Reader\bin\Release\Library.Database.pdb
+C:\Users\nurfarhanah_azli\Desktop\RFID New 2\Film_SparePart_RFID - New\FILM_RFID_Reader\bin\Release\Library.Database.xml
+C:\Users\nurfarhanah_azli\Desktop\RFID New 2\Film_SparePart_RFID - New\FILM_RFID_Reader\bin\Release\Library.Reader.pdb
+C:\Users\nurfarhanah_azli\Desktop\RFID New 2\Film_SparePart_RFID - New\FILM_RFID_Reader\bin\Release\Library.Reader.xml
+C:\Users\nurfarhanah_azli\Desktop\RFID New 2\Film_SparePart_RFID - New\FILM_RFID_Reader\bin\Release\Symbol.RFID3.Host.xml
+C:\Users\nurfarhanah_azli\Desktop\RFID New 2\Film_SparePart_RFID - New\FILM_RFID_Reader\obj\Release\FILM_RFID_READER_DEPLOY.vbprojAssemblyReference.cache
+C:\Users\nurfarhanah_azli\Desktop\RFID New 2\Film_SparePart_RFID - New\FILM_RFID_Reader\obj\Release\FILM_RFID_READER_DEPLOY.Loading.resources
+C:\Users\nurfarhanah_azli\Desktop\RFID New 2\Film_SparePart_RFID - New\FILM_RFID_Reader\obj\Release\FILM_RFID_READER_DEPLOY.Resources.resources
+C:\Users\nurfarhanah_azli\Desktop\RFID New 2\Film_SparePart_RFID - New\FILM_RFID_Reader\obj\Release\FILM_RFID_READER_DEPLOY.vbproj.GenerateResource.cache
+C:\Users\nurfarhanah_azli\Desktop\RFID New 2\Film_SparePart_RFID - New\FILM_RFID_Reader\obj\Release\FILM_RFID_READER_DEPLOY.vbproj.CoreCompileInputs.cache
+C:\Users\nurfarhanah_azli\Desktop\RFID New 2\Film_SparePart_RFID - New\FILM_RFID_Reader\obj\Release\FILM_RFID_READER_DEPLOY.vbproj.CopyComplete
+C:\Users\nurfarhanah_azli\Desktop\RFID New 2\Film_SparePart_RFID - New\FILM_RFID_Reader\obj\Release\FILM_RFID_READER_DEPLOY.exe
+C:\Users\nurfarhanah_azli\Desktop\RFID New 2\Film_SparePart_RFID - New\FILM_RFID_Reader\obj\Release\FILM_RFID_READER_DEPLOY.xml
+C:\Users\nurfarhanah_azli\Desktop\RFID New 2\Film_SparePart_RFID - New\FILM_RFID_Reader\obj\Release\FILM_RFID_READER_DEPLOY.pdb
+C:\Users\nurfarhanah_azli\Desktop\RFID New 2\Film_SparePart_RFID - New\FILM_RFID_Reader\obj\Release\FILM_RFID_READER_DEPLOY.Form1.resources

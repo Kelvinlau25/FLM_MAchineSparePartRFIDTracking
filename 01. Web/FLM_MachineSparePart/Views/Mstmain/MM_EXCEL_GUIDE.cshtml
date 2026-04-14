@@ -1,0 +1,32 @@
+﻿
+@{
+    ViewBag.Title = "User Guideline";
+    Layout = "~/Views/Shared/_Layout_iFrame.cshtml";
+}
+
+<h2>User Guideline</h2>
+<hr />
+<div class="form-horizontal">
+    <div class="form-group">
+        <label class="col-sm-2" style="width:200px;">User Manual</label>
+        <label class="labelW10">:</label>
+        <div class="col-sm-4">
+            <a href="@Url.Action("GetUserGuidePdf", "MstMain")" target="_blank">User Manual Download</a>
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="col-sm-2" style="width:200px;">Receiving Process Flow</label>
+        <label class="labelW10">:</label>
+        <div class="col-sm-4">
+            <a href="@Url.Action("GetReceiveImage", "MstMain")" target="_blank">Receiving Process Flow Download</a>
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="col-sm-2" style="width:200px;">Issuing Process Flow</label>
+        <label class="labelW10">:</label>
+        <div class="col-sm-4">
+            <a href="@Url.Action("GetIssueImage", "MstMain")" target="_blank">Issuing Process Download</a>
+        </div>
+    </div>
+</div>
+

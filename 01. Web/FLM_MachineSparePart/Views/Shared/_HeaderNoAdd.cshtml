@@ -1,0 +1,95 @@
+﻿@{
+    var postto = this.ViewData["SrcAct"].ToString();
+
+    //--------------------- Add (14/4/21) ----------------------------
+    var act = this.ViewData["Act"].ToString();
+    var ctrlto = this.ViewData["Ctrl"].ToString();
+    //----------------------------------------------------------------
+}
+
+<style type="text/css">
+    .btntolink {
+        background-color: transparent;
+        border: none;
+    }
+
+    .searchbtn {
+        /*position: absolute;
+        right: 64%;
+        top: 26%;*/
+    }
+
+    .searchtxt {
+        width: 100%;
+        border-radius: 8px;
+        border: 2px solid #ccc;
+    }
+
+    .topleft {
+        position: relative;
+        width: 25%;
+        float: left;
+    }
+
+    .topright {
+        position: relative;
+        width: 75%;
+        float: left;
+    }
+</style>
+@{
+    @*using (Html.BeginForm(postto, @Html.ViewData["Ctrl"].ToString()))
+        {
+            <div>
+                <fieldset>
+                    <div class="editor-field">
+                        <div class="topleft">
+                            <input type="text" id="SEARCH_VALUE" class="searchtxt" name=@Html.ViewData["SrcVal"].ToString() />
+                        </div>
+                        <div class="topright">
+                            <button id="btnsubmit" class="btntolink searchbtn"><i class="fa fa-search"></i></button>
+                        </div>
+                    </div>
+                </fieldset>
+
+            </div>
+        }*@
+    @*<div style="float:right;">
+            @Html.ActionLink(" ", "AddNew", "Mstmain",
+           new { act=this.ViewData["Act"] ,ctrl= this.ViewData["Ctrl"] },
+           new { @class = "fa fa-plus-square fa-2x" })
+        </div>*@
+    @* Advance search *@
+    using (Html.BeginForm(postto, ctrlto))
+    {
+        <div>
+            <fieldset>
+                <div class="editor-field">
+                    <div class="topleft">
+                        <input type="text" id="SEARCH_VALUE" class="searchtxt" name=@Html.ViewData["SrcVal"].ToString() />
+                    </div>
+                    <div class="topright">
+                        <button id="btnsubmit" class="btntolink searchbtn"><i class="fa fa-search"></i></button>
+                    </div>
+
+                    <div style="float:right;" >
+                        <a href="#" onclick="advanceSearchClick()" data-toggle="modal" data-target="#exampleModal1" class="fa fa-search-plus fa-2x"></a>
+                    </div>
+                    <div class="modal fade" id="exampleModal1" tabindex="-1" role="dialog" data-backdrop="false" style="background-color: rgba(0, 0, 0, 0.5);">
+                        <div class="modal-dialog" role="document">
+                            <div id="advanceSearchDiv"></div>
+                        </div>
+                    </div>
+
+                    <script>
+                        function advanceSearchClick()
+                        {
+                            $("#advanceSearchDiv").load('@(Url.Content("/Mstmain/AdvancedSearch") + "?actionRequested=" + ViewContext.RouteData.Values["action"].ToString() + "/" + ViewContext.RouteData.Values["controller"].ToString())');
+                        }
+                    </script>
+                </div>
+            </fieldset>
+
+        </div>
+    }
+}

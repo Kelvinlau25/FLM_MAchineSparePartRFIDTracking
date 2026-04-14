@@ -1,0 +1,85 @@
+﻿@model UserMMModel.SparePartModel
+@{
+    var url = @Url.Action("MM_SPARE_PART_LST", "Mstmain").ToString();
+    ViewBag.Title = "MM Spare Part Model - Add";
+    Layout = "~/Views/Shared/_Layout_iFrame.cshtml";
+}
+
+@if (ViewData["Success"] != null)
+{
+    <script type="text/javascript">
+        //alert("viewdata");
+        alert("@ViewData["Success"]");
+        window.location.href = "@Url.Action("MM_SPARE_PART_LST", "Mstmain")";
+    </script>
+}
+
+@if (!string.IsNullOrEmpty(ViewBag.Result))
+{
+    <script type="text/javascript">
+        var chkmsg = "@ViewBag.Result";
+        var url = "";
+        //alert("viewbag");
+        alert(chkmsg);
+        url= '@Url.Action("MM_SPARE_PART_LST", "Mstmain")';
+        window.location.href = url;
+    </script>
+}
+
+<h2>Spare Part Model Master Maintenance - Add</h2>
+<hr />
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    <div class="col-100">
+
+        <div class="col-md-8">
+            <label>Model No</label>
+        </div>
+
+        <div class="col-md-8">
+            <div class="form-group">
+                @Html.TextBoxFor(a => a.Model_No, null, new { @class = "form-control txtbox" })
+                @Html.ValidationMessageFor(a => a.Model_No, "", new { @style = "color:red" })
+            </div>
+        </div>
+        <div class="col-md-8">
+            @Html.LabelFor(a => a.Remarks)
+        </div>
+        <div class="col-md-8">
+            <div class="form-group">
+                @Html.TextBoxFor(a => a.Remarks, null, new { @class = "form-control txtbox" })
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <input id="Submit" type="submit" class="btn btn-primary" value="Submit" />
+            @Html.BackButton(url)
+        </div>
+
+    </div>
+    @*<div class="form-horizontal">
+            <div class="form-group">
+                <label class="col-sm-1">Model No</label>
+                <label class="labelW10">:</label>
+                <div class="col-sm-5">
+                    @Html.TextBoxFor(a => a.Model_No, null, new { @class = "form-control txtbox" })
+                    @Html.ValidationMessageFor(a => a.Model_No)
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="col-sm-1">Remarks</label>
+                <label class="labelW10">:</label>
+                <div class="col-sm-5">
+                    @Html.TextBoxFor(a => a.Remarks, null, new { @class = "form-control" })
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <input id="Submit" type="submit" class="btn btn-primary" value="Submit" />
+            @Html.BackButton(url)
+        </div>*@
+
+}
