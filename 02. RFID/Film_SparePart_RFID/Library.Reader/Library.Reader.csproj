@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <RootNamespace>Library.Reader</RootNamespace>
+    <AssemblyName>Library.Reader</AssemblyName>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="Symbol.RFID3.Host">
+      <HintPath>..\reader_dll\Symbol.RFID3.Host.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Library.Database.CS\Library.Database.csproj" />
+    <ProjectReference Include="..\Library.Database\Library.Database.csproj" />
+  </ItemGroup>
+</Project>

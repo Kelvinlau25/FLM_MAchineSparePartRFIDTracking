@@ -1,0 +1,10 @@
+C:\CONVERTED PROJECT\FLM_MAchineSparePartRFIDTracking\02. RFID\Film_SparePart_RFID\Library.Database.cs\bin\Debug\net48\Library.Database.dll
+C:\CONVERTED PROJECT\FLM_MAchineSparePartRFIDTracking\02. RFID\Film_SparePart_RFID\Library.Database.cs\bin\Debug\net48\Library.Database.pdb
+C:\CONVERTED PROJECT\FLM_MAchineSparePartRFIDTracking\02. RFID\Film_SparePart_RFID\Library.Database.cs\obj\Debug\net48\Library.Database.csproj.AssemblyReference.cache
+C:\CONVERTED PROJECT\FLM_MAchineSparePartRFIDTracking\02. RFID\Film_SparePart_RFID\Library.Database.cs\obj\Debug\net48\Library.Database.GeneratedMSBuildEditorConfig.editorconfig
+C:\CONVERTED PROJECT\FLM_MAchineSparePartRFIDTracking\02. RFID\Film_SparePart_RFID\Library.Database.cs\obj\Debug\net48\Library.Database.AssemblyInfoInputs.cache
+C:\CONVERTED PROJECT\FLM_MAchineSparePartRFIDTracking\02. RFID\Film_SparePart_RFID\Library.Database.cs\obj\Debug\net48\Library.Database.AssemblyInfo.cs
+C:\CONVERTED PROJECT\FLM_MAchineSparePartRFIDTracking\02. RFID\Film_SparePart_RFID\Library.Database.cs\obj\Debug\net48\Library.Database.csproj.CoreCompileInputs.cache
+C:\CONVERTED PROJECT\FLM_MAchineSparePartRFIDTracking\02. RFID\Film_SparePart_RFID\Library.Database.cs\obj\Debug\net48\Library.Database.sourcelink.json
+C:\CONVERTED PROJECT\FLM_MAchineSparePartRFIDTracking\02. RFID\Film_SparePart_RFID\Library.Database.cs\obj\Debug\net48\Library.Database.dll
+C:\CONVERTED PROJECT\FLM_MAchineSparePartRFIDTracking\02. RFID\Film_SparePart_RFID\Library.Database.cs\obj\Debug\net48\Library.Database.pdb

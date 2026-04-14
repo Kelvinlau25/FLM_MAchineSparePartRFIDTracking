@@ -1,0 +1,8 @@
+is_global = true
+build_property.RootNamespace = Library.Database
+build_property.ProjectDir = C:\CONVERTED PROJECT\FLM_MAchineSparePartRFIDTracking\02. RFID\Film_SparePart_RFID\Library.Database\
+build_property.EnableComHosting = 
+build_property.EnableGeneratedComInterfaceComImportInterop = 
+build_property.CsWinRTUseWindowsUIXamlProjections = false
+build_property.EffectiveAnalysisLevelStyle = 
+build_property.EnableCodeStyleSeverity = 

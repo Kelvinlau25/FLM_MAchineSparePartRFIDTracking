@@ -1,3 +1,0 @@
-Starting Error Log for today 15/03/26 12:13:09
-New() >> Init done - 15/03/26 12:13:09
-New() >> Init done - 15/03/26 12:14:24
