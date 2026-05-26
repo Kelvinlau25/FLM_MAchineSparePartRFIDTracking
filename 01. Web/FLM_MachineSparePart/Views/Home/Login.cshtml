@@ -1,0 +1,65 @@
+﻿@model HomeModel.AuthenticatorModel
+@{
+    ViewBag.Title = "Login Page";
+    Layout = null;
+}
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="~/css/Login.css" />
+<link rel="stylesheet" href="~/css/Alert.css" />
+<script src="~/js/Alert.js"></script>
+<style>
+
+    #successBtn, #failBtn {
+        display: none;
+    }
+
+    .errMsg {
+        color: crimson;
+    }
+</style>
+@using (Html.BeginForm("Login", "Home", FormMethod.Post, new { @class = "box" }))
+{
+    @Html.AntiForgeryToken()
+    <img id="img_logo" alt="Logo" src="@Url.Content("~/images/Capture.png")" />
+    <h1>Machine Spare Part Tracking System</h1>
+    @Html.TextBoxFor(a => a.LOGIN_ID, new { placeholder = "Username" })
+
+    @Html.PasswordFor(a => a.PASSWORD, new { placeholder = "Password" })
+    <input id="loginBtn" type="submit" value="Login" />
+    <div class="errMsg">@Html.ValidationMessageFor(a => a.LOGIN_ID)</div>
+    <div class="errMsg">@Html.ValidationMessageFor(a => a.PASSWORD)</div>
+
+    <input type="button" id="failBtn" value="Fail" onclick="alert('&#10006; Failed','Invalid Username & Password. <br> Please Try Again.','red');" />
+
+    @*@Html.ActionLink("Login", "Menu", "Home", new { @type = "submit" })*@
+}
+<script type="text/javascript">
+    function redirect(color) {
+        if (color == "green") {
+            var url = '@Url.Action("Menu", "Home")';
+            window.location.href = url;
+        }
+        if (color == "red") {
+            var url = '@Url.Action("Login", "Home")';
+            window.location.href = url;
+        }
+    }
+</script>
+@{
+    if (ViewBag.Validate == true)
+    {
+        <script type="text/javascript">
+            var url = '@Url.Action("Menu", "Home")';
+            window.location.href = url;
+        </script>
+    }
+    else if (ViewBag.Validate == false)
+    {
+        <script type="text/javascript">
+            var elem = document.getElementById("failBtn");
+            if (typeof elem.onclick == "function") {
+                elem.onclick.apply(elem);
+            }
+        </script>
+    }
+}

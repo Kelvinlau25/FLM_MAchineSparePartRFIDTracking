@@ -1,0 +1,212 @@
+﻿@using UserMMModel
+@using FILM_Sparepart_MVC.Helpers
+@model PaginatedList<UserMMModel.SparePart>
+@{
+    /**/
+    ViewBag.Title = "MM Spare Part";
+    Layout = "~/Views/Shared/_Layout_iFrame.cshtml";
+    var items = Model?.ToList() ?? new List<UserMMModel.SparePart>();
+}
+
+
+@if (TempData["result"] != null)
+{
+    <script type="text/javascript">
+        alert("@TempData["result"]");
+    </script>
+}
+
+
+<script type="text/javascript">
+    //$(document).ready(function () {
+    //    //$('.webgrid-table thead td:nth-child(0), thead th:nth-child(0').hide();
+    //    //$('.webgrid-table tbody td:nth-child(0), tbody th:nth-child(0').hide();
+    //    $('td:nth-child(1), th:nth-child(1)').hide();
+    //});
+    function popUpDelete(rowid, page)
+    {
+        //var row = rowid.parentNode.parentNode;
+        //var spartid = row.getElementsByTagName("TD")[0].innerHTML;
+        var spartid = rowid.toString();
+        var agree = confirm("Are you sure to delete?");
+        if (agree) {
+            var url = '@Url.Action("MM_SPART_DELETE", "Mstmain")?id=' + spartid + '&page=' + page;
+            window.location.href = url;
+        }
+    }
+</script>
+
+<h2>Spare Part Master Maintenance</h2>
+<hr />
+@{
+    @Html.Partial("_Header",
+    new ViewDataDictionary(this.ViewData) {
+        { "Act", "MM_SPART_ADD" },
+        { "Ctrl", "Mstmain" },
+        { "SrcAct", "MM_SPART_LST" },
+        { "SrcVal", "SEARCH_VALUE" }
+    })
+
+
+}
+<div id="grid">
+    <table class="table table-bordered">
+        <thead class="head">
+            <tr>
+                <th></th>
+                <th>Model No</th>
+                <th>Serial No</th>
+                <th>Part No</th>
+                <th>Machine Model</th>
+                <th>Storage</th>
+                <th>Manufacturer</th>
+                <th>Status</th>
+                <th>Remarks</th>
+                <th>Edit</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (items != null && items.Any())
+            {
+                foreach (var item in items)
+                {
+                    <tr>
+                        <td><a href="javascript:void(0)" onclick="popUpDelete('@item.SPARE_PART_ID', @Model.PageIndex);"><i class="fa fa-trash"></i></a></td>
+                        <td>@item.Spare_Part_Model_ID</td>
+                        <td>@item.Series_No</td>
+                        <td>@item.Part_No</td>
+                        <td>@item.Spare_Part_Machine_ID</td>
+                        <td>@item.Storage_ID</td>
+                        <td>@item.Manufacturer_ID</td>
+                        <td>@item.Status</td>
+                        <td>@item.Remarks</td>
+                        <td><a href="@Url.Action("MM_SPART_EDIT", "Mstmain", new { id = item.SPARE_PART_ID })"><i class="fa fa-pencil"></i></a></td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="10" class="text-center">No records found</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@* Pagination Controls *@
+@if (Model != null && Model.TotalPages > 1)
+{
+    <div class="pagination-container" style="margin: 20px 0; text-align: center;">
+        <ul class="pagination" style="display: inline-flex; list-style: none; padding: 0;">
+            @* Previous Button *@
+            @if (Model.HasPreviousPage)
+            {
+                <li style="margin: 0 2px;">
+                    <a href="@Url.Action("MM_SPART_LST", new { page = Model.PageIndex - 1 })" 
+                       style="padding: 5px 10px; border: 1px solid #ddd; text-decoration: none; color: #337ab7;">
+                        Previous
+                    </a>
+                </li>
+            }
+            else
+            {
+                <li style="margin: 0 2px;">
+                    <span style="padding: 5px 10px; border: 1px solid #ddd; color: #999;">Previous</span>
+                </li>
+            }
+
+            @* Page Numbers *@
+            @{
+                int startPage = Math.Max(1, Model.PageIndex - 2);
+                int endPage = Math.Min(Model.TotalPages, Model.PageIndex + 2);
+                
+                // Show first page if not in range
+                if (startPage > 1)
+                {
+                    <li style="margin: 0 2px;">
+                        <a href="@Url.Action("MM_SPART_LST", new { page = 1 })" 
+                           style="padding: 5px 10px; border: 1px solid #ddd; text-decoration: none; color: #337ab7;">
+                            1
+                        </a>
+                    </li>
+                    if (startPage > 2)
+                    {
+                        <li style="margin: 0 2px;"><span style="padding: 5px 10px;">...</span></li>
+                    }
+                }
+
+                // Show page numbers
+                for (int i = startPage; i <= endPage; i++)
+                {
+                    if (i == Model.PageIndex)
+                    {
+                        <li style="margin: 0 2px;">
+                            <span style="padding: 5px 10px; border: 1px solid #337ab7; background-color: #337ab7; color: white; font-weight: bold;">
+                                @i
+                            </span>
+                        </li>
+                    }
+                    else
+                    {
+                        <li style="margin: 0 2px;">
+                            <a href="@Url.Action("MM_SPART_LST", new { page = i })" 
+                               style="padding: 5px 10px; border: 1px solid #ddd; text-decoration: none; color: #337ab7;">
+                                @i
+                            </a>
+                        </li>
+                    }
+                }
+
+                // Show last page if not in range
+                if (endPage < Model.TotalPages)
+                {
+                    if (endPage < Model.TotalPages - 1)
+                    {
+                        <li style="margin: 0 2px;"><span style="padding: 5px 10px;">...</span></li>
+                    }
+                    <li style="margin: 0 2px;">
+                        <a href="@Url.Action("MM_SPART_LST", new { page = Model.TotalPages })" 
+                           style="padding: 5px 10px; border: 1px solid #ddd; text-decoration: none; color: #337ab7;">
+                            @Model.TotalPages
+                        </a>
+                    </li>
+                }
+            }
+
+            @* Next Button *@
+            @if (Model.HasNextPage)
+            {
+                <li style="margin: 0 2px;">
+                    <a href="@Url.Action("MM_SPART_LST", new { page = Model.PageIndex + 1 })" 
+                       style="padding: 5px 10px; border: 1px solid #ddd; text-decoration: none; color: #337ab7;">
+                        Next
+                    </a>
+                </li>
+            }
+            else
+            {
+                <li style="margin: 0 2px;">
+                    <span style="padding: 5px 10px; border: 1px solid #ddd; color: #999;">Next</span>
+                </li>
+            }
+
+            @* Last Button *@
+            @if (Model.PageIndex < Model.TotalPages)
+            {
+                <li style="margin: 0 2px;">
+                    <a href="@Url.Action("MM_SPART_LST", new { page = Model.TotalPages })" 
+                       style="padding: 5px 10px; border: 1px solid #ddd; text-decoration: none; color: #337ab7;">
+                        Last
+                    </a>
+                </li>
+            }
+        </ul>
+        <div style="margin-top: 10px; color: #666;">
+            Page @Model.PageIndex of @Model.TotalPages (Total: @Model.TotalCount records)
+        </div>
+    </div>
+}
+
+<input type="button" value="Export to Excel" class="btn btn-primary" onclick="location.href='@Url.Action("ExportExcelSpart", "Mstmain")'" />
+<input type="button" value="Add Spare Part(Excel)"  class="btn btn-primary" onclick="location.href='@Url.Action("MM_SPART_ADD_Excel", "Mstmain")'" />

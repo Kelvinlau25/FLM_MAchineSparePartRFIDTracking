@@ -1,0 +1,12 @@
+\\10.200.0.19\temp\fromFarhana\RFID\Film_SparePart_RFID - New\Library.Database\bin\Release\Library.Database.dll
+\\10.200.0.19\temp\fromFarhana\RFID\Film_SparePart_RFID - New\Library.Database\bin\Release\Library.Database.pdb
+\\10.200.0.19\temp\fromFarhana\RFID\Film_SparePart_RFID - New\Library.Database\bin\Release\Library.Database.xml
+\\10.200.0.19\temp\fromFarhana\RFID\Film_SparePart_RFID - New\Library.Database\bin\Release\Oracle.DataAccess.dll
+\\10.200.0.19\temp\fromFarhana\RFID\Film_SparePart_RFID - New\Library.Database\obj\Release\Library.Database.vbprojAssemblyReference.cache
+\\10.200.0.19\temp\fromFarhana\RFID\Film_SparePart_RFID - New\Library.Database\obj\Release\Library.Database.Resources.resources
+\\10.200.0.19\temp\fromFarhana\RFID\Film_SparePart_RFID - New\Library.Database\obj\Release\Library.Database.vbproj.GenerateResource.cache
+\\10.200.0.19\temp\fromFarhana\RFID\Film_SparePart_RFID - New\Library.Database\obj\Release\Library.Database.vbproj.CoreCompileInputs.cache
+\\10.200.0.19\temp\fromFarhana\RFID\Film_SparePart_RFID - New\Library.Database\obj\Release\Library.Database.vbproj.CopyComplete
+\\10.200.0.19\temp\fromFarhana\RFID\Film_SparePart_RFID - New\Library.Database\obj\Release\Library.Database.dll
+\\10.200.0.19\temp\fromFarhana\RFID\Film_SparePart_RFID - New\Library.Database\obj\Release\Library.Database.xml
+\\10.200.0.19\temp\fromFarhana\RFID\Film_SparePart_RFID - New\Library.Database\obj\Release\Library.Database.pdb

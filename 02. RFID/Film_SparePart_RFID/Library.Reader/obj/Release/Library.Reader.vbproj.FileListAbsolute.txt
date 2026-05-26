@@ -1,0 +1,32 @@
+\\10.200.0.19\temp\fromFarhana\RFID\Film_SparePart_RFID - New\Library.Reader\bin\Release\Library.Reader.dll
+\\10.200.0.19\temp\fromFarhana\RFID\Film_SparePart_RFID - New\Library.Reader\bin\Release\Library.Reader.pdb
+\\10.200.0.19\temp\fromFarhana\RFID\Film_SparePart_RFID - New\Library.Reader\bin\Release\Library.Reader.xml
+\\10.200.0.19\temp\fromFarhana\RFID\Film_SparePart_RFID - New\Library.Reader\bin\Release\Library.Database.dll
+\\10.200.0.19\temp\fromFarhana\RFID\Film_SparePart_RFID - New\Library.Reader\bin\Release\Symbol.RFID3.Host.dll
+\\10.200.0.19\temp\fromFarhana\RFID\Film_SparePart_RFID - New\Library.Reader\bin\Release\Library.Database.pdb
+\\10.200.0.19\temp\fromFarhana\RFID\Film_SparePart_RFID - New\Library.Reader\bin\Release\Library.Database.xml
+\\10.200.0.19\temp\fromFarhana\RFID\Film_SparePart_RFID - New\Library.Reader\bin\Release\Symbol.RFID3.Host.xml
+\\10.200.0.19\temp\fromFarhana\RFID\Film_SparePart_RFID - New\Library.Reader\obj\Release\Library.Reader.vbprojAssemblyReference.cache
+\\10.200.0.19\temp\fromFarhana\RFID\Film_SparePart_RFID - New\Library.Reader\obj\Release\Library.Reader.Resources.resources
+\\10.200.0.19\temp\fromFarhana\RFID\Film_SparePart_RFID - New\Library.Reader\obj\Release\Library.Reader.vbproj.GenerateResource.cache
+\\10.200.0.19\temp\fromFarhana\RFID\Film_SparePart_RFID - New\Library.Reader\obj\Release\Library.Reader.vbproj.CoreCompileInputs.cache
+\\10.200.0.19\temp\fromFarhana\RFID\Film_SparePart_RFID - New\Library.Reader\obj\Release\Library.Reader.vbproj.CopyComplete
+\\10.200.0.19\temp\fromFarhana\RFID\Film_SparePart_RFID - New\Library.Reader\obj\Release\Library.Reader.dll
+\\10.200.0.19\temp\fromFarhana\RFID\Film_SparePart_RFID - New\Library.Reader\obj\Release\Library.Reader.xml
+\\10.200.0.19\temp\fromFarhana\RFID\Film_SparePart_RFID - New\Library.Reader\obj\Release\Library.Reader.pdb
+C:\Users\nurfarhanah_azli\Desktop\RFID New 2\Film_SparePart_RFID - New\Library.Reader\bin\Release\Library.Reader.dll
+C:\Users\nurfarhanah_azli\Desktop\RFID New 2\Film_SparePart_RFID - New\Library.Reader\bin\Release\Library.Reader.pdb
+C:\Users\nurfarhanah_azli\Desktop\RFID New 2\Film_SparePart_RFID - New\Library.Reader\bin\Release\Library.Reader.xml
+C:\Users\nurfarhanah_azli\Desktop\RFID New 2\Film_SparePart_RFID - New\Library.Reader\bin\Release\Library.Database.dll
+C:\Users\nurfarhanah_azli\Desktop\RFID New 2\Film_SparePart_RFID - New\Library.Reader\bin\Release\Symbol.RFID3.Host.dll
+C:\Users\nurfarhanah_azli\Desktop\RFID New 2\Film_SparePart_RFID - New\Library.Reader\bin\Release\Library.Database.pdb
+C:\Users\nurfarhanah_azli\Desktop\RFID New 2\Film_SparePart_RFID - New\Library.Reader\bin\Release\Library.Database.xml
+C:\Users\nurfarhanah_azli\Desktop\RFID New 2\Film_SparePart_RFID - New\Library.Reader\bin\Release\Symbol.RFID3.Host.xml
+C:\Users\nurfarhanah_azli\Desktop\RFID New 2\Film_SparePart_RFID - New\Library.Reader\obj\Release\Library.Reader.vbprojAssemblyReference.cache
+C:\Users\nurfarhanah_azli\Desktop\RFID New 2\Film_SparePart_RFID - New\Library.Reader\obj\Release\Library.Reader.Resources.resources
+C:\Users\nurfarhanah_azli\Desktop\RFID New 2\Film_SparePart_RFID - New\Library.Reader\obj\Release\Library.Reader.vbproj.GenerateResource.cache
+C:\Users\nurfarhanah_azli\Desktop\RFID New 2\Film_SparePart_RFID - New\Library.Reader\obj\Release\Library.Reader.vbproj.CoreCompileInputs.cache
+C:\Users\nurfarhanah_azli\Desktop\RFID New 2\Film_SparePart_RFID - New\Library.Reader\obj\Release\Library.Reader.vbproj.CopyComplete
+C:\Users\nurfarhanah_azli\Desktop\RFID New 2\Film_SparePart_RFID - New\Library.Reader\obj\Release\Library.Reader.dll
+C:\Users\nurfarhanah_azli\Desktop\RFID New 2\Film_SparePart_RFID - New\Library.Reader\obj\Release\Library.Reader.xml
+C:\Users\nurfarhanah_azli\Desktop\RFID New 2\Film_SparePart_RFID - New\Library.Reader\obj\Release\Library.Reader.pdb

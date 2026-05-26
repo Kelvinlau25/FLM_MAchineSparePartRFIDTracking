@@ -1,0 +1,220 @@
+﻿@model FILM_Sparepart_MVC.Models.RfidResponseModel
+
+@{
+    ViewBag.Title = "RFID Audit Report";
+    Layout = "~/Views/Shared/_Layout_iFrame.cshtml";
+
+}
+<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.11.3/js/jquery.dataTables.js" defer></script>
+<link href="https://cdn.datatables.net/1.11.3/css/jquery.dataTables.css" rel="stylesheet" />
+<style>
+    .row {
+        margin-bottom: 20px;
+    }
+
+    td {
+        background: rgb(217,225,242);
+        border: 1px solid white;
+    }
+
+    #mytable {
+        visibility: hidden
+    }
+</style>
+<div>
+    <h1>@ViewBag.Title</h1>
+
+    <hr />
+    <div>
+
+        <div class="form-inline">
+            <div class="row">
+
+                <div class="col-md-2"><label class="required">* </label><label>Date From</label></div>
+                <div class="col-md-5"><input type="date" id="dateFrom" onclick="enableFilter()" class="form-control txtbox text-box single-line" /></div>
+            </div>
+        </div>
+        <div class="form-inline">
+            <div class="row">
+                <div class="col-md-2"><label class="required">* </label><label>Date To</label></div>
+                <div class="col-md-5"><input type="date" id="dateTo" onclick="enableFilter()" class="form-control txtbox text-box single-line" /></div>
+            </div>
+        </div>
+        <div class="form-inline">
+            <div class="row">
+                <div class="col-md-2"><label class="required">* </label><label>Location</label></div>
+                <div class="col-md-5">
+
+                    <select id="location" class="form-control txtbox text-box single-line">
+                        <option value="N/A">--Select--</option>
+                        <option value="">All</option>
+                        @if (Model != null && Model.locations != null)
+                        {
+                            foreach (var locationKey in Model.locations.Keys)
+                            {
+                                <option value="@locationKey">@Model.locations[locationKey]</option>
+                            }
+                        }
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-inline">
+            <div class="row">
+                <div class="col-md-2"><label>RFID</label></div>
+                <div class="col-md-5"><input type="text" id="rfid" class="form-control txtbox text-box single-line" /></div>
+            </div>
+        </div>
+
+
+        <div class="form-inline">
+            <div class="row">
+                <div class="col-md-2"><label>Audited Status</label></div>
+                <div class="col-md-5">
+
+                    <select id="status" class="form-control txtbox text-box single-line">
+                        <option value="">--Select--</option>
+                        <option value="Y">Yes</option>
+                        <option value="N">No</option>
+                    </select>
+
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <input class="btn btn-primary" type="button" onclick="searchClick()" value="Search" />
+            <input class="btn btn-primary" type="button" onclick="resetClick()" value="Reset" />
+            <input class="btn btn-primary" type="button" onclick="exportClick()" value="Export" />
+        </div>
+
+    </div>
+
+
+
+    <table class="rfid-tb" id="mytable">
+        <caption>RFID REPORT TABLE</caption>
+        <thead>
+            <tr class="rfid-tb-header">
+                <th>Rfid id</th>
+                <th>Series no</th>
+                <th>Part no</th>
+                <th>Model no</th>
+                <th>Model</th>
+                <th>Scan Location</th>
+                <th>Actual Location</th>
+                <th>Manufacturer</th>
+                <th>Audited Status</th>
+                <th>Audited date</th>
+                <th>Audited by</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr class="rfid-tb-header">
+                <td>Rfid id</td>
+                <td>Series no</td>
+                <td>Part no</td>
+                <td>Model no</td>
+                <td>Model</td>
+                <td>Scan Location</td>
+                <td>Actual Location</td>
+                <td>Manufacturer</td>
+                <td>Status</td>
+                <td>Created date</td>
+                <td>Created by</td>
+            </tr>
+        </tbody>
+
+    </table>
+</div>
+
+<script>
+    var dateFilter = true;
+
+    function enableFilter() {
+        dateFilter = true;
+    }
+    function exportClick() {
+        var dateFromStr = document.getElementById("dateFrom").value;
+        var dateToStr = document.getElementById("dateTo").value;
+
+        var location = document.getElementById("location").value;
+        var rfid = document.getElementById("rfid").value;
+        var status = document.getElementById("status").value;
+        var dateFromIsoStr = dateFromStr ? new Date(dateFromStr).toISOString() : null;
+        var dateToIsoStr = dateToStr ? new Date(dateToStr).toISOString() : null;
+        if (location != "N/A") {
+            window.location = '@Url.Action("ReportExcel", "RfidAudit")' + '?location=' + location + '&dateTo=' + dateToIsoStr + '&dateFrom=' + dateFromIsoStr + '&rfid=' + rfid + '&status=' + status + '&dateFilter=' + dateFilter;
+        } else {
+            alert("Please select a location");
+        }
+
+    }
+    function searchClick() {
+
+        var dateFromStr = document.getElementById("dateFrom").value;
+        var dateToStr = document.getElementById("dateTo").value;
+        var location = document.getElementById("location").value;
+        var rfid = document.getElementById("rfid").value;
+        var status = document.getElementById("status").value;
+        var dateFromIsoStr = dateFromStr ? new Date(dateFromStr).toISOString() : null;
+        var dateToIsoStr = dateToStr ? new Date(dateToStr).toISOString() : null;
+        if (location == "N/A") {
+            alert("Please select a location");
+        } else {
+
+
+        console.log(dateFilter)
+        document.getElementById('mytable').style.visibility = "visible";
+
+        $('#mytable').DataTable().clear();
+        $('#mytable').DataTable().destroy();
+        debugger
+        $('#mytable').DataTable({
+            "processing": true,
+            "serverSide": false,
+            "ajax": {
+                "url": '@Url.Action("Reports", "RfidAudit")',
+                "type": 'POST',
+                "dataSrc": "",
+                "data": { "dateFrom": dateFromIsoStr, "dateTo": dateToIsoStr, "location": location, "rfid": rfid, "status": status, "dateFilter": dateFilter }
+             },
+            "columns": [
+                { "data": "rfidId" },
+                { "data": "seriesNo" },
+                { "data": "partNo" },
+                { "data": "modelNo" },
+                { "data": "model" },
+                { "data": "storageCode" },
+                { "data": "actualLocation" },
+                { "data": "manufacturer" },
+                { "data": "status" },
+                { "data": "createdDate" },
+                { "data": "createdBy" }
+            ],
+            "aaSorting": []
+
+        });
+        }
+    }
+    function resetClick() {
+        dateFilter = false;
+        document.getElementById("dateFrom").value = "";
+        document.getElementById("dateTo").value = "";
+        document.getElementById("location").value = "";
+        document.getElementById("rfid").value = "";
+        document.getElementById("status").value = "";
+    }
+
+
+
+    $(document).ready(function () {
+        var today = new Date();
+        document.getElementById("dateFrom").value = today.getFullYear() + '-' + ('0' + (today.getMonth() + 1)).slice(-2) + '-' + ('0' + today.getDate()).slice(-2);
+
+        document.getElementById("dateTo").value = today.getFullYear() + '-' + ('0' + (today.getMonth() + 1)).slice(-2) + '-' + ('0' + today.getDate()).slice(-2);
+
+    });
+
+</script>

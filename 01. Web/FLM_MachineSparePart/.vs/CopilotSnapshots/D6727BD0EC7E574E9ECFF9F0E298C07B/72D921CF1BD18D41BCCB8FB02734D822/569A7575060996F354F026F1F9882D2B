@@ -1,0 +1,730 @@
+﻿@model DBModel.RFIDModel
+@{
+    ViewBag.Title = "RFIDScan";
+    Layout = "~/Views/Shared/_Layout_iFrame.cshtml";
+}
+@{
+    if (null != TempData["alertMessage"])
+    {
+        <script type="text/javascript">
+            alert('@TempData["alertMessage"]');
+        </script>
+    }
+}
+
+<style type="text/css">
+    .body-content {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+
+    body {
+        display: block;
+        background-color: rgb(240,240,240);
+    }
+
+    .txtbox {
+        width: 100%;
+    }
+
+    .searchBtn {
+        margin-top: 0px;
+    }
+
+    .connection {
+        display: block;
+        height: auto;
+        width: 100%;
+        padding-top: 10px;
+        margin-bottom: 10px;
+        margin-left: 2px;
+        background-color: #3B5998;
+    }
+
+    #testbtn {
+        padding: 0;
+        border: none;
+        background: none;
+        height: 3.5vw;
+        width: 3.5vw;
+    }
+
+    .testTable tr td {
+        height: auto;
+    }
+
+    .testTable {
+        width: 100%;
+        margin-left: auto;
+        margin-right: auto;
+        margin-top: 7px;
+        table-layout: fixed !important;
+    }
+
+        .testTable thead tr td {
+            font-size: 3vw;
+            background-color: #7400F6;
+            font-weight: bold;
+            color: White;
+        }
+
+        .testTable tbody tr td {
+            font-size: 30px;
+            font-size: 3vw;
+            height: auto !important;
+            height: 10px !important;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            overflow-wrap: break-word;
+            vertical-align: top;
+        }
+
+            .testTable tbody tr td:first-child {
+                text-align: center;
+            }
+
+    .logout {
+        display: block;
+        float: right;
+        height: auto;
+        font-weight: bold;
+        font-size: 2.5vw;
+        text-decoration: none;
+        color: white;
+    }
+
+        .logout a:hover {
+            text-decoration: underline;
+            font-weight: bold;
+        }
+
+    .backBtn {
+        float: right;
+        font-weight: bold;
+        color: white;
+    }
+</style>
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+
+    <div class="wrap">
+        <div class="connection row" id="row">
+            <div class="col-md-11">
+                <div style="float:left;">
+                    <input value="" type="button" id="testbtn" style="background-color:red;" runat="server" />
+                    <label id="lblConn" title="No Internet Connection" style="color:Red;" visible="true">&nbsp; No Internet Connection</label>
+                </div>
+            </div>
+        </div>
+
+        <div id="divDDL" style="margin-top:25px;font-weight:bold;">
+            <div class="col-100">
+                <div id="row">
+                    <div class="col-md-4 col-lg-4">
+                        Company
+                    </div>
+                    <div class="col-md-4 col-lg-4">
+                        Department
+                    </div>
+                    <div class="col-md-4 col-lg-4">
+                        Location
+                    </div>
+                </div>
+
+                <div id="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            @Html.DropDownList("ddlCompany", Model.DropdownCompany, new { @class = "form-control", @id = "ddlCompany", @disabled = "disabled" })
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            @Html.DropDownList("ddlDepartment", Model.DropdownDepartment, new { @class = "form-control", @id = "ddlDepartment", @disabled = "disabled" })
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            @Html.DropDownList("ddlLocation", Model.DropdownLocation, "Select Location", new { @class = "form-control", @id = "ddlLocation", @disabled = "disabled" })
+                        </div>
+                    </div>
+                </div>
+
+                <div id="row" style="margin-top:10px;">
+                    <div class="col-md-12">
+                        <label style="color:white; display:none;" id="lblWebConnectionId"></label>
+                        <label id="lblSignalRStatus" style="color:orange; font-weight:bold;">&#9679; Connecting to server...</label>
+                        &nbsp;|&nbsp;
+                        <label id="lblSelectedReader" style="color:gray; font-weight:bold;">No reader selected</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="divSCAN" style="display:none;">
+            <div class="col-100">
+                <div id="row" style="height:31px">
+                    <div class="col-md-12 col-sm-12">
+                        <label>
+                            RFID :
+                            <input id="taginput" disabled="disabled" autofocus />
+                        </label>
+                        &nbsp; &nbsp;
+                    </div>
+                </div>
+
+                <div id="row">
+                    <div class="col-md-12">
+                        <label id="taglblscan" title="" style="color:black;" visible="true">Current scanned : 0</label>
+                        <label id="taglblresult" title="" style="color:Red;" visible="true"></label>
+                    </div>
+                </div>
+
+                <div id="row" style="height: 50px;">
+                    <div class="col-md-1">
+                        <input id="btnSubmit" type="button" class="btn btn-success" value="Submit" title="Confirm the audit" onclick="completeScan();" disabled="disabled" />
+                    </div>
+                    <div class="col-md-1">
+                        <input id="btnReset" type="button" class="btn btn-warning" value="Reset" title="Reset the audit" onclick="resetBtn();" disabled="disabled" />
+                    </div>
+                    <div class="col-md-1">
+                        <input id="btnCancel" type="button" class="btn btn-danger" value="Cancel" onclick="cancelScan();" title="Exit current audit" disabled="disabled" />
+                    </div>
+                </div>
+
+                <div id="row">
+                    <div class="col-md-12">
+                        <table id="tagTABLE" class="testTable" style="display:none;">
+                            <thead>
+                                <tr>
+                                    <td style="width:10%;">No</td>
+                                    <td style="width:80%;">RFID</td>
+                                    <td style="width:10%;">&nbsp;</td>
+                                    <td style="visibility:hidden;">&nbsp;</td>
+                                </tr>
+                            </thead>
+                            <tbody id="tagtbodyid"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<script src="https://cdn.jsdelivr.net/npm/@@microsoft/signalr@@8.0.0/dist/browser/signalr.min.js"></script>
+
+<script type="text/javascript">
+    var username = "@Model.CREATED_BY";
+    var rfidConnection = null;
+    var webConnectionId = "";
+    var selectedReader = "";
+    var lastReceivedTag = "";
+    var lastReceivedTime = 0;
+
+    $(document).ready(function () {
+
+        initSignalR();
+
+        $("#ddlCompany").change(function () {
+            var dID = $('#ddlCompany option:selected').val();
+
+            $("#ddlDepartment").empty();
+            $("#ddlDepartment").append($('<option></option>').val("").html("Select Department"));
+            $("#ddlLocation").empty();
+            $("#ddlLocation").append($('<option></option>').val("").html("Select Location"));
+
+            if (dID != null) {
+                $.ajax({
+                    url: '@Url.Action("GETdepartmentDDL", "RfidAudit")',
+                    type: "GET",
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "JSON",
+                    data: { pID: dID },
+                    success: function (response) {
+                        $.each(response, function (index, value) {
+                            $("#ddlDepartment").append($('<option></option>').val(value.Value).html(value.Text));
+                        });
+                    },
+                    error: function (xhr, status, error) {
+                        alert(xhr.responseText);
+                    }
+                });
+            }
+        });
+
+        $("#ddlDepartment").change(function () {
+            var dID = $('#ddlCompany option:selected').val();
+            var dID1 = $('#ddlDepartment option:selected').val();
+
+            $("#ddlLocation").empty();
+            $("#ddlLocation").append($('<option></option>').val("").html("Select Location"));
+
+            if (dID != null && dID1 != null) {
+                $.ajax({
+                    url: '@Url.Action("GETlocationDDL", "RfidAudit")',
+                    type: "GET",
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "JSON",
+                    data: { pID: dID, pID1: dID1 },
+                    success: function (response) {
+                        $.each(response, function (index, value) {
+                            $("#ddlLocation").append($('<option></option>').val(value.Value).html(value.Text));
+                        });
+                    },
+                    error: function (xhr, status, error) {
+                        alert(xhr.responseText);
+                    }
+                });
+            }
+        });
+
+        $("#ddlLocation").change(function () {
+            var pID = $('#ddlLocation option:selected').val();
+            var locationText = $('#ddlLocation option:selected').text();
+
+            // Fetch reader name from server dynamically based on LOCATION column in DB
+            $.ajax({
+                url: '@Url.Action("GetReaderByLocation", "RfidAudit")',
+                type: "GET",
+                dataType: "JSON",
+                data: { locationText: locationText },
+                success: function (response) {
+                    selectedReader = response.hostName || "";
+                    if (selectedReader) {
+                        $("#lblSelectedReader").text(selectedReader);
+                    } else {
+                        $("#lblSelectedReader").css("color", "red").text("No reader found for this location");
+                    }
+                },
+                error: function () {
+                    selectedReader = "";
+                    $("#lblSelectedReader").css("color", "red").text("Failed to get reader info");
+                }
+            });
+
+            $.ajax({
+                url: '@Url.Action("CheckLocationStatus", "RfidAudit")',
+                type: "GET",
+                contentType: "application/json; charset=utf-8",
+                dataType: "JSON",
+                data: { pID: pID },
+                success: function (response) {
+                    if (response == "1" || response == "3") {
+                        var r = confirm("Are you sure want to Audit " + pID + " now?");
+                        if (r == true) {
+                            RFIDUPDATE("1", pID, "", "ADMIN");
+
+                            document.getElementById('divDDL').style.display = 'none';
+                            document.getElementById('divSCAN').style.display = 'block';
+                            document.getElementById("taglblscan").innerHTML = "Auditing " + locationText + " | Current scanned : 0";
+                            document.getElementById("taginput").disabled = false;
+                            document.getElementById("taginput").value = "";
+                            document.getElementById("taginput").focus();
+
+                            connectSelectedReader();
+                        } else {
+                            document.getElementById('ddlLocation').selectedIndex = "0";
+                        }
+                    }
+                    else if (response == "2") {
+                        alert("Someone is doing audit for " + pID + " now");
+                        document.getElementById('ddlLocation').selectedIndex = "0";
+                    }
+                },
+                error: function (xhr, status, error) {
+                    alert(xhr.responseText);
+                }
+            });
+        });
+    });
+
+    function initSignalR() {
+        // Initialize SignalR connection
+        rfidConnection = new signalR.HubConnectionBuilder()
+            .withUrl('@Url.Content("~/rfidHub")')
+            .withAutomaticReconnect()
+            .build();
+
+        // Register client methods
+        rfidConnection.on("receiveTag", function (reader, tag) {
+            if (!tag) return;
+            if ($("#divSCAN").is(":hidden")) return;
+
+            tag = tag.toUpperCase();
+
+            if (selectedReader && reader !== selectedReader) {
+                console.log("Ignored tag from reader [" + reader + "], expected [" + selectedReader + "]");
+                return;
+            }
+
+            var now = new Date().getTime();
+            if (lastReceivedTag === tag && (now - lastReceivedTime) < 1000) {
+                return;
+            }
+
+            lastReceivedTag = tag;
+            lastReceivedTime = now;
+
+            $("#taginput").val(tag);
+
+            if (tag.length >= 16 && tag.substring(12, 16) === "FFFF") {
+                $("#taginput").val("");
+                return;
+            }
+
+            addRow(tag);
+        });
+
+        rfidConnection.on("receiveStatus", function (msg) {
+            console.log(msg);
+        });
+
+        rfidConnection.on("receiveReaderStatusText", function (reader, status) {
+            console.log("[" + reader + "] " + status);
+            var lbl = document.getElementById("lblSelectedReader");
+            var lower = status.toLowerCase();
+            if (lower.indexOf("connected") >= 0 && lower.indexOf("already") < 0) {
+                lbl.style.color = "lightgreen";
+                lbl.innerHTML = "&#9679; Reader connected: " + reader;
+            } else if (lower.indexOf("connecting") >= 0) {
+                lbl.style.color = "orange";
+                lbl.innerHTML = "&#9679; Connecting reader: " + reader;
+            } else if (lower.indexOf("disconnect") >= 0) {
+                lbl.style.color = "red";
+                lbl.innerHTML = "&#9679; Reader disconnected: " + reader;
+            } else {
+                lbl.style.color = "gray";
+                lbl.innerHTML = reader + " : " + status;
+            }
+        });
+
+        rfidConnection.on("receiveAgentConnection", function (id) {
+            console.log("Agent: " + (id ? "Online" : "Offline"));
+        });
+
+        // Start connection
+        rfidConnection.start().then(function () {
+            webConnectionId = rfidConnection.connectionId;
+            $("#lblWebConnectionId").text(webConnectionId);
+            console.log("SignalR connected. Connection ID = " + webConnectionId);
+
+            rfidConnection.invoke("GetAgentConnection", webConnectionId).catch(function (err) {
+                console.log("Error invoking GetAgentConnection: " + err.toString());
+            });
+
+            // Enable dropdowns only after SignalR is ready
+            document.getElementById("ddlCompany").disabled = false;
+            document.getElementById("ddlDepartment").disabled = false;
+            document.getElementById("ddlLocation").disabled = false;
+            document.getElementById("lblSignalRStatus").style.color = "lightgreen";
+            document.getElementById("lblSignalRStatus").innerHTML = "&#9679; Server connected";
+        }).catch(function (err) {
+            console.log("SignalR connection failed: " + err.toString());
+        });
+    }
+
+    function mapLocationToReader(locationText) {
+        switch (locationText) {
+            case "Tent House 2":
+            case "Green Tent House 2":
+                return "FCDCF2";
+
+            case "Tent House 1":
+            case "Green Tent House 1":
+                return "FCDCEC";
+
+            case "Tower Zone":
+            case "Tower Zone 2nd Floor":
+                return "EED389";
+
+            default:
+                return "";
+        }
+    }
+
+    function connectSelectedReader() {
+        if (!rfidConnection || !webConnectionId || !selectedReader) {
+            console.log("Cannot connect reader. Missing SignalR connection or selected reader.");
+            return;
+        }
+
+        document.getElementById("lblSelectedReader").style.color = "orange";
+        document.getElementById("lblSelectedReader").innerHTML = "&#9679; Connecting reader: " + selectedReader;
+
+        rfidConnection.invoke("ConnectReader", webConnectionId, selectedReader).catch(function (err) {
+            console.log("Error invoking ConnectReader: " + err.toString());
+        });
+        console.log("Connecting reader: " + selectedReader);
+    }
+
+    function completeScan() {
+        var r = confirm("Are you sure want to complete current process now?");
+        if (r == true) {
+            document.getElementById("ddlLocation").disabled = true;
+            document.getElementById("btnSubmit").disabled = true;
+            document.getElementById("btnReset").disabled = true;
+            document.getElementById("btnCancel").disabled = true;
+            document.getElementById("taglblresult").style.color = "green";
+            document.getElementById("taglblresult").innerHTML = "Updating audit result, please wait.";
+
+            var table = document.getElementById("tagTABLE").getElementsByTagName('tbody')[0];
+            var rows = $('#tagTABLE tbody tr').length;
+            var pID = $('#ddlLocation option:selected').val();
+            var timecount = 0;
+
+            console.log("=== Starting completeScan ===");
+            console.log("Total rows to process: " + rows);
+
+            for (i = 0; i < rows; i++) {
+                timecount = timecount + 300;
+                var rfid = table.rows[i].cells[1].innerHTML;
+                console.log("Row " + i + " RFID from cell[1]: [" + rfid + "]");
+                
+                RFIDUPDATE("2", pID, rfid, "ADMIN");
+                checkAndInsertRfid(rfid);
+            }
+
+            RFIDUPDATE("4", pID, "", "ADMIN");
+            setTimeout(function () { RFIDUPDATE("6", pID, "", "ADMIN"); }, timecount);
+        }
+    }
+
+    function checkAndInsertRfid(rfidInput) {
+        var location = document.getElementById("ddlLocation").value;
+
+        // Debug logging
+        console.log("Sending RFID to server: [" + rfidInput + "], Location: [" + location + "]");
+
+        // Validate RFID is not empty
+        if (!rfidInput || rfidInput.trim() === "") {
+            console.error("ERROR: RFID is empty or null!");
+            alert("Error: RFID value is empty. Cannot submit.");
+            return;
+        }
+
+        $.ajax({
+            url: '@Url.Action("CreateEntry", "RfidAudit")',
+            type: "POST",
+            contentType: "application/json; charset=utf-8",
+            data: JSON.stringify({ "rfid": rfidInput, "location": location, "username": username }),
+            success: function (response) {
+                console.log("Successfully saved RFID: " + rfidInput);
+                resetTAG();
+            },
+            error: function (e) {
+                console.error("Error saving RFID: " + rfidInput, e);
+                alert("Error saving RFID: " + (e.responseText || e.statusText));
+            }
+        });
+    }
+
+    function cancelScan() {
+        var r = confirm("Are you sure want to cancel current process now?");
+        if (r == true) {
+            if (rfidConnection && webConnectionId && selectedReader) {
+                rfidConnection.invoke("DisconnectReader", webConnectionId, selectedReader).catch(function (err) {
+                    console.log("Error invoking DisconnectReader: " + err.toString());
+                });
+            }
+            window.location = '@Url.Action("Entry", "RfidAudit")';
+        }
+    }
+
+    function doSomething() {
+        if (navigator.onLine == true) {
+            document.getElementById("testbtn").style.backgroundColor = "lightgreen";
+            document.getElementById("lblConn").style.color = "lightgreen";
+            document.getElementById("lblConn").innerHTML = "Connection Available";
+            // Only enable dropdowns if SignalR is already connected
+            var signalRReady = rfidConnection && webConnectionId !== "";
+            document.getElementById("ddlCompany").disabled = !signalRReady;
+            document.getElementById("ddlDepartment").disabled = !signalRReady;
+            document.getElementById("ddlLocation").disabled = !signalRReady;
+            document.getElementById("btnSubmit").disabled = false;
+            document.getElementById("btnReset").disabled = false;
+            document.getElementById("btnCancel").disabled = false;
+        } else {
+            document.getElementById("testbtn").style.backgroundColor = "red";
+            document.getElementById("lblConn").style.color = "red";
+            document.getElementById("lblConn").innerHTML = "Connection Not Available";
+            document.getElementById("ddlCompany").disabled = true;
+            document.getElementById("ddlDepartment").disabled = true;
+            document.getElementById("ddlLocation").disabled = true;
+            document.getElementById("btnSubmit").disabled = true;
+            document.getElementById("btnReset").disabled = true;
+            document.getElementById("btnCancel").disabled = true;
+        }
+
+        $.ajax({
+            url: '@Url.Action("KeepSession", "RfidAudit")',
+            cache: false,
+            success: function (html) {
+            }
+        });
+    }
+
+    function resetStatus() {
+        $("#ddlDepartment").empty();
+        $("#ddlDepartment").append($('<option></option>').val("").html("Select Department"));
+        $("#ddlLocation").empty();
+        $("#ddlLocation").append($('<option></option>').val("").html("Select Location"));
+        $("#tagtbodyid").empty();
+        document.getElementById("taglblscan").innerHTML = "Current scanned : 0";
+        document.getElementById("taglblscan").style.color = "black";
+        document.getElementById("taglblresult").innerHTML = "";
+        document.getElementById('ddlCompany').selectedIndex = "0";
+        document.getElementById('divDDL').style.display = 'block';
+        document.getElementById('divSCAN').style.display = 'none';
+        document.getElementById("taginput").disabled = true;
+    }
+
+    function resetBtn() {
+        var r = confirm("Are you sure want to reset current audit process?");
+        if (r == true) {
+            resetTAG();
+        }
+    }
+
+    function backBtn() {
+        var r = confirm("Are you sure want to cancel current audit process and back to menu?");
+        if (r == true) {
+            var pID = $('#ddlLocation option:selected').val();
+            RFIDUPDATE("5", pID, "", "ADMIN");
+            var url = '@Url.Action("Login", "Home")';
+            window.location.href = url;
+        }
+    }
+
+    function resetTAG() {
+        var location = $('#ddlLocation option:selected').text();
+        $("#tagTABLE").css({ "display": "none" });
+        $("#tagtbodyid").empty();
+        document.getElementById("taglblscan").innerHTML = "Auditing " + location + " | Current scanned : 0";
+        document.getElementById("taglblscan").style.color = "black";
+        $("#tagresultTable").css({ "display": "none" });
+        document.getElementById("taglblresult").innerHTML = "";
+        document.getElementById("taginput").value = "";
+        document.getElementById("taginput").focus();
+    }
+
+    function addRow(str) {
+        console.log("addRow called with RFID: [" + str + "]");
+        
+        if (str != "") {
+            var table = document.getElementById("tagTABLE").getElementsByTagName('tbody')[0];
+            var rows = $('#tagTABLE tbody tr').length;
+
+            for (i = 0; i < rows; i++) {
+                var row1 = table.rows[i].cells[1].innerHTML;
+
+                if (str == row1) {
+                    document.getElementById("taginput").value = "";
+                    document.getElementById("taglblresult").style.color = "red";
+                    document.getElementById("taglblresult").innerHTML = "Cannot scan duplicate RFID tag.";
+                    return;
+                }
+            }
+
+            var row = table.insertRow(rows);
+            var cell1 = row.insertCell(0);
+            var cell2 = row.insertCell(1);
+            var cell3 = row.insertCell(2);
+            var cell4 = row.insertCell(3);
+
+            cell1.innerHTML = '<strong>' + (rows + 1) + '</strong>';
+            cell2.innerHTML = str;
+            cell3.innerHTML = '<a Class="fa fa-times-circle fa-lg dICON" style="width:100%;text-align:center;" onclick="deleteRow(this)"></a>';
+            cell4.innerHTML = str;
+            cell4.style.display = "none";
+
+            console.log("Added row " + (rows + 1) + " with RFID in cell[1]: [" + cell2.innerHTML + "]");
+
+            $("#tagTABLE").css({ "display": "" });
+
+            var location = $('#ddlLocation option:selected').text();
+            document.getElementById("taglblscan").innerHTML = "Auditing " + location + " | Current scanned : " + (rows + 1);
+        } else {
+            console.warn("addRow called with empty string!");
+        }
+
+        document.getElementById("taginput").value = "";
+        document.getElementById("taginput").focus();
+    }
+
+    function deleteRow(r) {
+        var i = r.parentNode.parentNode.rowIndex;
+        var hid = r.parentNode.parentNode.parentNode.parentNode.id;
+        document.getElementById(hid).deleteRow(i);
+
+        var renum = 1;
+        $("tr td strong").each(function () {
+            $(this).text(renum);
+            renum++;
+        });
+
+        var rows = $('#tagTABLE tbody tr').length;
+        var location = $('#ddlLocation option:selected').text();
+        document.getElementById("taglblscan").innerHTML = "Auditing " + location + " | Current scanned : " + (rows);
+        document.getElementById("taginput").value = "";
+        document.getElementById("taginput").focus();
+    }
+
+    taginput.addEventListener("keypress", function (event) {
+        event.preventDefault();
+        document.getElementById("taglblresult").innerHTML = "";
+
+        var X = event.which || event.keyCode;
+
+        if (X === 13) {
+            if (taginput.value.toUpperCase().substring(12, 16) != "FFFF") {
+                addRow(taginput.value.toUpperCase());
+            } else {
+                taginput.value = "";
+            }
+        }
+        else {
+            taginput.value = taginput.value + String.fromCharCode(X);
+        }
+
+        if (taginput.value.length == 24) {
+            if (taginput.value.toUpperCase().substring(12, 16) != "FFFF") {
+                addRow(taginput.value.toUpperCase());
+            } else {
+                taginput.value = "";
+            }
+        }
+    });
+
+    function RFIDUPDATE(type, ID, RFID, User) {
+        $.ajax({
+            url: '@Url.Action("UPDATERFID", "RfidAudit")',
+            type: "GET",
+            contentType: "application/json; charset=utf-8",
+            dataType: "JSON",
+            data: { pTYPE: type, pID: ID, pRFID: RFID, pUSER: User },
+            success: function (response) {
+                if (response == "EMAIL") {
+                    document.getElementById("ddlCompany").disabled = false;
+                    document.getElementById("ddlDepartment").disabled = false;
+                    document.getElementById("ddlLocation").disabled = false;
+                    document.getElementById("btnSubmit").disabled = false;
+                    document.getElementById("btnReset").disabled = false;
+                    document.getElementById("btnCancel").disabled = false;
+                    alert("This location had been audit completely today. Audit Report for " + ID + " already send to PIC.");
+                    resetStatus();
+                }
+            },
+            error: function (xhr, status, error) {
+                alert(xhr.responseText);
+            }
+        });
+    }
+</script>
+
+<script>
+    setInterval(doSomething, 1000);
+</script>

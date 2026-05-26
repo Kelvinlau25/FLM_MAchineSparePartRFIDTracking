@@ -1,0 +1,95 @@
+﻿@using UserMMModel
+@model IEnumerable<RfidType>
+
+
+@{
+    ViewBag.Title = "RFID Type";
+    Layout = "~/Views/Shared/_Layout_iFrame.cshtml";
+    var items = Model.ToList();
+}
+
+@if (TempData["result"] != null)
+{
+    <script type="text/javascript">
+        alert("@TempData["result"]");
+    </script>
+}
+
+<script type="text/javascript">
+    //$(document).ready(function () {
+    //    //$('.webgrid-table thead td:nth-child(0), thead th:nth-child(0').hide();
+    //    //$('.webgrid-table tbody td:nth-child(0), tbody th:nth-child(0').hide();
+    //    $('td:nth-child(1), th:nth-child(1)').hide();
+    //});
+    function popUpDelete(rowid)
+    {
+        //var row = rowid.parentNode.parentNode;
+        //var rfid = row.getElementsByTagName("TD")[0].innerHTML;
+        var rfid = rowid.toString();
+        //alert(rfid);
+        var agree = confirm("Are you sure to delete?");
+        if (agree) {
+            //alert("deleted.");
+            var url = '@Url.Action("MM_RFID_TYPE_DELETE", "Mstmain")?id=' + rfid;
+            window.location.href = url;
+        }
+    }
+</script>
+
+<h2>
+    RFID Type Master Maintenance
+</h2>
+<hr />
+@{
+    @Html.Partial("_Header",
+    new ViewDataDictionary(this.ViewData) {
+        { "Act", "MM_RFID_TYPE_ADD" },
+        { "Ctrl", "Mstmain" },
+        { "SrcAct", "MM_RFID_TYPE_LST" },
+        { "SrcVal", "SEARCH_VALUE" }
+    })
+}
+@{
+<div id="grid">
+    <table class="table table-bordered">
+        <thead class="head">
+            <tr>
+                <th>Delete</th>
+                <th>RFID Type</th>
+                <th>Remarks</th>
+                <th>Edit</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (items != null && items.Any())
+            {
+                foreach (var item in items)
+                {
+                    <tr>
+                        <td>
+                            <a href="#" onclick="popUpDelete('@item.RFID_TYPE_ID');">
+                                <i class="fa fa-trash"></i>
+                            </a>
+                        </td>
+                        <td>@item.Rfid_Type</td>
+                        <td>@item.Remarks</td>
+                        <td>
+                            <a href="@Url.Action("MM_RFID_TYPE_EDIT", "Mstmain", new { id = item.RFID_TYPE_ID })">
+                                <i class="fa fa-pencil"></i>
+                            </a>
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="4" class="text-center">No records found</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+}
+<input type="button" value="Export to Excel" class="btn btn-primary" onclick="location.href='@Url.Action("ExportExcelRFIDType", "Mstmain")'" />
+ 

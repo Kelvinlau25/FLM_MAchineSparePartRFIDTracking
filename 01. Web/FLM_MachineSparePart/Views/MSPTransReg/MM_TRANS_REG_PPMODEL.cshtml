@@ -1,0 +1,158 @@
+﻿@using MSPTransReg
+@model IEnumerable<SparePartModel>
+@*@{
+    ViewBag.Title = "Pop Up - Spare Part Model";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var items = Model?.ToList() ?? new List<SparePartModel>();
+}*@
+
+
+<style type="text/css">
+    .btntolink {
+        background-color: transparent;
+        border: none;
+    }
+
+    .searchbtn {
+        /*position: absolute;
+        right: 64%;
+        top: 26%;*/
+    }
+
+    .searchtxt {
+        width: 100%;
+        border-radius: 8px;
+        border: 2px solid #ccc;
+    }
+
+    .topleft {
+        position: relative;
+        width: 25%;
+        float: left;
+    }
+
+    .topright {
+        position: relative;
+        width: 75%;
+        float: left;
+    }
+</style>
+
+<script type="text/javascript">
+    //NOT USED, fail use this to do
+    function closePopUp(model, id) {
+        //var row = rowid.parentNode.parentNode;
+        //var rfid = row.getElementsByTagName("TD")[0].innerHTML;
+        var modelno = model.toString();
+        var modelid = id.toString();
+
+        //alert(modelno);
+        //alert(modelid);
+        var url = '@Url.Action("MM_TRANS_REG_PPMODEL_Pass", "MSPTransReg")?id=' + modelid + '&modelno=' + modelno;
+        window.location.href = url;
+    }
+
+    //Manage to pass to parent input
+    function SetModel() {
+        if (window.opener != null && !window.opener.closed) {
+            var txtModel = window.opener.document.getElementById("txtmodelno");
+            var txtModelID = window.opener.document.getElementById("txtmodelid");
+            txtModel.value = document.getElementById('model').value;
+            txtModelID.value = document.getElementById('id').value;
+        }
+        //window.close();
+    }
+
+    //$("form").submit(function (event) {
+    //    event.preventDefault();
+    //});
+
+    $(function () {
+        $("#btnsubmit").click(function () {
+            //self.open();
+            //location.reload();
+            //event.preventDefault();
+            var valueofText = $("#SEARCH_VALUE").val();
+            //alert(valueofText);
+            //var booksDiv = $("#booksDiv");
+            $.ajax({
+                url: '@Url.Action("MM_TRANS_REG_PPMODEL")',
+                type: 'POST',
+                cache: false,
+                //data: { readerid: $(this).val() },
+                success: function (result) {
+                    alert("success");
+                    //booksDiv.html('');
+                    //booksDiv.html(result);
+                    //$("#myModal").modal("show");
+                    //event.preventDefault();
+                    //var readername = result.myResult;
+                    //$('#txtreadername').val(readername);
+                },
+                error: function (result) {
+                    alert("fail");
+                    //$('#txtreadername').val(result.myResult);
+                }
+            });
+        });
+    });
+</script>
+
+@using (Html.BeginForm())
+{
+    <h2>Pop Up Model No</h2>
+    //Layout = "~/Views/Shared/_Layout.cshtml";
+    @Html.Partial("_HeaderNoAdd", new ViewDataDictionary(this.ViewData) {
+        { "Act", "" },
+        { "Ctrl", "MSPTransReg" },
+        { "SrcAct", "MM_TRANS_REG_PPMODEL" },
+        { "SrcVal", "SEARCH_VALUE" }
+    })   
+    @*<div>
+        <fieldset>
+            <div class="editor-field">
+                <div class="topleft">                    
+                    <input type="text" id="SEARCH_VALUE" class="searchtxt" name="SEARCH_VALUE" />
+                </div>
+                <div class="topright">
+                    <button id="btnsubmit" class="btntolink searchbtn" type="submit" ><i class="fa fa-search"></i></button>
+                </div>
+            </div>
+        </fieldset>
+    </div>*@
+    <br />
+    //<input type="text" id="SEARCH_VALUE" class="searchtxt" name="SEARCH_VALUE" />
+    //<button id="btnsubmit" class="btntolink searchbtn"><i class="fa fa-search"></i></button>
+
+
+    <div id="booksDiv"></div>
+    var items = Model?.ToList() ?? new List<SparePartModel>();
+
+    if (items.Any())
+    {
+        <div id="grid">
+            <table class="table table-bordered">
+                <thead class="head">
+                    <tr>
+                        <th>Model No</th>
+                        <th>Model No</th>
+                        <th>Remarks</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in items)
+                    {
+                        <tr>
+                            <td><a href="@Url.Action("MM_TRANS_REG_ADD", "MSPTransReg", new { id = item.SPARE_PART_MODEL_ID, model = item.Model_No })" onclick="SetModel();">@item.Model_No</a></td>
+                            <td>@item.Model_No</td>
+                            <td>@item.Remarks</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+}
+
+
+

@@ -1,0 +1,128 @@
+﻿@model UserMMModel.SparePartMachine
+@{
+    var url = @Url.Action("MM_SPARE_PART_M_LST", "Mstmain").ToString();
+    ViewBag.Title = "MM Spare Part Machine  - Edit";
+    Layout = "~/Views/Shared/_Layout_iFrame.cshtml";
+}
+
+
+@if (ViewData["Success"] != null)
+{
+    <script type="text/javascript">
+        var chkmsg = "@ViewData["Success"]";
+        var url = "";
+
+        @*alert(chkmsg);
+        url= '@Url.Action("MM_SPARE_PART_LST", "Mstmain")';
+        window.location.href = url;*@
+        //alert("viewdata");
+        alert(chkmsg);
+        if (chkmsg == "Data is successfully saved.") {
+            url= '@Url.Action("MM_SPARE_PART_M_LST", "Mstmain")';
+        }
+        else {
+            url = '@Url.Action("MM_SPARE_PART_M_EDIT", "Mstmain" , new { id = ViewBag.ID })';
+        }
+        window.location.href = url;
+    </script>
+}
+
+@if (!string.IsNullOrEmpty(ViewBag.Result))
+{
+    <script type="text/javascript">
+        var chkmsg = "@ViewBag.Result";
+        var url = "";
+        //alert("viewbag");
+        alert(chkmsg);
+        if (chkmsg == "Data is successfully saved.") {
+            url= '@Url.Action("MM_SPARE_PART_M_LST", "Mstmain")';
+        } else {
+            url = '@Url.Action("MM_SPARE_PART_M_EDIT", "Mstmain" , new { id = ViewBag.ID })';
+        }
+        window.location.href = url;
+    </script>
+}
+
+@section scripts
+{
+    <script src="~/js/jquery-ui.js"></script>
+    <script src="~/js/jquery-3.3.1.min.js"></script>
+
+    <script type="text/javascript">
+        function postback() {
+            var elem = document.getElementById("postbackBtn");
+            if (typeof elem.onsubmit == "function") {
+                elem.onsubmit.apply(elem);
+            }
+        }
+
+    </script>
+
+
+}
+
+<h2>Spare Part Machine Master Maintenance - Edit</h2>
+
+<hr />
+<table style="width:100%;">
+    <tr>
+        <td>
+            @using (Html.BeginForm())
+            {
+
+                @Html.AntiForgeryToken()
+                <div class="form-horizontal">
+                    <div class="form-group">
+                        @Html.HiddenFor(a => a.SPARE_PART_MACHINE_ID)
+                    </div>
+
+                    <div class="form-group">
+                        <label class="col-sm-2" style="width:150px;">Machine Model</label>
+                        <label class="labelW10">:</label>
+                        <div class="col-sm-5">
+                            @*col-sm-4*@
+                            @Html.TextBoxFor(a => a.Machine_Model, null, new { @class = "form-control txtbox" })
+                            @Html.ValidationMessageFor(a => a.Machine_Model, "", new { @style = "color:red" })
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="col-sm-2" style="width:150px;">Remarks</label>
+                        <label class="labelW10">:</label>
+                        <div class="col-sm-5">
+                            @*col-sm-4*@
+                            @Html.TextBoxFor(a => a.Remarks, null, new { @class = "form-control txtbox" })
+                        </div>
+                    </div>
+
+                </div>
+
+
+                <div class="form-group">
+                    <input id="Submit" type="submit" class="btn btn-primary" value="Submit" />
+                    @Html.BackButton(url)
+                </div>
+            }
+        </td>
+    </tr>
+</table>
+<table style="border:1px solid; border-radius:20px; width:50%;">
+    <tr>
+        <td style="padding-left:0.5em; width:15%;"><label>Created By:</label></td>
+        <td style="width:35%;">@Html.TextBoxFor(a => a.Created_By, null, new { @class = "form-control", @readonly = "true" })</td>
+    </tr>
+    <tr>
+        <td style="padding-left:0.5em; width:15%;"><label>Created Date:</label></td>
+        <td style="width:35%;">@Html.TextBoxFor(a => a.Created_Date, null, new { @class = "form-control", @readonly = "true" })</td>
+    </tr>
+    <tr>
+        <td style="padding-left:0.5em; width:15%;"><label>Updated By:</label></td>
+        <td style="width:35%;">@Html.TextBoxFor(a => a.Updated_By, null, new { @class = "form-control", @readonly = "true" })</td>
+    </tr>
+    <tr>
+        <td style="padding-left:0.5em; width:15%;"><label>Updated Date:</label></td>
+        <td style="width:35%;">@Html.TextBoxFor(a => a.Updated_Date, null, new { @class = "form-control", @readonly = "true" })</td>
+    </tr>
+</table>
+
+

@@ -1,0 +1,138 @@
+﻿@model UserMMModel.SparePartModel
+
+@{
+    var url = @Url.Action("MM_SPARE_PART_LST", "Mstmain").ToString();
+    ViewBag.Title = "MM Spare Part Model - Edit";
+    Layout = "~/Views/Shared/_Layout_iFrame.cshtml";
+}
+@*<script>
+    var msg = '@TempData["Success"]';
+    if (msg.length > 0)
+    {
+        alert(msg);
+    }
+</script>*@
+
+@*@if (ViewData["Success"] != null)
+{
+    <p class="alert alert-success" id="successMessage">@ViewData["Success"]</p>
+}
+else
+{
+    <p>VIEW DATA not found</p>;
+}*@
+
+@if (ViewData["Success"] != null)
+{
+    <script type="text/javascript">
+        var chkmsg = "@ViewData["Success"]";
+        var url = "";
+
+        @*alert(chkmsg);
+        url= '@Url.Action("MM_SPARE_PART_LST", "Mstmain")';
+        window.location.href = url;*@
+        //alert("viewdata");
+        alert(chkmsg);
+        if (chkmsg == "Data is successfully saved.") {            
+            url= '@Url.Action("MM_SPARE_PART_LST", "Mstmain")';            
+        }
+        else {            
+            url = '@Url.Action("MM_SPARE_PART_EDIT", "Mstmain" , new { id = ViewBag.ID })';            
+        } 
+        window.location.href = url;
+    </script>
+}
+
+@if (!string.IsNullOrEmpty(ViewBag.Result))
+{
+    <script type="text/javascript">
+        var chkmsg = "@ViewBag.Result";
+        var url = "";
+        //alert("viewbag");
+        alert(chkmsg);
+        if (chkmsg == "Data is successfully saved.") {            
+            url= '@Url.Action("MM_SPARE_PART_LST", "Mstmain")';            
+        } else {
+            url = '@Url.Action("MM_SPARE_PART_LST", "Mstmain" , new { id = ViewBag.ID })';             
+        }       
+        window.location.href = url;
+    </script>
+}
+
+
+@section scripts
+{
+    <script src="~/js/jquery-ui.js"></script>
+    <script src="~/js/jquery-3.3.1.min.js"></script>
+
+    <script type="text/javascript">
+        function postback() {
+            var elem = document.getElementById("postbackBtn");
+            if (typeof elem.onsubmit == "function") {
+                elem.onsubmit.apply(elem);
+            }
+        }
+
+    </script>
+
+
+}
+
+<h2>Spare Part Model Master Maintenance - Edit</h2>
+<hr />
+<table style="width:100%;">
+    <tr>
+        <td>
+            @using (Html.BeginForm("MM_SPARE_PART_EDIT", "Mstmain", FormMethod.Post))
+            {
+
+                @Html.AntiForgeryToken()
+                <div class="form-horizontal">
+                    <div class="form-group">
+                        <div class="col-md-8">
+                            @Html.HiddenFor(a => a.SPARE_PART_MODEL_ID)
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-1">Model No</label>
+                        <label class="labelW10">:</label>
+                        <div class="col-sm-5">
+                            @Html.TextBoxFor(a => a.Model_No, null, new { @class = "form-control txtbox" })
+                            @Html.ValidationMessageFor(a => a.Model_No, "", new { @style = "color:red" })
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-1">Remarks</label>
+                        <label class="labelW10">:</label>
+                        <div class="col-sm-5">
+                            @Html.TextBoxFor(a => a.Remarks, null, new { @class = "form-control txtbox" })                            
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                    @Html.BackButton(url)
+                </div>
+            }
+        </td>
+    </tr>
+</table>
+<table style="border:1px solid; border-radius:20px; width:60%;">
+    <tr>
+        <td style="padding-left:0.5em; width:15%;"><label>Created By:</label></td>
+        <td style="width:35%;">@Html.TextBoxFor(a => a.Created_By, null, new { @class = "form-control", @readonly = "true" })</td>
+    </tr>
+    <tr>
+        <td style="padding-left:0.5em; width:15%;"><label>Created Date:</label></td>
+        <td style="width:35%;">@Html.TextBoxFor(a => a.Created_Date, null, new { @class = "form-control", @readonly = "true" })</td>
+    </tr>
+    <tr>
+        <td style="padding-left:0.5em; width:15%;"><label>Updated By:</label></td>
+        <td style="width:35%;">@Html.TextBoxFor(a => a.Updated_By, null, new { @class = "form-control", @readonly = "true" })</td>
+    </tr>
+    <tr>
+        <td style="padding-left:0.5em; width:15%;"><label>Updated Date:</label></td>
+        <td style="width:35%;">@Html.TextBoxFor(a => a.Updated_Date, null, new { @class = "form-control", @readonly = "true" })</td>
+    </tr>
+</table>

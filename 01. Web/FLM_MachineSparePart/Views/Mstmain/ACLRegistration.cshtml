@@ -1,0 +1,57 @@
+﻿@using DBModel
+@model IEnumerable<RoleRegModel>
+
+@{
+    ViewBag.Title = "RoleRegistration";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var items = Model?.ToList() ?? new List<RoleRegModel>();
+}
+<h2>
+    Role Registration
+</h2>
+<hr />
+@{
+    @Html.Partial("_Header",
+    new ViewDataDictionary(this.ViewData) {
+        { "Act", "RoleRegistrationAdd" },
+        { "Ctrl", "Mstmain" },
+        { "SrcAct", "RoleRegistration" },
+        { "SrcVal", "SEARCH_VALUE" }
+    })
+}
+@{
+    <div id="grid">
+        <table class="table table-bordered">
+            <thead class="head">
+                <tr>
+                    <th>Role Name</th>
+                    <th>Role Desc</th>
+                    <th>Resource Name</th>
+                    <th>Status</th>
+                    <th>Edit</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (items != null && items.Any())
+                {
+                    foreach (var item in items)
+                    {
+                        <tr>
+                            <td>@item.ROLE_NAME</td>
+                            <td>@item.ROLE_DESC</td>
+                            <td>@item.RESOURCE_NAME</td>
+                            <td>@item.ROLE_STATUS</td>
+                            <td><a href="@Url.Action("RoleRegistrationEdit", "Mstmain", new { id = item.ID_ACL_ROLE })"><i class="fa fa-pencil"></i></a></td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="5" class="text-center">No records found</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

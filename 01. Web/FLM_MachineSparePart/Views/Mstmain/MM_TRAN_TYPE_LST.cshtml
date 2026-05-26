@@ -1,0 +1,82 @@
+﻿@using UserMMModel
+@model IEnumerable<TransactionType>
+@{
+    ViewBag.Title = "MM_TRAN_TYPE_LST";
+    Layout = "~/Views/Shared/_Layout_iFrame.cshtml";
+    var items = Model?.ToList() ?? new List<TransactionType>();
+}
+
+@if (TempData["result"] != null)
+{
+    <script type="text/javascript">
+        alert("@TempData["result"]");
+    </script>
+}
+
+<script type="text/javascript">
+    //$(document).ready(function () {
+    //    //$('.webgrid-table thead td:nth-child(0), thead th:nth-child(0').hide();
+    //    //$('.webgrid-table tbody td:nth-child(0), tbody th:nth-child(0').hide();
+    //    $('td:nth-child(1), th:nth-child(1)').hide();
+    //});
+    function popUpDelete(rowid)
+    {
+        //var row = rowid.parentNode.parentNode;
+        //var tranid = row.getElementsByTagName("TD")[0].innerHTML;
+        var tranid = rowid.toString();
+        //alert(tranid);
+        var agree = confirm("Are you sure to delete?");
+        if (agree) {
+            //alert("deleted.");
+            var url = '@Url.Action("MM_TRAN_TYPE_DELETE", "Mstmain")?id=' + tranid;
+            window.location.href = url;
+        }
+    }
+</script>
+
+<h2>Transaction Type Master Maintenance</h2>
+<hr />
+@{
+    @Html.Partial("_Header",new ViewDataDictionary(this.ViewData) {
+        { "Act", "MM_TRAN_TYPE_ADD" },
+        { "Ctrl", "Mstmain" },
+        { "SrcAct", "MM_TRAN_TYPE_LST" },
+        { "SrcVal", "SEARCH_VALUE" }
+    })
+}
+@{
+<div id="grid">
+    <table class="table table-bordered">
+        <thead class="head">
+            <tr>
+                <th></th>
+                <th>Transaction Name</th>
+                <th>Transaction Description</th>
+                <th>Remarks</th>
+                <th>Edit</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (items != null && items.Any())
+            {
+                foreach (var item in items)
+                {
+                    <tr>
+                        <td><a href="#" onclick="popUpDelete('@item.TRANS_TYPE_ID');"><i class="fa fa-trash"></i></a></td>
+                        <td>@item.Trans_Name</td>
+                        <td>@item.Trans_Desc1</td>
+                        <td>@item.Remarks</td>
+                        <td><a href="@Url.Action("MM_TRAN_TYPE_EDIT", "Mstmain", new { id = item.TRANS_TYPE_ID })"><i class="fa fa-pencil"></i></a></td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="5" class="text-center">No records found</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+}

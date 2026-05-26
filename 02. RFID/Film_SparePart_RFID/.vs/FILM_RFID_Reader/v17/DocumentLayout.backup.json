@@ -1,0 +1,98 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\ORIGINAL PROJECT TO CONVERT\\FLM_MachineSparePartRFIDTracking\\02. RFID\\Film_SparePart_RFID\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{275AAF70-3E9C-4853-8D72-FEC2FB0EFF43}|FILM_RFID_Reader\\FILM_RFID_READER_DEPLOY.vbproj|C:\\ORIGINAL PROJECT TO CONVERT\\FLM_MachineSparePartRFIDTracking\\02. RFID\\Film_SparePart_RFID\\film_rfid_reader\\form1.vb||{2C015C70-C72C-11D0-88C3-00A0C9110049}",
+      "RelativeMoniker": "D:0:0:{275AAF70-3E9C-4853-8D72-FEC2FB0EFF43}|FILM_RFID_Reader\\FILM_RFID_READER_DEPLOY.vbproj|solutionrelative:film_rfid_reader\\form1.vb||{2C015C70-C72C-11D0-88C3-00A0C9110049}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{10045569-D09B-4544-92CF-A27F899A8D7B}|Library.Reader\\Library.Reader.vbproj|c:\\original project to convert\\flm_machinesparepartrfidtracking\\02. rfid\\film_sparepart_rfid\\library.reader\\objects\\readerobject.vb||{2C015C70-C72C-11D0-88C3-00A0C9110049}",
+      "RelativeMoniker": "D:0:0:{10045569-D09B-4544-92CF-A27F899A8D7B}|Library.Reader\\Library.Reader.vbproj|solutionrelative:library.reader\\objects\\readerobject.vb||{2C015C70-C72C-11D0-88C3-00A0C9110049}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 12,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:130:0:{1fc202d4-d401-403c-9834-5b218574bb67}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:131:0:{1fc202d4-d401-403c-9834-5b218574bb67}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:132:0:{1fc202d4-d401-403c-9834-5b218574bb67}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:133:0:{1fc202d4-d401-403c-9834-5b218574bb67}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:129:0:{116d2292-e37d-41cd-a077-ebacac4c8cc4}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:128:0:{116d2292-e37d-41cd-a077-ebacac4c8cc4}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{1c4feeaa-4718-4aa9-859d-94ce25d182ba}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{d78612c7-9962-4b83-95d9-268046dad23a}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{34e76e81-ee4a-11d0-ae2e-00a0c90fffc3}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{aa2115a1-9712-457b-9047-dbb71ca2cdd2}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{40ea2e6b-2121-4bb8-a43e-c83c04b51041}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "ReaderObject.vb",
+              "DocumentMoniker": "C:\\ORIGINAL PROJECT TO CONVERT\\FLM_MachineSparePartRFIDTracking\\02. RFID\\Film_SparePart_RFID\\Library.Reader\\Objects\\ReaderObject.vb",
+              "RelativeDocumentMoniker": "Library.Reader\\Objects\\ReaderObject.vb",
+              "ToolTip": "C:\\ORIGINAL PROJECT TO CONVERT\\FLM_MachineSparePartRFIDTracking\\02. RFID\\Film_SparePart_RFID\\Library.Reader\\Objects\\ReaderObject.vb",
+              "RelativeToolTip": "Library.Reader\\Objects\\ReaderObject.vb",
+              "ViewState": "AgIAAEoAAAAAAAAAAAAgwFQAAAAsAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003361|",
+              "WhenOpened": "2026-04-22T07:31:07.313Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Form1.vb",
+              "DocumentMoniker": "C:\\ORIGINAL PROJECT TO CONVERT\\FLM_MachineSparePartRFIDTracking\\02. RFID\\Film_SparePart_RFID\\FILM_RFID_Reader\\Form1.vb",
+              "RelativeDocumentMoniker": "FILM_RFID_Reader\\Form1.vb",
+              "ToolTip": "C:\\ORIGINAL PROJECT TO CONVERT\\FLM_MachineSparePartRFIDTracking\\02. RFID\\Film_SparePart_RFID\\FILM_RFID_Reader\\Form1.vb",
+              "RelativeToolTip": "FILM_RFID_Reader\\Form1.vb",
+              "ViewState": "AgIAAOcFAAAAAAAAAAAAAO4FAAALAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003361|",
+              "WhenOpened": "2026-04-22T07:30:11.03Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
