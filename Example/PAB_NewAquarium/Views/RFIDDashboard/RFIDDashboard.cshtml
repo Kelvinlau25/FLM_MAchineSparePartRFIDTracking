@@ -1,0 +1,1055 @@
+﻿@using PAB_NewAquarium.Helpers
+@model PAB_NewAquarium.Models.RFIDDashboardModel
+
+@{
+    Layout = null;
+
+    if (Model.RFID_READER == null)
+    {
+        <script>
+            var readerObj = null;
+        </script>
+    }
+    else
+    {
+        <script>
+        var readerObj = {
+            READER_NAME: "@Model.RFID_READER.READER_NAME",
+            READER_BRAND: "@Model.RFID_READER.READER_BRAND",
+            READER_IP: "@Model.RFID_READER.READER_IP",
+            READER_PORT: "@Model.RFID_READER.READER_PORT",
+            READER_RANGE: "@Model.RFID_READER.READER_RANGE"
+        }
+        </script>
+    }
+}
+
+<!DOCTYPE html>
+<html class="h-100">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="x-ua-compatible" content="ie=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>@System.Configuration.ConfigurationManager.AppSettings["SystemName"]</title>
+    @Styles.Render("~/Content/css")
+    @Scripts.Render("~/bundles/modernizr")
+    @Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/bundles/jqueryui")
+    @Scripts.Render("~/bundles/jqueryval")
+    @Scripts.Render("~/bundles/bootstrap")
+    @Scripts.Render("~/bundles/datatables")
+    @Scripts.Render("~/bundles/js")
+    @Scripts.Render("~/Scripts/Main.js")
+
+    @Scripts.Render("~/bundles/vendorscripts.bundle.js")
+    @Scripts.Render("~/Scripts/jquery.signalR-2.4.3.js")
+
+    <style>
+        tr {
+            border-color: transparent;
+        }
+
+        .page-container {
+            overflow-x: hidden;
+            overflow-y: scroll;
+        }
+
+        .navbar-title {
+            margin-left: 1rem;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .navbar-shadow {
+            box-shadow: 0 5px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        }
+
+        .td-content:hover {
+            background-color: #EBF3FE;
+            cursor: pointer;
+        }
+
+        .min-height-custom {
+            min-height: 80px;
+        }
+
+        .page-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-left: 1rem;
+        }
+
+        .ui-helper-hidden-accessible {
+            display: none;
+        }
+
+        .tr-select2 + .btn-group > .multiselect-container input[type="text"] {
+            visibility: visible;
+        }
+
+        @@media only screen and (max-device-width: 1280px) {
+            img {
+                height: 200px;
+                width: 200px;
+                border-radius: 0.5rem;
+            }
+
+            .page-container {
+                max-height: calc(100vh - 110px);
+            }
+
+            .custom-overlay {
+                height: calc(100vh - 110px);
+            }
+
+            .text-category {
+                font-size: 14px !important;
+            }
+
+            .text-chop {
+                font-size: 14px !important;
+            }
+        }
+
+        @@media only screen and (min-device-width: 1281px) and (max-device-width: 1919px) {
+            img {
+                height: 225px;
+                width: 225px;
+                border-radius: 0.5rem;
+            }
+
+            .page-container {
+                max-height: calc(100vh - 110px);
+            }
+
+            .custom-overlay {
+                height: calc(100vh - 110px);
+            }
+        }
+
+        @@media only screen and (min-device-width: 1920px) {
+            img {
+                height: 300px;
+                width: 300px;
+                border-radius: 0.5rem;
+            }
+
+            .page-container {
+                max-height: calc(100vh - 140px);
+            }
+
+            .custom-overlay {
+                height: calc(100vh - 140px);
+            }
+
+            .text-category {
+                font-size: 20px !important;
+            }
+
+            .text-chop {
+                font-size: 18px !important;
+            }
+
+            .min-height-custom {
+                min-height: 100px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="sticky-top">
+        <header class="navbar navbar-dark flex-md-nowrap p-0 shadow tr-navbar">
+            <div class="row row-cols-auto align-items-center">
+                <a href="#" class="col" style="margin-left: 10px; margin-top: -5px">
+                    <img class="p-0 tr-navbar-logo" src="~/Images/Toray Logo.png" />
+                </a>
+                <div class="tr-nav-divider"></div>
+            </div>
+            <div class="me-auto d-none d-md-block">
+                <p class="m-0 px-4 tr-navbar-title">@System.Configuration.ConfigurationManager.AppSettings["SystemName"]</p>
+            </div>
+            <div class="navbar-nav d-none d-md-block">
+                <div class="nav-item text-nowrap">
+                    <div class="d-flex align-items-center">
+                        <div class="mx-2">
+                            <div class="dropdown overlay-dropdown">
+                                <a href="#" class="m-0 px-1 text-reset tr-navbar-logout">
+                                    <i class="fa-solid fa-user px-2"></i>&nbsp;
+                                    <text id="customer-name-display">@((Session["AclUser"] as ACL_UserObj).EMP_NAME)</text>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="tr-nav-divider"></div>
+                        <div>
+                            <a id="btnLogout" href="#" class="px-1 text-reset tr-navbar-logout"><i class="fa-solid fa-right-from-bracket px-2"></i>&nbsp;LOGOUT</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+        <header class="navbar flex-md-nowrap p-0 navbar-shadow tr-navbar bg-white">
+            <div class="row row-cols-auto align-items-center">
+                <text class="page-title">RFID Dashboard</text>
+            </div>
+        </header>
+    </div>
+
+    <div class="custom-overlay hidden">
+        <div class="bg-overlay d-flex justify-content-center align-items-center h-100">
+            <div class="custom-spinner">
+                <div class="image-container d-flex justify-content-center align-items-center">
+                    <span class="fa-duotone fa-spinner fa-spin-pulse dark-blue"></span>
+                </div>
+                <div class="image-container d-flex justify-content-center align-items-center ps-3 pt-2">
+                    <text class="fw-bold white">Loading...</text>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="page-container p-3">
+        <text class="hidden">Showing RFID scan results</text>
+        <table class="table">
+            <thead class="d-none">
+                <tr>
+                    <th class="w-20"></th>
+                    <th class="w-20"></th>
+                    <th class="w-20"></th>
+                    <th class="w-20"></th>
+                    <th class="w-20"></th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <div class="tr-footer d-flex flex-row" id="footer">
+        <div class="flex-column px-1 text-black-50 tr-footer-text" style="margin:auto">
+            <span>@System.Configuration.ConfigurationManager.AppSettings["VersionText"]</span>
+        </div>
+        <div class="flex-column flex-grow-1 text-center text-black-50 tr-footer-text" style="margin:auto; margin-left: -80px">
+            @System.Configuration.ConfigurationManager.AppSettings["CopyrightText"].Replace("YEAR", DateTime.Now.Year.ToString())
+        </div>
+    </div>
+
+    <!-- Modal Dialog -->
+    <div class="modal fade" id="customer-modal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Customer Registration</h5>
+                    <button type="button" class="btnCloseModal" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <hr class="mt-3 mb-0" />
+                <div class="modal-overlay bg-overlay">
+                    <div class="customer-loading-spinner">
+                        <div class=" d-flex justify-content-center align-items-center">
+                            <span class="fa-duotone fa-spinner fa-spin-pulse dark-blue"></span>
+                        </div>
+                        <div class="d-flex justify-content-center align-items-center pt-2 ps-3">
+                            <text class="fw-bold white">Loading...</text>
+                        </div>
+                    </div>
+                    <div class="modal-body invisible">
+                        <div class="customer-modal-first min-height-custom">
+                            <text>Have you bring any customer with you today?</text>
+                        </div>
+                        <div class="customer-modal-second min-height-custom hidden">
+                            <div class="row align-items-center">
+                                <div class="col-md-4 isLabel">Company <span class="text-danger">*</span><span class="float-end">:</span></div>
+                                <div class="col-md-8">
+                                    <select id="selectCompany" class="tr-select2"></select>
+                                </div>
+                            </div>
+                            <div class="row align-items-center mt-2">
+                                <div class="col-md-4 isLabel">Customer Name <span class="text-danger">*</span><span class="float-end">:</span></div>
+                                <div class="col-md-8">
+                                    <input id="inputCustName" class="form-control" type="text" placeholder="Enter Customer Name" spellcheck="false" autocomplete="off" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-2">
+                            <span id="customer-reg-validation" class="text-danger hidden">Please insert required field.</span>
+                        </div>
+                        <div class="row align-items-center mt-3">
+                            <div class="col-md-12 text-center">
+                                <button class="btn-slider btn-slider-first" page="1"></button>
+                                <button class="btn-slider btn-slider-second" page="2"></button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer invisible">
+                        <button type="button" class="btn btn-sm btn-secondary customer-modal-first" data-bs-dismiss="modal">No</button>
+                        <button type="button" class="btn btn-sm btn-primary btnModal customer-modal-first">Yes</button>
+                        <button type="button" class="btn btn-sm btn-primary btnModal customer-modal-second hidden">Confirm</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Toast Message -->
+    <div class="toast-container position-fixed toast-success">
+        @Html.Partial("_Toast_Info")
+    </div>
+    <div class="toast-container position-fixed toast-alert">
+        @Html.Partial("_Toast_Error")
+    </div>
+
+    <script src="~/Scripts/jquery.signalR-2.4.3.min.js"></script>
+    <script src="~/signalr/hubs"></script>
+
+    <!-- Common JavaScript -->
+    <script src="~/ViewsHelpers/CommonComponent/Alert.js"></script>
+
+    <script>
+        var urlActionView = "@Url.Action("RFIDDashboardPage", "RFIDDashboard")";
+        var urlLogout = '@Url.Action("Logout", "ACL")';
+        var urlRFIDDashboard = '@Url.Action("RFIDDashboard", "RFIDDashboard")';
+        var urlCustomerDashboard = '@Url.Action("Index", "Dashboard", new { login = "customer" })';
+        var ajaxGetCompany = '@Url.Action("GetCompanyList", "Dashboard")';
+        var ajaxGetCustomer = '@Url.Action("GetCustomerList", "Dashboard")';
+        var ajaxUserReg = '@Url.Action("InsertCustomerName", "Dashboard")';
+        var ajaxGetImage = '@Url.Action("GetRFIDImage", "RFIDDashboard")';
+        var ajaxGetImageCount = '@Url.Action("GetImageCount", "RFIDDashboard")';
+        var ajaxUpdateLocation = '@Url.Action("UpdateLocation", "RFIDDashboard")';
+        var ajaxCheckSession = '@Url.Action("CheckSessionTimeout", "Dashboard")';
+        var rfidList = '@Html.Raw(Model.RFID_TAG_JSON)';
+
+
+        var table, customerName;
+        var tagArray = [], timeArray = [], imageArray = [];
+        var timer = false, cooldown = false, rfidConnect = false, isEmpty = true;
+
+
+        var hub = $.connection.rFIDDashboardHub;
+        var connectionHub = "RFIDDashboard";
+        var connectionId;
+
+        function InitReader() {
+            if (readerObj == null) {
+                showAlert("Error", "RFID has not been set up yet");
+            } else {
+                Swal.fire({
+                    title: 'Loading...',
+                    html: 'Please wait while the RFID reader is connecting.',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    didOpen: () => {
+                        Swal.showLoading(); // Show loading spinner
+                    }
+                });
+
+                hub.client.broadcastMessage = function (type, message) {
+                    if (type == "Success") {
+
+                        initializeTable();
+
+                        window.onbeforeunload = function () {
+                            hub.server.stopRFID(connectionId);
+                        };
+
+                        Swal.fire({
+                            title: 'Connected!',
+                            text: message,
+                            //text: 'RFID Service is ready.',
+                            icon: 'success',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                    }
+                    else {
+                        Swal.fire({
+                            title: 'Error!',
+                            text: message,
+                            //text: 'Failed to start RFID Service.',
+                            icon: 'error',
+                            confirmButtonText: 'OK'
+                        });
+                    }
+                };
+
+                hub.client.broadcastTag = function (tag) {
+                    if (timer == false) {
+                        var currentTime = new Date().getTime();
+
+                        // If tag not exist in array, push to array else update the current time of tag
+                        if (!tagArray.includes(tag) && (rfidList.includes(tag))) {
+                            tagArray.push(tag)
+                            // Get Image
+                            $.ajax({
+                                type: "get",
+                                url: ajaxGetImage,
+                                data: { tag: tag },
+                                datatype: "json",
+                                traditional: true,
+                                success: function (data) {
+                                    var imageObj = {
+                                        TAG: data.RFID,
+                                        PRODUCT_H_ID: data.PRODUCT_H_ID,
+                                        CHOP_NO: data.CHOP_NO,
+                                        CATEGORY_NAME: data.CATEGORY_NAME,
+                                        IMAGE_URL: data.IMAGE_URL,
+                                        TIME: currentTime
+                                    }
+
+                                    imageArray.push(imageObj);
+                                    displayImage(imageObj);
+                                },
+                            });
+                            // Update Location
+                            $.ajax({
+                                type: "get",
+                                url: ajaxUpdateLocation,
+                                data: { tag: tag },
+                                datatype: "json",
+                                traditional: true,
+                                success: function (data) {
+                                },
+                            });
+                        }
+                        else {
+                            // Update time of tag
+                            for (var i = 0; i < imageArray.length; i++) {
+                                if (imageArray[i].TAG == tag) {
+                                    imageArray[i].TIME = currentTime;
+                                }
+                            }
+                        }
+                    }
+                };
+
+                // Start the SignalR connection
+                $.connection.hub.start().done(function () {
+                    connectionId = $.connection.hub.id;
+                    hub.server.startRFID(readerObj, connectionId, connectionHub)
+                        .done(function () {
+
+                        })
+                        .fail(function (error) {
+                            Swal.fire({
+                                title: 'Error!',
+                                text: 'Failed to start RFID Service.',
+                                icon: 'error',
+                                confirmButtonText: 'OK'
+                            });
+                        });
+
+                }).fail(function () {
+                    Swal.fire({
+                        title: 'Error!',
+                        text: 'Failed to connect RFID Service.',
+                        icon: 'error',
+                        confirmButtonText: 'OK'
+                    });
+                });
+            }
+        }
+
+        $(document).ready(function () {
+            // Function to check user login
+            customerLogin();
+
+            // Function timer to check time for each tag
+            setInterval(function () {
+                timer = true;
+                var currentTime = new Date().getTime() - 3000;
+                var removeTag = "";
+                for (var i = 0; i < imageArray.length; i++) {
+                    // Remove tag from array if the time of tag less 3 seconds than current time
+                    if (imageArray[i].TIME < currentTime) {
+                        removeTag = imageArray[i].TAG;
+                        imageArray.splice(i, 1);
+                        i--;
+
+                        for (var j = 0; j < tagArray.length; j++) {
+                            if (tagArray[j] == removeTag) {
+                                tagArray.splice(j, 1);
+                                j--;
+                            }
+                        }
+                        refreshImage();
+                    }
+                }
+
+                timer = false;
+            }, 500)
+
+            setInterval(checkSessionStatus, 60000);
+
+            $('#selectCompany').multiselect({
+                buttonClass: 'form-select form-control text-start',
+                enableCaseInsensitiveFiltering: true,
+                enableFiltering: true,
+                templates: {
+                    button: '<button type="button" class="multiselect dropdown-toggle" data-bs-toggle="dropdown"><span class="multiselect-selected-text"></span></button>',
+                    filter: '<div class="multiselect-filter" style="position:sticky; top:0; background-color:white"><div class="input-group input-group-sm p-1"><div class="input-group-prepend"></div><input id="REFERENCE_NO_FILTER" class="form-control multiselect-search" type="text" /></div></div>',
+                },
+            });
+            $('#selectCompany').next().addClass('w-100');
+            $('#selectCompany').next().find('.multiselect').removeClass('text-center');
+            $('#selectCompany').on('change', function () {
+                var companyCode = $('#selectCompany').val();
+                var width = $('#inputCustName').width() + "px !important";
+
+                if (companyCode != "") {
+                    $.ajax({
+                        type: "post",
+                        url: ajaxGetCustomer,
+                        data: { companyCode: companyCode },
+                        datatype: "json",
+                        traditional: true,
+                        success: function (data) {
+                            var dataList = JSON.parse(data);
+                            $("#inputCustName").autocomplete({
+                                source: dataList,
+                                create: function (event, ui) {
+                                    var autocompleteMenu = $(this).data('ui-autocomplete').menu.element
+                                    autocompleteMenu.addClass('ui-autocomplete-reg');
+                                    autocompleteMenu.css({
+                                        'border': '1px solid #EBEBEB'
+                                    });
+                                },
+                                open: function (event, ui) {
+                                    var inputVal = $(this).val();
+                                    var matcher = new RegExp("(" + $.ui.autocomplete.escapeRegex(inputVal) + ")", "ig");
+
+                                    $('.ui-menu-item').each(function () {
+                                        var html = '<div class="ui-menu-item-wrapper">';
+                                        html += $(this).text().replace(matcher, '<strong>$1</strong>');
+                                        html += '</div>';
+                                        $(this).html(html);
+                                    });
+
+                                    $('.ui-menu-item').hover(function () {
+                                        $('.ui-menu-item').removeClass('bg-grey');
+                                        $(this).addClass('bg-grey');
+                                    });
+                                }
+                            });
+                            $('.ui-autocomplete-reg').css('width', width);
+                        },
+                    });
+                }
+            });
+
+            $('#inputCustName').on('keydown', function (e) {
+                var hasClass = false;
+                if (e.keyCode === 40) {
+                    $('.ui-autocomplete-reg').find('.ui-menu-item').each(function () {
+                        if ($(this).hasClass('bg-grey')) {
+                            if ($(this).is(':last-child')) {
+                                $(this).removeClass('bg-grey');
+                            }
+                            else {
+                                $(this).removeClass('bg-grey');
+                                $(this).next().addClass('bg-grey');
+
+                            }
+                            hasClass = true;
+                            return false;
+                        }
+                    });
+                    if (!hasClass) {
+                        $('.ui-autocomplete-reg').find('.ui-menu-item:first-child').addClass('bg-grey');
+                    }
+                }
+
+                if (e.keyCode === 38) {
+                    $('.ui-autocomplete-reg').find('.ui-menu-item').each(function () {
+                        if ($(this).hasClass('bg-grey')) {
+                            if ($(this).is(':first-child')) {
+                                $(this).removeClass('bg-grey');
+                            }
+                            else {
+                                $(this).removeClass('bg-grey');
+                                $(this).prev().addClass('bg-grey');
+                            }
+                            hasClass = true;
+                            return false;
+                        }
+                    });
+                    if (!hasClass) {
+                        $('.ui-autocomplete-reg').find('.ui-menu-item:last-child').addClass('bg-grey');
+                    }
+                }
+            });
+
+            $('.btn-slider').on('click', function () {
+                var page = $(this).attr('page');
+                setActivePage(page);
+            });
+
+            $('.btnModal').on('click', function () {
+                var btn = $(this).text();
+                var companyCode = $('#selectCompany').val();
+                var companyName = $('#selectCompany').next().find('.multiselect-selected-text').text();
+                var customerName = $('#inputCustName').val().toUpperCase();
+
+                if (btn == "Yes") {
+                    setActivePage(2)
+                }
+
+                else if (btn == "Confirm") {
+                    if (companyCode != "" && customerName != "") {
+                        $.ajax({
+                            type: "post",
+                            url: ajaxUserReg,
+                            data: {
+                                companyCode: companyCode,
+                                companyName: companyName,
+                                customerName: customerName
+                            },
+                            datatype: "json",
+                            traditional: true,
+                            success: function (data) {
+                                localStorage.setItem('customerID', data);
+                                localStorage.setItem('customerName', customerName.toUpperCase());
+                                customerID = localStorage.getItem('customerID');
+                                $('#customer-modal').modal('hide');
+                                $('#customer-name-display').text(customerName.toUpperCase());
+                            },
+                        });
+                    }
+                    else {
+                        $('#customer-reg-validation').removeClass('hidden');
+                    }
+                }
+            });
+
+            $('.btnCloseModal').on('click', function () {
+                $('.modal').modal('hide');
+                setActivePage(1);
+            });
+
+            $('#btnLogout').on('click', function () {
+                localStorage.removeItem('customerID');
+                localStorage.removeItem('customerName');
+                localStorage.removeItem('companyName');
+                hub.server.stopRFID(connectionId).done(function () {
+                    window.close();
+                });
+            });
+
+            $('#customer-modal').on('shown.bs.modal', function () {
+                getCompanyDropdown();
+            });
+
+            $('#customer-modal').on('hidden.bs.modal', function () {
+                $('.customer-loading-spinner').removeClass('hidden');
+                $('.modal-overlay').removeClass('mt-3');
+                $('.modal-overlay').addClass('bg-overlay');
+                $('#customer-modal .modal-body').addClass('invisible');
+                $('#customer-modal .modal-footer').addClass('invisible');
+                //$('.custom-overlay').removeClass("hidden");
+                InitReader();
+                //$.connection.hub.start().done(function () {
+                //    webConnectionID = $.connection.hub.id;
+                //    hub.server.getRFIDConnectionID(webConnectionID);
+                //});
+            });
+        });
+
+        // Function to check user login
+        function customerLogin() {
+            customerName = localStorage.getItem('customerName');
+            if (customerName == null) {
+                $('#customer-modal').modal('show');
+            }
+            else {
+                $('#customer-name-display').text(customerName);
+                InitReader();
+                //$.connection.hub.start().done(function () {
+                //    webConnectionID = $.connection.hub.id;
+                //    hub.server.getRFIDConnectionID(webConnectionID);
+                //});
+            }
+        }
+
+        // Function to initialize DataTable
+        function initializeTable() {
+            table = $('.table').DataTable({
+                ordering: false,
+                pageLength: 2,
+                dom: "<'row'<'col-sm-12'tr>>" +
+                    "<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'<'d-flex justify-content-end mt-2'p<'go-to align-self-center mx-2'>>>>",
+                drawCallback: function (settings) {
+                    var api = this.api();
+                    $("#txtGoTo").val(api.page() + 1);
+                },
+                fixedHeader: {
+                    header: true,
+                    footer: false
+                },
+                fnInfoCallback: function (oSettings, iStart, iEnd, iMax, iTotal, sPre) {
+                    return "Showing " + (imageArray.length == 0 ? 0 : iStart * 5 - 4) + " to " + (iEnd * 5 < imageArray.length ? iEnd * 5 : imageArray.length) + " of " + (imageArray.length) + " entries";
+                },
+                language: {
+                    emptyTable: "No RFID tag found"
+                }
+            });
+            $("div.go-to").html('<div class="d-flex align-items-center p-0"><input class="form-control" type="text" id="txtGoTo" style="width:75px" value=1> &nbsp; <div class="page-info">of ' + table.page.info().pages + '</div></div>');
+            $("#txtGoTo").on('keyup', function (e) {
+                try {
+                    var page = e.target.value;
+                    if ($.isNumeric(page) && page > 0 && page <= table.page.info().pages) {
+                        table.page(page - 1).draw('page');
+                    } else if (e.target.value.trim() == '') {
+
+                    }
+                    else {
+                        e.target.value = table.page() + 1;
+                    }
+
+                } catch (ex) {
+                    e.target.value = 1;
+                }
+            });
+            $("#txtGoTo").on('blur', function (e) {
+                try {
+                    var page = e.target.value;
+                    if (page.trim() == '') {
+                        $("#txtGoTo").val(1);
+                        table.page(0).draw('page');
+                        $("#txtGoTo").focus();
+                    }
+                } catch (ex) {
+                    e.target.value = 1;
+                }
+            });
+            $(".dataTables_length .form-select").on('change', function () {
+                $("#txtGoTo").val(table.page() + 1);
+                $("div.page-info").html('of ' + table.page.info().pages + '</div>');
+            });
+        }
+
+        // Function to display image in DataTable when RFID tag in
+        function displayImage(imageObj) {
+            var html = '';
+            var tdCount = 0;
+            var breakLoop = false;
+
+            // If tbody is empty, add new tr and insert image in empty td
+            if (isEmpty) {
+                html += '<tr>';
+                html += `<td id="${imageObj.PRODUCT_H_ID}" class="td-content text-center w-20" onclick="redirectTo(this)">`;
+                html += `<div><img src="${imageObj.IMAGE_URL}"></div>`;
+                html += `<div class="mt-2"><text class="text-category fw-bold">${imageObj.CATEGORY_NAME}</text></div>`;
+                html += `<div><text class="text-chop">${imageObj.CHOP_NO}</text></div>`;
+                html += '</td>';
+                html += '<td class="text-center w-20"></td>';
+                html += '<td class="text-center w-20"></td>';
+                html += '<td class="text-center w-20"></td>';
+                html += '<td class="text-center w-20"></td>';
+                html += '</tr>';
+                $('tbody').html(html);
+                table = $('.table').DataTable();
+                table.rows.add($(html)).draw();
+                isEmpty = false;
+            }
+            // If tbody is not empty, loop each tr and td to insert image in empty td
+            else {
+                var row = table.rows().nodes();
+                $.each(row, function () {
+                    $(this).find('td').each(function () {
+                        if ($(this).html().trim() == "") {
+                            html += `<div><img src="${imageObj.IMAGE_URL}"></div>`;
+                            html += `<div class="mt-2"><text class="text-category fw-bold">${imageObj.CATEGORY_NAME}</text></div>`;
+                            html += `<div><text class="text-chop">${imageObj.CHOP_NO}</text></div>`;
+                            $(this).attr('id', imageObj.PRODUCT_H_ID);
+                            $(this).attr('onclick', 'redirectTo(this)');
+                            $(this).addClass('td-content');
+                            $(this).html(html);
+                            table = $('.table').DataTable();
+                            table.draw();
+                            breakLoop = true;
+                            return false;
+                        }
+                        else {
+                            tdCount++;
+                        }
+                    });
+                    if (breakLoop) {
+                        return false;
+                    }
+                });
+
+                // If tr contains 5 td, add new tr and insert image in empty td
+                if (tdCount != 0 && tdCount % 5 == 0) {
+                    html += '<tr>';
+                    html += `<td id="${imageObj.PRODUCT_H_ID}" class="td-content text-center w-20" onclick="redirectTo(this)">`;
+                    html += `<div><img src="${imageObj.IMAGE_URL}"></div>`;
+                    html += `<div class="mt-2"><text class="text-category fw-bold">${imageObj.CATEGORY_NAME}</text></div>`;
+                    html += `<div><text class="text-chop">${imageObj.CHOP_NO}</text></div>`;
+                    html += '</td>';
+                    html += '<td class="text-center w-20"></td>';
+                    html += '<td class="text-center w-20"></td>';
+                    html += '<td class="text-center w-20"></td>';
+                    html += '<td class="text-center w-20"></td>';
+                    html += '</tr>';
+                    $('tbody').html(html);
+                    table = $('.table').DataTable();
+                    table.rows.add($(html)).draw();
+                    return false;
+                }
+
+                if (breakLoop) {
+                    return false;
+                }
+            }
+        }
+
+        // Function to refresh image in DataTable when RFID tag out
+        function refreshImage() {
+            var html = '';
+            table = $('.table').DataTable();
+            table.destroy();
+
+            // Function to insert image in row, 1 row contains 5 image
+            for (var i = 0; i < imageArray.length; i++) {
+                html += '<tr>';
+                html += `<td id="${imageArray[i].PRODUCT_H_ID}" class="td-content text-center w-20" onclick="redirectTo(this)">`;
+                html += `<div><img src="${imageArray[i].IMAGE_URL}"></div>`;
+                html += `<div class="mt-2"><text class="text-category fw-bold">${imageArray[i].CATEGORY_NAME}</text></div>`;
+                html += `<div><text class="text-chop">${imageArray[i].CHOP_NO}</text></div>`;
+                html += '</td>';
+                // If next element got item
+                if (i < imageArray.length - 1) {
+                    i++;
+                    html += `<td id="${imageArray[i].PRODUCT_H_ID}" class="td-content text-center w-20" onclick="redirectTo(this)">`;
+                    html += `<div><img src="${imageArray[i].IMAGE_URL}"></div>`;
+                    html += `<div class="mt-2"><text class="text-category fw-bold">${imageArray[i].CATEGORY_NAME}</text></div>`;
+                    html += `<div><text class="text-chop">${imageArray[i].CHOP_NO}</text></div>`;
+                    html += '</td>';
+                }
+                else {
+                    html += '<td class="text-center w-20">';
+                }
+                // If next element got item
+                if (i < imageArray.length - 1) {
+                    i++;
+                    html += `<td id="${imageArray[i].PRODUCT_H_ID}" class="td-content text-center w-20" onclick="redirectTo(this)">`;
+                    html += `<div><img src="${imageArray[i].IMAGE_URL}"></div>`;
+                    html += `<div class="mt-2"><text class="text-category fw-bold">${imageArray[i].CATEGORY_NAME}</text></div>`;
+                    html += `<div><text class="text-chop">${imageArray[i].CHOP_NO}</text></div>`;
+                    html += '</td>';
+                }
+                else {
+                    html += '<td class="text-center w-20">';
+                }
+                // If next element got item
+                if (i < imageArray.length - 1) {
+                    i++;
+                    html += `<td id="${imageArray[i].PRODUCT_H_ID}" class="td-content text-center w-20" onclick="redirectTo(this)">`;
+                    html += `<div><img src="${imageArray[i].IMAGE_URL}"></div>`;
+                    html += `<div class="mt-2"><text class="text-category fw-bold">${imageArray[i].CATEGORY_NAME}</text></div>`;
+                    html += `<div><text class="text-chop">${imageArray[i].CHOP_NO}</text></div>`;
+                    html += '</td>';
+                }
+                else {
+                    html += '<td class="text-center w-20">';
+                }
+                // If next element got item
+                if (i < imageArray.length - 1) {
+                    i++;
+                    html += `<td id="${imageArray[i].PRODUCT_H_ID}" class="td-content text-center w-20" onclick="redirectTo(this)">`;
+                    html += `<div><img src="${imageArray[i].IMAGE_URL}"></div>`;
+                    html += `<div class="mt-2"><text class="text-category fw-bold">${imageArray[i].CATEGORY_NAME}</text></div>`;
+                    html += `<div><text class="text-chop">${imageArray[i].CHOP_NO}</text></div>`;
+                    html += '</td>';
+                }
+                else {
+                    html += '<td class="text-center w-20">';
+                }
+                html += '</tr>';
+            }
+
+            if (html == '') {
+                isEmpty = true;
+            }
+
+            $('tbody').html(html);
+
+            // Code below is initialize the table & it's component after insert image into tbody
+            table = $('.table').DataTable({
+                ordering: false,
+                pageLength: 2,
+                dom: "<'row'<'col-sm-12'tr>>" +
+                    "<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'<'d-flex justify-content-end mt-2'p<'go-to align-self-center mx-2'>>>>",
+                drawCallback: function (settings) {
+                    var api = this.api();
+                    $("#txtGoTo").val(api.page() + 1);
+                },
+                fixedHeader: {
+                    header: true,
+                    footer: false
+                },
+                fnInfoCallback: function (oSettings, iStart, iEnd, iMax, iTotal, sPre) {
+                    return "Showing " + (imageArray.length == 0 ? 0 : iStart * 5 - 4) + " to " + (iEnd * 5 < imageArray.length ? iEnd * 5 : imageArray.length) + " of " + (imageArray.length) + " entries";
+                },
+                language: {
+                    emptyTable: "No RFID tag found"
+                }
+            });
+            $("div.go-to").html('<div class="d-flex align-items-center p-0"><input class="form-control" type="text" id="txtGoTo" style="width:75px" value=1> &nbsp; <div class="page-info">of ' + table.page.info().pages + '</div></div>');
+            $("#txtGoTo").on('keyup', function (e) {
+                try {
+                    var page = e.target.value;
+                    if ($.isNumeric(page) && page > 0 && page <= table.page.info().pages) {
+                        table.page(page - 1).draw('page');
+                    } else if (e.target.value.trim() == '') {
+
+                    }
+                    else {
+                        e.target.value = table.page() + 1;
+                    }
+
+                } catch (ex) {
+                    e.target.value = 1;
+                }
+            });
+            $("#txtGoTo").on('blur', function (e) {
+                try {
+                    var page = e.target.value;
+                    if (page.trim() == '') {
+                        $("#txtGoTo").val(1);
+                        table.page(0).draw('page');
+                        $("#txtGoTo").focus();
+                    }
+                } catch (ex) {
+                    e.target.value = 1;
+                }
+            });
+            $(".dataTables_length .form-select").on('change', function () {
+                $("#txtGoTo").val(table.page() + 1);
+                $("div.page-info").html('of ' + table.page.info().pages + '</div>');
+            });
+        }
+
+        // Function to switch page in customer registration modal dialog
+        function setActivePage(page) {
+            if (page == 1) {
+                $('.btn-slider-first').css({
+                    'background-color': '#004098'
+                });
+
+                $('.btn-slider-second').css({
+                    'background-color': '#D6D4D4'
+                });
+
+                $('.customer-modal-first').removeClass('hidden');
+                $('.customer-modal-second').addClass('hidden');
+            }
+            else {
+                $('.btn-slider-first').css({
+                    'background-color': '#D6D4D4'
+                });
+
+                $('.btn-slider-second').css({
+                    'background-color': '#004098'
+                });
+
+                $('.customer-modal-first').addClass('hidden');
+                $('.customer-modal-second').removeClass('hidden');
+            }
+        }
+
+        // Function to get company dropdown
+        function getCompanyDropdown() {
+            var data = localStorage.getItem('companyList');
+            var dataList = JSON.parse(data);
+            var companyDDL = $('#selectCompany');
+            companyDDL.empty();
+            companyDDL.append($('<option/>', {
+                value: '',
+                text: 'Select Company'
+            }));
+            for (var i = 0; i < dataList.length; i++) {
+                companyDDL.append($('<option/>', {
+                    value: dataList[i].Value,
+                    text: dataList[i].Text
+                }));
+            }
+            companyDDL.multiselect('rebuild');
+
+            $('.customer-loading-spinner').addClass('hidden');
+            $('.modal-overlay').addClass('mt-3');
+            $('.modal-overlay').removeClass('bg-overlay');
+            $('#customer-modal .modal-body').removeClass('invisible');
+            $('#customer-modal .modal-footer').removeClass('invisible');
+        }
+
+        // Function to toast message
+        function toastMessage(status, message) {
+            const toastIDError = document.getElementById('errorToast');
+            const toastIDInfo = document.getElementById('infoToast');
+            const toastError = new bootstrap.Toast(toastIDError);
+            const toastInfo = new bootstrap.Toast(toastIDInfo);
+
+            if (status == "Info") {
+                $('#infoToast .toast-body').html(message);
+                toastError.hide();
+                toastInfo.show();
+            }
+            else if (status == "Error") {
+                $('#errorToast .toast-body').html(message);
+                toastError.show();
+                toastInfo.hide();
+            }
+
+            $('.custom-overlay').addClass("hidden");
+        }
+
+        // Function to redirect user to RFID product detail
+        function redirectTo(e) {
+            var id = $(e).attr('id');
+            var user;
+            var customer = localStorage.getItem('customerName');
+
+            if (customer == null) {
+                user = "sales";
+            }
+            else {
+                user = "customer";
+            }
+
+            $.ajax({
+                type: "get",
+                url: ajaxGetImageCount,
+                data: {
+                    id: id,
+                    user: user
+                },
+                datatype: "json",
+                traditional: true,
+                success: function (data) {
+                    window.open(data, '_blank');
+                },
+            });
+        }
+
+        // Function to avoid session timeout
+        function checkSessionStatus() {
+            if (cooldown) {
+                return false;
+            }
+            else {
+                cooldown = true;
+
+                setTimeout(function () {
+                    cooldown = false;
+                }, 5000);
+
+                $.ajax({
+                    url: ajaxCheckSession,
+                    type: 'GET',
+                    success: function (response) {
+
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html>

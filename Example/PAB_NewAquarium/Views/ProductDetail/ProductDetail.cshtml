@@ -1,0 +1,1569 @@
+﻿@model PAB_NewAquarium.Models.ProductDetailPageModel
+@{
+    ViewBag.Title = "ProductDetail";
+    var recentViewsCount = Model.RecentViewList.Count < 5 ? Model.RecentViewList.Count : 5;
+    var urlDashboard = "";
+    var urlAllProducts = "";
+
+    if (Model.GROUP_D_ID == 0)
+    {
+        Layout = "~/Views/Shared/_Layout.cshtml";
+        urlDashboard = Url.Action("Index", "Dashboard");
+        urlAllProducts = Url.Action("AllProducts", "AllProducts");
+    }
+    else
+    {
+        Layout = "~/Views/Shared/_Layout_Customer.cshtml";
+        urlDashboard = Url.Action("CustomerDashboard", "CustomerDashboard");
+        urlAllProducts = Url.Action("AllProducts", "AllProducts") + "?user=customer";
+    }
+}
+
+<style>
+    @@media (min-width: 768px) {
+
+        .product-container {
+            height: 79.5vh;
+        }
+
+        .fitImage {
+            height: calc(79.5vh - 105px);
+        }
+
+        .product-detail {
+            height: 79.5vh;
+            margin-top: 30px;
+            margin-left: 30px;
+        }
+    }
+
+    @@media (min-width: 1400px) {
+        .product-container {
+            height: 80vh;
+        }
+
+        .fitImage {
+            height: calc(82.5vh - 105px);
+        }
+
+        .product-detail {
+            height: 82.5vh;
+            margin-top: 30px;
+            margin-left: 30px;
+        }
+    }
+
+    .bold {
+        font-weight: bold;
+    }
+
+    .product-detail-width {
+        width: 37.5vw;
+    }
+
+    .image-width {
+        width: 48vw;
+    }
+
+    .viewMoreButton {
+        background-color: transparent;
+        border: none;
+        cursor: pointer;
+        padding-left: 0px;
+        text-decoration: underline;
+    }
+
+    .rmvBtnStyle {
+        background: none;
+        border: none;
+        outline: none;
+    }
+
+    .buttonAddToCart {
+        width: 100%;
+        height: 45px;
+        margin-top: 20px;
+    }
+
+    .buttonAddToCartCustomer {
+        background-color: white;
+        color: #004098;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        border: 2px #C5C5C5 solid;
+        font-weight: bold;
+    }
+
+        .buttonAddToCartCustomer:hover {
+            background-color: white;
+            color: #004098;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            border: 2px #C5C5C5 solid;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+    .image-btn, .video-btn {
+        border: none;
+        background: transparent;
+        display: inline-block;
+    }
+
+    /*close modal X button*/
+    .close-button {
+        border: none;
+        display: inline-block;
+        padding: 0px 16px;
+        vertical-align: middle;
+        overflow: hidden;
+        text-decoration: none;
+        color: inherit;
+        background-color: inherit;
+        text-align: center;
+        cursor: pointer;
+        white-space: nowrap;
+        font-size: 25px;
+    }
+
+    .topright {
+        position: absolute;
+        right: 0;
+        top: 0
+    }
+
+    .feedback-modal {
+        width: 80%;
+        max-width: 100%;
+    }
+
+    #txtComment {
+        display: block;
+        height: 100px;
+        padding: 5px;
+        text-overflow: clip;
+        overflow-y: scroll;
+    }
+
+        #txtComment:focus {
+            outline: none;
+        }
+
+    .commentSuggest {
+        border-radius: 100px;
+        border: 1px solid #54575A;
+        height: 40px;
+        padding-left: 20px;
+        padding-right: 20px;
+        margin-right: 10px;
+        color: #54575A;
+        background-color: #EBF3FE;
+    }
+
+    .commentSuggestSelect {
+        border-radius: 100px;
+        border: 2px solid #004098 !important;
+        height: 40px;
+        padding-left: 20px;
+        padding-right: 20px;
+        margin-right: 10px;
+        color: #004098 !important;
+        font-weight: bold !important;
+        background-color: #EBF3FE;
+    }
+
+    .placeholderColor {
+        color: #888;
+    }
+
+    .tr-select2 + .btn-group > .multiselect-container input[type="text"] {
+        visibility: visible;
+    }
+
+    .ui-autocomplete {
+        z-index: 1100;
+        /*width: 25% !important;*/
+        list-style: none;
+        background-color: white;
+        padding: 0px;
+        max-height: 300px;
+        overflow-y: scroll;
+    }
+
+    .ui-menu-item-wrapper {
+        cursor: pointer;
+        padding: 5px 15px;
+    }
+
+        .ui-menu-item-wrapper:hover {
+            background-color: #F0F0F0;
+        }
+
+    .hidden {
+        display: none;
+    }
+
+    .visible {
+        display: block;
+    }
+
+    .commentDiv {
+        background-color: #F0F0F0;
+        margin: 5px;
+        padding: 20px;
+        height: 140px;
+        border-radius: 10px;
+        overflow-y: scroll;
+    }
+
+    .fontBlack {
+        color: black;
+    }
+
+    .btn-fabric {
+        color: lightgrey;
+        background-color: white;
+        border: 1px solid lightgrey;
+    }
+
+        .btn-fabric:hover {
+            color: #004098;
+        }
+
+        .btn-fabric:focus {
+            color: #004098;
+        }
+
+    .tr-listing-header-title {
+        font-size: 30px !important;
+    }
+
+    .image-element {
+        height: 100%;
+        width: 100%;
+        border-radius: 0.5rem;
+    }
+
+    .image_75_size {
+        width: 75px;
+        height: 75px;
+    }
+
+    .image_50_size {
+        width: 50px;
+        height: 50px;
+    }
+
+    .carousel-item-container:hover {
+        background-color: #EBF3FE;
+        cursor: pointer;
+    }
+
+    .large-image-container {
+        position: relative;
+        width: 100%;
+        padding-top: 100%;
+        overflow: hidden;
+    }
+
+    .large-image {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .url-link:hover {
+        text-decoration: underline;
+    }
+
+    .col-main-image {
+        padding-left: 0px;
+    }
+
+    #image-selection {
+        display: flex;
+        justify-content: center;
+    }
+
+    .ui-autocomplete-customer {
+        width: 0px;
+    }
+
+    .btn-carousel {
+        color: #EBEBEB;
+        background-color: #FFFFFF;
+        border: 2px solid #EBEBEB;
+    }
+
+        .btn-carousel.active {
+            color: #004098;
+        }
+
+    .image-preview {
+        border-radius: 0.5rem;
+    }
+
+    .video-preview {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+    video {
+        border-radius: 0px;
+    }
+
+    .video-container {
+        width: 100%; /* Responsive width */
+        aspect-ratio: 16 / 9;
+        background: black; /* Background for contrast */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+
+        .video-container video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain; /* Ensures both horizontal & vertical videos fit */
+        }
+
+
+    .category-list {
+        max-height: 500px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 0px;
+    }
+
+        .category-list li {
+            margin-right: 1rem;
+            padding-left: 0.5rem;
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #EBEBEB;
+            cursor: pointer;
+        }
+
+            .category-list li:last-child {
+                border-bottom: none;
+            }
+
+        .category-list li:hover {
+            background-color: #EBEBEB;
+        }
+
+            .category-list li.active {
+                background: #EBEBEB;
+            }
+
+    #video-modal .modal-dialog {
+        --bs-modal-width: 1500px;
+    }
+
+    .color-select-border {
+        border: 2px solid #004098;
+        padding: 2px;
+    }
+
+    /*1 & 2 image color selection button css*/
+    .color-btn {
+        border: none;
+        background: transparent;
+        padding-left: 0;
+        padding-right: 12px;
+        display: inline-block;
+    }
+
+    .video-btn {
+        border: none;
+        background: transparent;
+    }
+
+    #color-selection {
+        width: 200px;
+        height: 70px;
+        overflow: hidden;
+        position: relative;
+        white-space: nowrap;
+    }
+
+    #color-selection-content {
+        width: 100%;
+        height: 100%;
+        position: absolute;
+    }
+
+    /*3 image color selection button css*/
+    .color-btn2 {
+        border: none;
+        background: transparent;
+        padding-left: 0;
+        padding-right: 12px;
+    }
+
+    #color-selection2 {
+        width: 200px;
+        height: 70px;
+        overflow: hidden;
+        position: relative;
+        white-space: nowrap;
+        margin: auto;
+    }
+
+    #color-selection-content2 {
+        width: 100%;
+        height: 100%;
+        position: absolute;
+    }
+
+    @@media only screen and (max-device-height: 799px) {
+        .carousel-header {
+            font-size: 22px;
+        }
+
+        .carousel-inner {
+            height: 300px;
+            min-width: 1200px;
+        }
+
+        .image-container {
+            height: 200px;
+        }
+
+        .product-header {
+            font-size: 1.5rem;
+            color: #212529;
+        }
+
+        .product-subheader {
+            font-size: 18px;
+            color: #212529;
+        }
+
+        .product-detail-body {
+            font-size: 14px;
+        }
+
+        .header-title {
+            font-size: 14px;
+        }
+
+        .btn-carousel {
+            height: 30px;
+            width: 30px;
+        }
+
+        .btn-view-more {
+            font-size: medium;
+        }
+    }
+
+    @@media only screen and (max-device-width: 1280px) and (min-device-height: 800px) {
+        .carousel-header {
+            font-size: 22px;
+        }
+
+        .carousel-inner {
+            height: 300px;
+            min-width: 1200px;
+        }
+
+        .image-container {
+            height: 200px;
+        }
+
+        .product-header {
+            font-size: 1.5rem;
+            color: #212529;
+        }
+
+        .product-subheader {
+            font-size: 18px;
+            color: #212529;
+        }
+
+        .product-detail-body {
+            font-size: 14px;
+        }
+
+        .header-title {
+            font-size: 14px;
+        }
+
+        .btn-carousel {
+            height: 30px;
+            width: 30px;
+        }
+
+        .btn-view-more {
+            font-size: medium;
+        }
+    }
+
+    @@media only screen and (min-device-width: 1281px) and (max-device-width: 1919px) and (min-device-height: 800px) {
+        .carousel-header {
+            font-size: 30px;
+        }
+
+        .carousel-inner {
+            height: 350px;
+            min-width: 1500px;
+        }
+
+        .image-container {
+            height: 250px;
+        }
+
+        .product-header {
+            font-size: 1.75rem;
+            color: #212529;
+        }
+
+        .product-subheader {
+            font-size: 20px;
+            color: #212529;
+        }
+
+        .product-detail-body {
+            font-size: 16px;
+        }
+
+        .header-title {
+            font-size: 16px;
+        }
+
+        .btn-carousel {
+            height: 34px;
+            width: 34px;
+        }
+
+        .btn-view-more {
+            font-size: medium;
+        }
+    }
+
+    @@media only screen and (min-device-width: 1920px) and (min-device-height: 800px) {
+        .carousel-header {
+            font-size: 30px;
+        }
+
+        .carousel-inner {
+            height: 400px;
+            min-width: 1900px;
+        }
+
+        .image-container {
+            height: 300px;
+        }
+
+        .product-header {
+            font-size: 2rem;
+            color: #212529;
+        }
+
+        .product-subheader {
+            font-size: 26px;
+            color: #212529;
+        }
+
+        .product-detail-body {
+            font-size: 22px;
+        }
+
+        .header-title {
+            font-size: 18px;
+        }
+
+        .btn-carousel {
+            height: 34px;
+            width: 34px;
+        }
+
+        .btn-view-more {
+            font-size: large;
+        }
+    }
+
+    
+</style>
+
+<div class="modal fade" id="video-modal" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content overflow-hidden">
+            <div class="modal-header">
+                <h5 class="modal-title">@Model.Product_H_Detail.CATEGORY - @Model.Product_H_Detail.CHOP_NO</h5>
+                <button type="button" class="btn-modal-close" data-bs-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <hr class="mb-0" />
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-9">
+                        <div class="video-container">
+                           <video controls>
+                                @if (Model.FabricVideoList.Count != 0)
+                                {
+                                    <source src="@Model.FabricVideoList[0].VIDEO_URL" type="video/mp4">
+                                }
+                            </video>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <ul class="category-list">
+                            @for (int i = 0; i < Model.FabricVideoList.Count; i++)
+                            {
+                                if (i == 0)
+                                {
+                                    <li class="active" data-url="@Model.FabricVideoList[i].VIDEO_URL">@Model.FabricVideoList[i].VIDEO_NAME</li>
+                                }
+                                else
+                                {
+                                    <li data-url="@Model.FabricVideoList[i].VIDEO_URL">@Model.FabricVideoList[i].VIDEO_NAME</li>
+                                }
+                            }
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@using (Html.BeginForm("ProductDetail", "ProductDetail", FormMethod.Post))
+{
+    @Html.AntiForgeryToken()
+    <div style="border-top:1px solid #F0F0F0; margin-top:-1px" class="tr-btm-line"></div>
+    <div class="row align-items-baseline mx-3 mt-3">
+        <div class="col p-0">
+            <a class="text-decoration-none" href="@urlDashboard"><span class="fa fa-house dark-blue"></span></a>
+            <text class="mx-1">/</text>
+            <a class="url-link" href="@urlAllProducts">All Products</a>
+            <text class="mx-1">/</text>
+            <text>@Model.Product_H_Detail.ITEM_CODE</text>
+        </div>
+    </div>
+    <div class="product-container mx-3 my-3 pb-5 overflow-y-auto">
+        <div class="row">
+            <div class="col-sm-1">
+                <div id="image-selection">
+                    <div id="image-selection-content">
+
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-5 col-main-image">
+                @*<img class="fitImage image-width card" id="image1" />*@
+                <div class="large-image-container mb-2">
+                    <img id="image1" class="large-image card" />
+                </div>
+            </div>
+            <div class="col-sm-6">
+                <div class="product-detail-head">
+                    <p class="product-header bold m-0">@Model.Product_H_Detail.CATEGORY</p>
+                    <p class="product-subheader pt-2 bold m-0">Chop No: @Model.Product_H_Detail.CHOP_NO</p>
+                </div>
+                <hr />
+                <p class="product-subheader">Variation: <span id="colorWay" class="bold"></span></p>
+                <div id="color-selection">
+                    <div id="color-selection-content">
+
+                    </div>
+                </div>
+                <div class="product-detail-body product-detail-width">
+                    <p class="product-subheader bold m-0">Details:</p>
+                    <div class="row align-items-baseline">
+                        <div class="col-sm-12">
+                            <div class="row">
+                                <div class="col-sm-4">
+                                    <label class="bold pt-2 mb-sm-0">Item Code:</label>
+                                </div>
+                                <div class="col-sm-8">
+                                    <label class="pt-2">@Model.Product_H_Detail.ITEM_CODE</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row align-items-baseline">
+                        <div class="col-sm-12">
+                            <div class="row">
+                                <div class="col-sm-4">
+                                    <label class="bold pt-2 mb-sm-0">Composition:</label>
+                                </div>
+                                <div class="col-sm-8">
+                                    <label class="pt-2">@Model.Product_H_Detail.COMPOSITION</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row align-items-baseline">
+                        <div class="col-sm-12">
+                            <div class="row">
+                                <div class="col-sm-4">
+                                    <label class="bold pt-2 mb-sm-0">Width:</label>
+                                </div>
+                                <div class="col-sm-8">
+                                    <label class="pt-2">@Model.Product_H_Detail.FINISH_WIDTH1 @Model.Product_H_Detail.UOM</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row align-items-baseline">
+                        <div class="col-sm-12">
+                            <div class="row">
+                                <div class="col-sm-4">
+                                    <label class="bold pt-2 mb-sm-0">Weight:</label>
+                                </div>
+                                <div class="col-sm-8">
+                                    <label class="pt-2">@Model.Product_H_Detail.FAB_WEIGHT_GSM gsm</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row align-items-baseline">
+                        <div class="col-sm-12">
+                            <div class="row">
+                                <div class="col-sm-4">
+                                    <label class="bold pt-2 mb-sm-0">Product Type / Usage:</label>
+                                </div>
+                                <div class="col-sm-8">
+                                    <label class="pt-2">@Model.Product_H_Detail.PRODUCT_TYPE1</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row align-items-baseline">
+                        <div class="col-sm-12">
+                            <div class="row">
+                                <div class="col-sm-4">
+                                    <label class="bold pt-2 mb-sm-0">Weave Type:</label>
+                                </div>
+                                <div class="col-sm-8">
+                                    <label class="pt-2">@Model.Product_H_Detail.WEAVE_TYPE</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row align-items-baseline">
+                        <div class="col-sm-12">
+                            <div class="row">
+                                <div class="col-sm-4">
+                                    <label class="bold pt-2 mb-sm-0">Finished Type:</label>
+                                </div>
+                                <div class="col-sm-8">
+                                    <label class="pt-2">@Model.Product_H_Detail.FINISH_TYPE</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row align-items-baseline">
+                        <div class="col-sm-12">
+                            <div class="row">
+                                <div class="col-sm-4">
+                                    <label class="bold pt-2 mb-sm-0">Location:</label>
+                                </div>
+                                <div class="col-sm-8">
+                                    <label class="pt-2">@Model.Product_H_Detail.HANGER_LOC</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row align-items-baseline">
+                        <div class="col-sm-12">
+                            <div class="row">
+                                <div class="col-sm-4">
+                                    <label class="bold pt-2 mb-sm-0">Sample Availability:</label>
+                                </div>
+                                <div class="col-sm-8">
+                                    <label class="pt-2" id="currentQtyLbl">100 / yard(s)</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="additional-content" style="display:none;">
+                        <div class="row align-items-baseline">
+                            <div class="col-sm-12">
+                                <div class="row">
+                                    <div class="col-sm-4">
+                                        <label class="bold pt-2 mb-sm-0">Reference No:</label>
+                                    </div>
+                                    <div class="col-sm-8">
+                                        <label class="pt-2">@Model.Product_H_Detail.REFERENCE_NO</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row align-items-baseline">
+                            <div class="col-sm-12">
+                                <div class="row">
+                                    <div class="col-sm-4">
+                                        <label class="bold pt-2 mb-sm-0">Finished Density:</label>
+                                    </div>
+                                    <div class="col-sm-8">
+                                        <label class="pt-2">@Model.Product_H_Detail.FIN_WARP_DENSITY / @Model.Product_H_Detail.FIN_WEFT_DENSITY</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row align-items-baseline">
+                        <div class="col-sm-12">
+                            <div class="col-sm-12">
+                                <button type="button" class="dark-blue pt-2 viewMoreButton" id="viewMoreButton">View More</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-center">
+                    <button id="buttonAddToCart" type="button" class="btn btn-sm btn-primary buttonAddToCart">ADD TO CART</button>
+                </div>
+            </div>
+        </div>
+        <hr />
+        @if (Model.GROUP_D_ID == 0)
+        {
+            <div class="row">
+                <div class="row align-items-baseline">
+                    <div class="col"><h5 class="text-muted card-title">Customer Review & Feedback:</h5></div>
+                    <div class="col text-end me-sm-3">
+                        <button class="rmvBtnStyle h3" id="btnEdit" type="button" data-bs-toggle="modal" data-bs-target="#feedback-modal"><span class="fa fa-edit dark-blue"></span></button>
+                        <button class="viewMoreButton" type="button" onclick="location.href='@Url.Action("CustomerReviewFeedback","ProductDetail", new { id = Model.Product_H_Detail.PRODUCT_H_ID })'">View All</button>
+                    </div>
+                </div>
+                @if (Model.ProductCommentList.Count == 0)
+                {
+                    <div class="row align-items-baseline">
+                        <div class="col-sm-12 text-center">
+                            No review & feedback found
+                        </div>
+                    </div>
+                }
+                @for (int i = 0; i < Model.ProductCommentList.Count; i = i + 2)
+                {
+                    <div class="row align-items-baseline">
+                        <div class="col-sm-6">
+                            <div class="commentDiv">
+                                <span>@Model.ProductCommentList[i].CUSTOMER_NAME</span><br />
+                                <span>Variation: @Model.ProductCommentList[i].COLOR_WAY</span><br />
+                                <p class="fontBlack pt-lg-2">@Model.ProductCommentList[i].FEEDBACK_DESC</p>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            @if (i + 1 < Model.ProductCommentList.Count)
+                            {
+                                <div class="commentDiv">
+                                    <span>@Model.ProductCommentList[i + 1].CUSTOMER_NAME</span><br />
+                                    <span>Variation: @Model.ProductCommentList[i + 1].COLOR_WAY</span><br />
+                                    <p class="fontBlack pt-lg-2">@Model.ProductCommentList[i + 1].FEEDBACK_DESC</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+            <hr />
+        }
+
+        <!-- Similar Products -->
+        <div class="section-similar-products">
+            <div class="row justify-content-end mt-5">
+                <div class="col-sm-4 text-center">
+                    <p class="carousel-header text-center bell-mt m-0"><b>Similar Products</b></p>
+                </div>
+                <div class="col-sm-4 d-flex align-items-center justify-content-end me-3">
+                    <div class="d-flex align-items-end">
+                        <button class="btn-carousel" type="button" href="#carouselSimilar" data-bs-slide-to="0">
+                            <div class="d-flex align-items-center justify-content-center"><i class="fa fa-solid fa-angle-left"></i></div>
+                        </button>
+                        <button class="btn-carousel border-start-0 active" type="button" href="#carouselSimilar" data-bs-slide-to="1">
+                            <div class="d-flex align-items-center justify-content-center"><i class="fa fa-solid fa-angle-right"></i></div>
+                        </button>
+                        <a class="btn-view-more ms-3 text-decoration-underline bell-mt" href="#" onclick="viewAll()"><text>View All</text></a>
+                    </div>
+                </div>
+            </div>
+
+            <div id="carouselSimilar" class="carousel slide" data-ride="carousel">
+                <div class="carousel-inner">
+                    <!-- Display loading before the partial view is load -->
+                    <div class="carousel-loading bg-grey h-100 d-flex justify-content-center align-items-center">
+                        <i class="fa-duotone fa-spinner fa-spin-pulse dark-blue"></i>
+                    </div>
+                    <!-- Waiting ajax load partial view at here -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Views -->
+        <div class="row justify-content-end mt-5">
+            <div class="col-sm-4 text-center">
+                <p class="carousel-header text-center bell-mt m-0"><b>Recent Views</b></p>
+            </div>
+            <div class="col-sm-4 d-flex align-items-center justify-content-end me-3">
+                <div class="d-flex align-items-end">
+                    <button class="btn-carousel" type="button" href="#carouselRecent" data-bs-slide-to="0">
+                        <div class="d-flex align-items-center justify-content-center"><i class="fa fa-solid fa-angle-left"></i></div>
+                    </button>
+                    <button class="btn-carousel border-start-0 active" type="button" href="#carouselRecent" data-bs-slide-to="1">
+                        <div class="d-flex align-items-center justify-content-center"><i class="fa fa-solid fa-angle-right"></i></div>
+                    </button>
+                    <a class="btn-view-more ms-3 text-decoration-underline bell-mt" href="#" onclick="viewAll()">View All</a>
+                </div>
+            </div>
+        </div>
+        <div id="carouselRecent" class="carousel slide" data-ride="carousel">
+            <div class="carousel-inner">
+                <!-- First Carousel -->
+                <div class="carousel-item active">
+                    <div class="row">
+                        @for (var i = 0; i < recentViewsCount; i++)
+                        {
+                            <div class="carousel-item-container w-20" onclick="viewProduct(@Model.RecentViewList[i].PRODUCT_H_ID)">
+                                <div class="image-container m-3">
+                                    <img src="@Model.RecentViewList[i].IMAGE_URL" class="image-element" />
+                                </div>
+                                <div class="mx-3 mb-3">
+                                    <div class="divider-line">
+                                        <p class="header-title fw-bold mb-1">@Model.RecentViewList[i].CATEGORY_NAME</p>
+                                    </div>
+                                    <div>
+                                        <p class="mt-1 mb-0">@Model.RecentViewList[i].CHOP_NO</p>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+                <!-- Second Carousel -->
+                @if (Model.RecentViewList.Count > 5)
+                {
+                    <div class="carousel-item">
+                        <div class="row">
+                            @for (var i = 5; i < Model.RecentViewList.Count; i++)
+                            {
+                                <div class="carousel-item-container w-20" onclick="viewProduct(@Model.RecentViewList[i].PRODUCT_H_ID)">
+                                    <div class="image-container m-3">
+                                        <img src="@Model.RecentViewList[i].IMAGE_URL" class="image-element" />
+                                    </div>
+                                    <div class="mx-3 mb-3">
+                                        <div class="divider-line">
+                                            <p class="header-title fw-bold mb-1">@Model.RecentViewList[i].CATEGORY_NAME</p>
+                                        </div>
+                                        <div>
+                                            <p class="mt-1 mb-0">@Model.RecentViewList[i].CHOP_NO</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="feedback-modal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered feedback-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Write Customer Review & Feedback:</h5>
+                    <span data-bs-dismiss="modal" class="close-button topright">&times;</span>
+                </div>
+                <hr />
+                <div class="modal-body">
+                    <div>
+                        <div class="row">
+                            <div class="col-sm-12">
+                                <img id="feedbackImg" class="float-start card image_75_size" />
+                                <div class="float-start ps-3">
+                                    <p class="bold mb-md-1">Dyed Nylon</p>
+                                    <p class="mb-md-1"> Chop No: @Model.Product_H_Detail.CHOP_NO, Colour: <span id="colorWayModal"></span></p>
+                                    <p class="mb-md-1"> Reference No: @Model.Product_H_Detail.REFERENCE_NO</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mt-2 align-items-baseline">
+                            <hr />
+                        </div>
+                        <div class="row mt-2 align-items-baseline">
+                            <div class="col-sm-2">
+                                <p class="text-muted">Company <span class="text-danger">*</span> <span style="float:right">:</span></p>
+                            </div>
+                            <div class="col-sm-4">
+                                @Html.DropDownList("ddlCompany", (SelectList)ViewBag.CompanyName, "Select Company", new { @class = "tr-select2 form-control", id = "select-id" })
+                                @Html.ValidationMessage("", "Please Select Company.", new { @class = "text-danger hidden", id = "rvDdlCompany" })
+
+                            </div>
+                            <div class="col-sm-2">
+                                <p class="text-muted">Customer Name <span class="text-danger">*</span> <span style="float:right">:</span></p>
+                            </div>
+                            <div class="col-sm-4">
+                                @Html.TextBox("txtCustomerName", "", new { @class = "form-control", placeholder = "Enter Customer Name", id = "txtCustomerName" })
+                                @Html.ValidationMessage("", "Please Enter Customer Name.", new { @class = "text-danger hidden", id = "rvTxtCustomerName" })
+                            </div>
+                        </div>
+                        <div class="row mt-2 align-items-baseline">
+                            <div class="col-sm-2">
+                                <p class="text-muted">Comment <span class="text-danger">*</span> <span style="float:right">:</span></p>
+                            </div>
+                            <div class="col-sm-10">
+                                <span class="form-control">
+                                    <div>
+                                        You may choose from suggested comments:<br /><br />
+                                        @for (int i = 0; i < ViewBag.CommentSuggestion.Count; i++)
+                                        {
+                                            <button type="button" class="commentSuggest">@ViewBag.CommentSuggestion[i]</button>
+                                        }
+                                    </div>
+                                    <hr />
+                                    <span contenteditable="true" id="txtComment" class="placeholderColor">
+                                        Enter customer comments or feedback.
+                                    </span>
+                                </span>
+                                @Html.ValidationMessage("", "Please Enter Comments or Feedback.", new { @class = "text-danger hidden", id = "rvTxtComment" })
+                                @Html.ValidationMessage("", "Please select at least one suggested comment.", new { @class = "text-danger hidden", id = "rvSuggestedComment" })
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" value="submit" name="btn" id="btnConfirm2">Submit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Toast -->
+    <div class="toast-container position-fixed toast-alert">
+        <div id="liveToast" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true" style="border: 1px solid #B1003C">
+            <div class="toast-header" style="background-color: #FFF0EE">
+                <strong class="me-auto text-danger">Warning!</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body text-muted" style="background-color: #FFF0EE; border-top: 1px solid #FFF0EE; border-bottom-left-radius: inherit; border-bottom-right-radius: inherit">
+                Failed to submit, Duplicated Company Name.
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container position-fixed toast-success">
+        <div id="liveToast2" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true" style="border: 1px solid #00A251">
+            <div class="toast-header" style="background-color: #E9FFF8">
+                <strong class="me-auto" style="color: #00A251">Successful!</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body text-muted" style="background-color: #E9FFF8; border-top: 1px solid #E9FFF8; border-bottom-left-radius: inherit; border-bottom-right-radius: inherit">
+                Comments & Feedback Submit Successfully.
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container position-fixed toast-success">
+        <div id="successToast" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true" style="border: 1px solid #00A251">
+            <div class="toast-header" style="background-color: #E9FFF8">
+                <strong class="me-auto" style="color: #00A251">Successful!</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body text-muted" style="background-color: #E9FFF8; border-top: 1px solid #E9FFF8; border-bottom-left-radius: inherit; border-bottom-right-radius: inherit">
+                Add to Cart Successfully.
+            </div>
+        </div>
+    </div>
+    if(Model.FabricVideoList.Count > 0)
+    {
+        <div class="video-btn-layout hidden">
+            <button type="button" class="video-btn position-relative d-inline-block" data-bs-toggle="modal" data-bs-target="#video-modal">
+                <img class="image-preview image_75_size bg-dark" />
+                <img class="video-preview" src="~/ViewsHelpers/CommonIcon/Play/Play.png" />
+            </button>
+        </div>
+    }
+    
+}
+
+<script>
+    var imageData = @Html.Raw(Model.Product_H_Detail.imageList);
+    var productID = "@Model.Product_H_Detail.PRODUCT_H_ID";
+    var urlProductDetail = "@Url.Action("ProductDetail", "ProductDetail")";
+    var urlAddToCart = "@Url.Action("AddToCart", "ProductDetail")";
+    var urlAllProduct = "@Url.Action("AllProducts", "AllProducts")";
+    var colorway = imageData[0].COLOR_WAY;
+    var commentSuggestArr = [];
+    var customerID;
+
+    function checkUser() {
+        var currentURL = window.location.href;
+        customer = localStorage.getItem('customerID');
+        if (customer == null || currentURL.includes('groupDID=0') || !currentURL.includes('groupDID')) {
+            customerID = 0;
+        }
+        else {
+            customerID = customer;
+        }
+    }
+
+    function imageBtnOnClick() {
+        $(".image-btn").click(function () {
+            var id = $(this).attr("id");
+            var seq = id.substring(id.indexOf("_") + 1);
+            $("#image1").attr("src", $(this).find("img").attr("src"));
+        });
+    }
+
+    function viewAll() {
+        if (customerID != 0) {
+            urlAllProduct += "?user=customer";
+        }
+        window.location = urlAllProduct;
+    }
+
+    function viewProduct(id) {
+        var url = urlProductDetail + '?id=' + id + '&groupDID=' + customerID;
+        window.location = url;
+    }
+
+    function generateImagePreview() {
+            for (var i = 0; i < imageData.length; i++) {
+                for (var j = 0; j < imageData[i].imageName.length; j++) {
+                    var url = imageData[i].imageFile[j];
+                    if (i == 0) {
+                        var imageBtn = $("<button>").attr("id", "imageBtn_" + (j + 1));
+                        imageBtn.attr("class", "image-btn");
+                        imageBtn.attr("type", "button");
+                        var img = $("<img>").attr("src", url);
+                        img.attr("class", "card image_75_size");
+                        imageBtn.append(img);
+                        $("#image-selection-content").append(imageBtn);
+                        $("#image-selection-content").append('<br/>');
+                    }
+                    if (j == 0) {
+                        var colorBtn = $("<button>").attr("id", "colorBtn_" + (i + 1));
+                        colorBtn.attr("class", "color-btn");
+                        colorBtn.attr("type", "button");
+                        var btnImg = $("<img>").attr("src", url);
+                        btnImg.attr("class", "card image_50_size");
+                        colorBtn.append(btnImg);
+                        $("#color-selection-content").append(colorBtn);
+                        if (i == 0) {
+                            $("#image1").attr("src", url)
+                            $(".color-btn").find("img").addClass("color-select-border");
+                            $("#colorWay").text(imageData[i].COLOR_WAY);
+                            $("#currentQtyLbl").text(imageData[i].CURRENT_QTY + " / yards");
+                            $("#colorWayModal").text(imageData[i].COLOR_WAY);
+                            $("#feedbackImg").attr("src", url)
+                            if (imageData[i].CURRENT_QTY <= 0) {
+                                $("#buttonAddToCart").prop("disabled", true);
+                            }
+                            else {
+                                $("#buttonAddToCart").prop("disabled", false);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+    function generateVideoPreview() {
+        var length = imageData[0].imageFile.length;
+        var url = imageData[0].imageFile[length - 1];
+        //$('.video-btn-layout .image-preview').attr('src', url);
+        var container = $('.video-btn-layout ').html();
+        $("#image-selection-content").append(container);
+    }
+
+    function generateSimilarProduct() {
+        $.ajax({
+            url: "/ProductDetail/GetSimilarityProducts",
+            type: "POST",
+            data: {
+                id: '@Model.Product_H_Detail.PRODUCT_H_ID',
+                groupDID: '@Model.GROUP_D_ID'
+            },
+            success: function (data) {
+                if (data == "Empty") {
+                    $('.section-similar-products').addClass('d-none');
+                }
+                else {
+                    $('#carouselSimilar .carousel-inner').append(data);
+                    $('#carouselSimilar .carousel-loading').removeClass('d-flex').addClass('d-none');
+                }
+            },
+            error: function () {
+                $('.section-similar-products').addClass('d-none');
+            }
+        });
+    }
+
+    $(document).ready(function () {
+        generateImagePreview();
+        generateVideoPreview();
+        generateSimilarProduct();
+        checkUser();
+
+        $("#btnConfirm2").on('click', function () {
+            $("#btnConfirm2").prop("disabled", true);
+            setTimeout(function () {
+                $("#btnConfirm2").prop("disabled", false);
+            }, 2000);
+            var isValid = true;
+            if ($("#select-id").val() == "") {
+                isValid = false;
+                $("#rvDdlCompany").removeClass("hidden");
+            }
+            if ($("#txtCustomerName").val() == "") {
+                isValid = false;
+                $("#rvTxtCustomerName").removeClass("hidden");
+            }
+            if ($("#txtComment").text().trim() == "Enter customer comments or feedback." || $("#txtComment").text().trim() == "") {
+                isValid = false;
+                $("#rvTxtComment").removeClass("hidden");
+                $("#rvSuggestedComment").addClass("hidden");
+            }
+            else {
+                if (commentSuggestArr.length == 0) {
+                    isValid = false;
+                    $("#rvSuggestedComment").removeClass("hidden");
+                }
+            }
+            if (isValid == true) {
+                $.ajax({
+                    url: "/ProductDetail/SubmitFeedback",
+                    type: 'POST',
+                    dataType: 'text',
+                    data: { id: @Model.Product_H_Detail.PRODUCT_H_ID, colorWay: $("#colorWayModal").text(), companyID: $("#select-id").val(), customerName: $("#txtCustomerName").val(), commentSuggestArr: commentSuggestArr, comment: $("#txtComment").text().trim() },
+
+                    success: function (data) {
+                        const toastLiveExample = document.getElementById('liveToast2');
+                        const toast = new bootstrap.Toast(toastLiveExample);
+                        toast.show();
+                        $('#feedback-modal').modal('hide');
+                    },
+
+                    error: function (jqXHR, textStatus, errorThrown) {
+                        alert(errorThrown);
+                    }
+                });
+            }
+        });
+
+        $('#txtCustomerName').on('input', function () {
+            $("#rvTxtCustomerName").addClass("hidden");
+        });
+
+        $('#txtComment').on('input', function () {
+            $("#rvTxtComment").addClass("hidden");
+        });
+
+        $('#select-id').change(function () {
+            var width = $('#inputCustName').width() + "px !important";
+            var selectedValue = $(this).val();
+            if (selectedValue == "") selectedValue = 0;
+            $("#rvDdlCompany").addClass("hidden");
+
+            $.ajax({
+                url: "/ProductDetail/GetCustomerName",
+                type: 'GET',
+                dataType: 'json',
+                data: {id: selectedValue},
+
+                success: function (data) {
+                    $("#txtCustomerName").autocomplete({
+                        source: data,
+                        create: function (event, ui) {
+                            var autocompleteMenu = $(this).data('ui-autocomplete').menu.element
+                            autocompleteMenu.addClass('ui-autocomplete-customer');
+                            autocompleteMenu.css({
+                                'border': '1px solid #EBEBEB'
+                            });
+                        },
+                    });
+                    $('.ui-autocomplete-customer').css('width', width);
+                    $(".ui-autocomplete").addClass("form-control");
+                },
+
+                error: function (jqXHR, textStatus, errorThrown) {
+                    var data = [];
+                    $("#txtCustomerName").autocomplete({
+                        source: data
+                    });
+                }
+            });
+        });
+
+        $(".commentSuggest").on('click', function () {
+            if ($(this).hasClass("commentSuggestSelect")) {
+                $(this).removeClass("commentSuggestSelect");
+                var itemIndex = commentSuggestArr.indexOf($(this).text());
+                if (itemIndex !== -1) {
+                    commentSuggestArr.splice(itemIndex, 1);
+                }
+            }
+            else {
+                $("#rvSuggestedComment").addClass("hidden");
+                $(this).addClass("commentSuggestSelect");
+                commentSuggestArr.push($(this).text());
+            }
+        });
+
+        $('#select-id').multiselect({
+            buttonClass: 'form-select form-control text-start',
+            enableCaseInsensitiveFiltering: true,
+            enableFiltering: true,
+            templates: {
+                button: '<button type="button" class="multiselect dropdown-toggle" id="locationTypDdl" data-bs-toggle="dropdown"><span class="multiselect-selected-text"></span></button>',
+                filter: '<div class="multiselect-filter"><div class="input-group input-group-sm p-1"><div class="input-group-prepend"></div><input class="form-control multiselect-search" type="text" /></div></div>',
+            }
+        });
+
+        $('.multiselect-native-select > .btn-group').addClass("w-100");
+        $('.multiselect-native-select > .btn-group > .multiselect').removeClass("text-center");
+        $('.multiselect-native-select > .btn-group > .multiselect-container').addClass("w-100");
+
+        $('#txtComment').on('focus', function () {
+            if ($(this).text().trim() == "Enter customer comments or feedback.") {
+                $(this).text("");
+                $(this).removeClass("placeholderColor");
+            }
+        });
+
+        $('#txtComment').on('focusout', function () {
+            if ($(this).text() == "") {
+                $(this).text("Enter customer comments or feedback.");
+                $(this).addClass("placeholderColor");
+            }
+        });
+
+        $("#viewMoreButton").click(function () {
+            $(".additional-content").slideToggle();
+
+            var buttonText = $(this).text() === "View More" ? "View Less" : "View More";
+            $(this).text(buttonText);
+            if (buttonText == "View More") {
+                $(this).addClass('dark-blue');
+                $(this).removeClass('vivid-red');
+            }
+            else {
+                $(this).addClass('vivid-red');
+                $(this).removeClass('dark-blue');
+            }
+        });
+
+        $(".color-btn").click(function () {
+            var id = $(this).attr("id");
+            var seq = id.substring(id.indexOf("_") + 1);
+            $("#image-selection-content").empty();
+            for (var j = 0; j < imageData[seq - 1].imageName.length; j++) {
+                var url = imageData[seq - 1].imageFile[j];
+                if (j == 0) {
+                    $("#image" + (j + 1)).attr("src", url);
+                    $("#feedbackImg").attr("src", url)
+                }
+                var imageBtn = $("<button>").attr("id", "imageBtn_" + (j + 1));
+                imageBtn.attr("class", "image-btn");
+                imageBtn.attr("type", "button");
+                var img = $("<img>").attr("src", url);
+                img.attr("width", 75);
+                img.attr("height", 75);
+                img.attr("class", "card image_75_size");
+                imageBtn.append(img);
+                $("#image-selection-content").append(imageBtn);
+                $("#image-selection-content").append('<br/>');
+            }
+            $(".color-btn").find("img").removeClass("color-select-border");
+            $(this).find("img").addClass("color-select-border");
+            $("#colorWay").text(imageData[seq - 1].COLOR_WAY);
+            $("#colorWayModal").text(imageData[seq - 1].COLOR_WAY);
+            $("#currentQtyLbl").text(imageData[seq - 1].CURRENT_QTY + " / yards");
+            colorway = imageData[seq - 1].COLOR_WAY;
+            if (imageData[seq - 1].CURRENT_QTY <= 0) {
+                $("#buttonAddToCart").prop("disabled", true);
+            }
+            else {
+                $("#buttonAddToCart").prop("disabled", false);
+            }
+
+            imageBtnOnClick();
+            generateVideoPreview();
+        });
+
+        $('#buttonAddToCart').on('click', function () {
+            var iconSize = parseInt($('#txtCartCount').attr('size'));
+            var customerID = localStorage.getItem('customerID');
+            if (customerID == null) {
+                customerID = 0;
+            }
+
+            $.ajax({
+                type: "post",
+                url: urlAddToCart,
+                data: {
+                    customerID: customerID,
+                    productID: productID,
+                    colorway: colorway
+                },
+                datatype: "json",
+                traditional: true,
+                success: function (data) {
+                    var count = Number(data);
+                    if (count >= 10 && count < 100) {
+                        iconSize += 2;
+                        $('#txtCartCount').css({
+                            'height': iconSize,
+                            'width': iconSize
+                        });
+
+                        $('#txtCartCount > text').html(count);
+                    }
+                    else if (count >= 100) {
+                        iconSize += 4;
+                        $('#txtCartCount').css({
+                            'height': iconSize,
+                            'width': iconSize
+                        });
+
+                        $('#txtCartCount > text').html("99+");
+                    }
+                    else {
+                        $('#txtCartCount > text').html(count);
+                    }
+                    $('#txtCartCount > text').attr('count', count);
+
+                    const toastLiveExample = document.getElementById('successToast');
+                    const toast = new bootstrap.Toast(toastLiveExample);
+                    toast.show();
+                },
+            });
+        });
+
+        $('.btn-carousel').on('click', function () {
+            var slide = $(this).attr('data-bs-slide-to');
+
+            if ($(this).hasClass('active')) {
+                if (slide == 0) {
+                    $(this).next().addClass('active');
+                }
+                else {
+                    $(this).prev().addClass('active');
+                }
+            }
+            $(this).removeClass('active');
+        });
+
+        $('#btnEdit').on('click', function () {
+            var companyName = localStorage.getItem('companyName');
+            var customerName = localStorage.getItem('customerName');
+            if (companyName != null) {
+                $(`#select-id option:contains('${companyName}')`).prop("selected", true);
+            }
+            else {
+                $('#select-id option').prop('selected', false);
+            }
+            $(`#select-id`).multiselect('rebuild');
+            $('#txtCustomerName').val(customerName);
+        });
+
+        $('.category-list li').on('click', function () {
+            var url = $(this).attr('data-url');
+            var video = $('#video-modal video');
+            video.find('source').attr('src', url);
+            video[0].load();
+            video[0].play();
+
+            $('.category-list li').removeClass('active');
+            $(this).addClass('active');
+        });
+
+        imageBtnOnClick();
+
+        //color selection horizontal drag scroll
+        var isDragging = false;
+        var startX, startY, scrollLeft, scrollTop;
+
+        var scrollContainer = $('#color-selection');
+        var scrollContent = $('#color-selection-content');
+
+        scrollContainer.on('mousedown', function (e) {
+            isDragging = true;
+            startX = e.pageX - scrollContainer.offset().left;
+            startY = e.pageY - scrollContainer.offset().top;
+            scrollLeft = scrollContainer.scrollLeft();
+            scrollTop = scrollContainer.scrollTop();
+        });
+
+        $(document).on('mousemove', function (e) {
+            if (!isDragging) return;
+            e.preventDefault();
+            var x = e.pageX - scrollContainer.offset().left;
+            var y = e.pageY - scrollContainer.offset().top;
+            var scrollX = scrollLeft - (x - startX);
+            var scrollY = scrollTop - (y - startY);
+            scrollContainer.scrollLeft(scrollX);
+            scrollContainer.scrollTop(scrollY);
+        });
+
+        $(document).on('mouseup', function () {
+            isDragging = false;
+        });
+
+        //image selection horizontal drag scroll
+        var isDragging2 = false;
+        var startX2, startY2, scrollLeft2, scrollTop2;
+
+        var scrollContainer2 = $('#image-selection');
+        var scrollContent2 = $('#image-selection-content');
+
+        scrollContainer2.on('mousedown', function (e) {
+            isDragging2 = true;
+            startX2 = e.pageX - scrollContainer2.offset().left;
+            startY2 = e.pageY - scrollContainer2.offset().top;
+            scrollLeft2 = scrollContainer2.scrollLeft();
+            scrollTop2 = scrollContainer2.scrollTop();
+        });
+
+        $(document).on('mousemove', function (e) {
+            if (!isDragging2) return;
+            e.preventDefault();
+            var x = e.pageX - scrollContainer2.offset().left;
+            var y = e.pageY - scrollContainer2.offset().top;
+            var scrollX2 = scrollLeft2 - (x - startX2);
+            var scrollY2 = scrollTop2 - (y - startY2);
+            scrollContainer2.scrollLeft(scrollX2);
+            scrollContainer2.scrollTop(scrollY2);
+        });
+
+        $(document).on('mouseup', function () {
+            isDragging2 = false;
+        });
+    });
+</script>
+
+@{
+    if (ViewBag.Result != "Duplicated Reference No" && ViewBag.Result != null)
+    {
+        <script>
+        const toastLiveExample = document.getElementById('liveToast2');
+        const toast = new bootstrap.Toast(toastLiveExample);
+        toast.show();
+            setTimeout(function () {
+                var url = '@Url.Action("RFIDDashboard", "RFIDDashboard")';
+                window.location.href = url;
+            }, 2000);
+        </script>
+    }
+    else if (ViewBag.Result == "Duplicated Reference No")
+    {
+        <script>
+            const toastLiveExample = document.getElementById('liveToast');
+            const toast = new bootstrap.Toast(toastLiveExample);
+            toast.show();
+        </script>
+    }
+}
+

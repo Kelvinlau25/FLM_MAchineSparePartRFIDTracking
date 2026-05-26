@@ -1,0 +1,492 @@
+﻿@model PAB_NewAquarium.Models.Product_H_Detail
+@{
+    ViewBag.Title = "RFIDProductPage6";
+    if (ViewBag.user == "sales")
+    {
+        Layout = "~/Views/Shared/_Layout.cshtml";
+    }
+    else
+    {
+        Layout = "~/Views/Shared/_Layout_Customer.cshtml";
+    }
+}
+
+<link href="~/Content/RFIDProductPage.css" rel="stylesheet" />
+
+<style>
+    @@media (min-width: 768px) {
+        .product-container {
+            height: 79.5vh;
+        }
+
+        .fitImage {
+            height: 50%;
+            position: absolute;
+            top: calc(79.5vh / 3);
+            z-index: 1;
+        }
+
+        .fitImage2 {
+            height: 77.5vh;
+            position: absolute;
+        }
+
+        .product-detail {
+            height: 79.5vh;
+            margin-top: 10px;
+            margin-left: 30px;
+        }
+    }
+
+    @@media (min-width: 1400px) {
+        .product-container {
+            height: 82.5vh;
+        }
+
+        .fitImage {
+            height: 50%;
+            position: absolute;
+            top: calc(82.5vh / 3);
+            z-index: 1;
+        }
+
+        .fitImage2 {
+            height: 82.5vh;
+            position: absolute;
+        }
+
+        .product-detail {
+            height: 82.5vh;
+            margin-top: 30px;
+            margin-left: 30px;
+        }
+    }
+
+    .image-sm {
+        width: 50px;
+        height: 50px;
+    }
+
+    .detail-head {
+        height: 100vh;
+    }
+
+    .bold {
+        font-weight: bold;
+    }
+
+    .product-detail-width {
+        width: 37.5vw;
+    }
+
+    .image-width {
+        width: 22%;
+        margin-left: 15vw;
+        border-radius: 30% 30% 30% 30%;
+    }
+
+    .image-width2 {
+        width: 36.5vw;
+        transform: translate(10%, -15%);
+        border-radius: 0px 0px 0px 20%;
+    }
+
+    .detail-head {
+        border-radius: 0px 20% 0px 0px;
+        background-color: #F0F0F0;
+        position: absolute;
+        width: 25.5vw;
+        top: 0;
+    }
+
+    .align-item-head {
+        display: flex;
+        padding-left: 50px;
+        padding-top: 50px;
+    }
+
+    .detail-background {
+        background-color: #FFFFFF;
+        z-index: 1;
+    }
+
+    .right {
+        right: 0;
+    }
+
+    .left {
+        left: 0;
+    }
+
+    .image-animation {
+        animation-name: image1-animation;
+        animation-duration: 1.5s;
+    }
+
+    @@keyframes image1-animation {
+        0% {
+            right: -1000px;
+            top: 0px;
+            opacity: 0;
+        }
+
+        100% {
+            right: 0px;
+            top: 0px;
+            opacity: 1;
+        }
+    }
+
+    .image-animation2 {
+        animation-name: image2-animation;
+        animation-duration: 1.5s;
+    }
+
+    @@keyframes image2-animation {
+        0% {
+            left: -1000px;
+            opacity: 0;
+        }
+
+        100% {
+            left: 0px;
+            opacity: 1;
+        }
+    }
+
+    @@media only screen and (max-device-width: 1280px) {
+        .product-header {
+            font-size: 1.5rem;
+        }
+
+        .product-subheader {
+            font-size: 16px;
+            padding-top: 1.5rem;
+        }
+
+        .product-detail, .product-text {
+            font-size: 14px;
+        }
+
+        .detail-head {
+            bottom: 80px;
+        }
+
+        .align-item-head {
+            padding-top: 0px;
+        }
+
+        #btnAddToCart {
+            right: 15px;
+            bottom: 40px;
+        }
+    }
+
+    @@media only screen and (min-device-width: 1281px) and (max-device-width: 1919px) {
+        .product-header {
+            font-size: 1.75rem;
+        }
+
+        .product-subheader {
+            font-size: 20px;
+            padding-top: 3rem;
+        }
+
+        .product-detail, .product-text {
+            font-size: 18px;
+        }
+    }
+
+    @@media only screen and (min-device-width: 1920px) {
+        .product-header {
+            font-size: 2rem;
+        }
+
+        .product-subheader {
+            font-size: 24px;
+            padding-top: 3rem;
+        }
+
+        .product-detail, .product-text {
+            font-size: 22px;
+        }
+    }
+</style>
+
+@Html.Partial("_Modal_Video", Model)
+
+@using (Html.BeginForm("RFIDProductPage", "RFIDDashboard", FormMethod.Post))
+{
+    @Html.AntiForgeryToken()
+    <div style="border-top:1px solid #F0F0F0; margin-top:-1px" class="tr-btm-line"></div>
+    <div class="product-container">
+        <div class="row">
+            <div class="col-sm-5 imageDiv">
+                <img class="fitImage image-width left image-animation2" id="image1" />
+                <div class="product-detail-head align-item-head detail-head">
+                    <div>
+                        <p class="product-header bold m-0">@Model.CATEGORY</p>
+                        <p class="product-text pt-2 m-0">Chop No: @Model.CHOP_NO</p>
+                        <p class="h5 bold dark-blue">____________</p>
+                        <div id="color-selection">
+                            <div id="color-selection-content" class="d-flex">
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-3 detail-background">
+                <div class="product-detail">
+                    <div class="product-detail-body">
+                        <p class="product-subheader h5 bold"><u>Product Details</u></p>
+                        <div class="row mt-2 align-items-baseline">
+                            <div class="col-sm-12">
+                                <div class="col-sm-12">
+                                    <p class="bold pt-2 mb-sm-0">Composition:</p>
+                                </div>
+                                <div class="col-sm-12">
+                                    <label class="">@Model.COMPOSITION</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mt-2 align-items-baseline">
+                            <div class="col-sm-6">
+                                <div class="col-sm-12">
+                                    <p class="bold pt-2 mb-sm-0">Width:</p>
+                                </div>
+                                <div class="col-sm-12">
+                                    <label class="">@Model.FINISH_WIDTH1 @Model.UOM</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mt-2 align-items-baseline">
+                            <div class="col-sm-6">
+                                <div class="col-sm-12">
+                                    <p class="bold pt-2 mb-sm-0">Weight:</p>
+                                </div>
+                                <div class="col-sm-12">
+                                    <label class="">@Model.FAB_WEIGHT_GSM gsm</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mt-2 align-items-baseline">
+                            <div class="col-sm-12">
+                                <div class="col-sm-12">
+                                    <p class="bold pt-2 mb-sm-0">Product Type / Usage:</p>
+                                </div>
+                                <div class="col-sm-12">
+                                    <label class="">@Model.PRODUCT_TYPE1</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mt-2 align-items-baseline">
+                            <div class="col-sm-12">
+                                <div class="col-sm-12">
+                                    <p class="bold pt-2 mb-sm-0">Weave Type:</p>
+                                </div>
+                                <div class="col-sm-12">
+                                    <label class="">@Model.WEAVE_TYPE</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mt-2 align-items-baseline">
+                            <div class="col-sm-12">
+                                <div class="col-sm-12">
+                                    <p class="bold pt-2 mb-sm-0">Location:</p>
+                                </div>
+                                <div class="col-sm-12">
+                                    <label class="">@Model.HANGER_LOC</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mt-2 align-items-baseline">
+                            <div class="col-sm-12">
+                                <div class="col-sm-12">
+                                    <p class="bold pt-2 mb-sm-0">Sample Availability:</p>
+                                </div>
+                                <div class="col-sm-12">
+                                    <label class="" id="currentQtyLbl"></label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            <div class="col-sm-4">
+                <img class="fitImage2 image-width2 right image-animation" id="image2" />
+            </div>
+        </div>
+        <button id="btnAddToCart" type="button" class="btn btn-sm btn-primary">ADD TO CART</button>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="confirmation-modal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirmation</h5>
+                </div>
+                <hr />
+                <div class="modal-body">
+                    <h6>Are you sure to delete this record?</h6>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" value="delete" name="btn" id="btnConfirm2">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast-container position-fixed toast-success">
+        <div id="successToast" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true" style="border: 1px solid #00A251">
+            <div class="toast-header" style="background-color: #E9FFF8">
+                <strong class="me-auto" style="color: #00A251">Successful!</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body text-muted" style="background-color: #E9FFF8; border-top: 1px solid #E9FFF8; border-bottom-left-radius: inherit; border-bottom-right-radius: inherit">
+                Add to Cart Successfully.
+            </div>
+        </div>
+    </div>
+}
+
+<script>
+    var imageData = @Html.Raw(Model.imageList);
+    var productID = "@Model.PRODUCT_H_ID";
+    var colorway = "@ViewBag.colorWay";
+    var urlAddToCart = "@Url.Action("AddToCart", "ProductDetail")";
+    var videoCnt = "@Model.FabricVideoList.Count"
+
+    $(document).ready(function () {
+        generateImagePreview();
+
+        $(".color-btn").click(function () {
+            var id = $(this).attr("id");
+            var seq = id.substring(id.indexOf("_") + 1);
+            var colorWay = imageData[seq - 1].COLOR_WAY;
+            var imageNum = imageData[seq - 1].imageFile.length;
+            var randomNum = Math.floor(Math.random() * (4 - 1 + 1)) + 1;
+            var url = "";
+            if (imageNum == 1) {
+                if(randomNum == 1)
+                    url = '@Url.Action("RFIDProductPage", "RFIDDashboard")?id=' + @Model.PRODUCT_H_ID + '&user=' + '@ViewBag.user' + '&colorWay=' + colorWay;
+                else if (randomNum == 2)
+                    url = '@Url.Action("RFIDProductPage2", "RFIDDashboard")?id=' + @Model.PRODUCT_H_ID + '&user=' + '@ViewBag.user' + '&colorWay=' + colorWay;
+                else if (randomNum == 3)
+                    url = '@Url.Action("RFIDProductPage3", "RFIDDashboard")?id=' + @Model.PRODUCT_H_ID + '&user=' + '@ViewBag.user' + '&colorWay=' + colorWay;
+                else if (randomNum == 4)
+                    url = '@Url.Action("RFIDProductPage4", "RFIDDashboard")?id=' + @Model.PRODUCT_H_ID + '&user=' + '@ViewBag.user' + '&colorWay=' + colorWay;
+                window.location.href = url;
+            }
+            else if (imageNum == 2) {
+                if(randomNum == 1)
+                    url = '@Url.Action("RFIDProductPage5", "RFIDDashboard")?id=' + @Model.PRODUCT_H_ID + '&user=' + '@ViewBag.user' + '&colorWay=' + colorWay;
+                else if (randomNum == 2)
+                    url = '@Url.Action("RFIDProductPage6", "RFIDDashboard")?id=' + @Model.PRODUCT_H_ID + '&user=' + '@ViewBag.user' + '&colorWay=' + colorWay;
+                else if (randomNum == 3)
+                    url = '@Url.Action("RFIDProductPage7", "RFIDDashboard")?id=' + @Model.PRODUCT_H_ID + '&user=' + '@ViewBag.user' + '&colorWay=' + colorWay;
+                else if (randomNum == 4)
+                    url = '@Url.Action("RFIDProductPage8", "RFIDDashboard")?id=' + @Model.PRODUCT_H_ID + '&user=' + '@ViewBag.user' + '&colorWay=' + colorWay;
+                window.location.href = url;
+            }
+            else if (imageNum == 3) {
+                if(randomNum == 1)
+                    url = '@Url.Action("RFIDProductPage9", "RFIDDashboard")?id=' + @Model.PRODUCT_H_ID + '&user=' + '@ViewBag.user' + '&colorWay=' + colorWay;
+                else if (randomNum == 2)
+                    url = '@Url.Action("RFIDProductPage10", "RFIDDashboard")?id=' + @Model.PRODUCT_H_ID + '&user=' + '@ViewBag.user' + '&colorWay=' + colorWay;
+                else if (randomNum == 3)
+                    url = '@Url.Action("RFIDProductPage11", "RFIDDashboard")?id=' + @Model.PRODUCT_H_ID + '&user=' + '@ViewBag.user' + '&colorWay=' + colorWay;
+                else if (randomNum == 4)
+                    url = '@Url.Action("RFIDProductPage12", "RFIDDashboard")?id=' + @Model.PRODUCT_H_ID + '&user=' + '@ViewBag.user' + '&colorWay=' + colorWay;
+                window.location.href = url;
+            }
+        });
+
+        var isDragging = false;
+        var startX, startY, scrollLeft, scrollTop;
+
+        var scrollContainer = $('#color-selection');
+        var scrollContent = $('#color-selection-content');
+
+        scrollContainer.on('mousedown', function (e) {
+            isDragging = true;
+            startX = e.pageX - scrollContainer.offset().left;
+            startY = e.pageY - scrollContainer.offset().top;
+            scrollLeft = scrollContainer.scrollLeft();
+            scrollTop = scrollContainer.scrollTop();
+        });
+
+        $(document).on('mousemove', function (e) {
+            if (!isDragging) return;
+            e.preventDefault();
+            var x = e.pageX - scrollContainer.offset().left;
+            var y = e.pageY - scrollContainer.offset().top;
+            var scrollX = scrollLeft - (x - startX);
+            var scrollY = scrollTop - (y - startY);
+            scrollContainer.scrollLeft(scrollX);
+            scrollContainer.scrollTop(scrollY);
+        });
+
+        $(document).on('mouseup', function () {
+            isDragging = false;
+        });
+    });
+
+    function generateImagePreview() {
+        for (var i = 0; i < imageData.length; i++) {
+            for (var j = 0; j < imageData[i].imageName.length; j++) {
+                var url = imageData[i].imageFile[j];
+                if (j == 0) {
+                    var colorBtn = $("<button>").attr("id", "colorBtn_" + (i + 1));
+                    colorBtn.attr("class", "color-btn");
+                    colorBtn.attr("type", "button");
+                    var btnImg = $("<img>").attr("src", url);
+                    btnImg.attr("class", "card");
+                    btnImg.addClass('image-sm');
+                    colorBtn.append(btnImg);
+                    $("#color-selection-content").append(colorBtn);
+                }
+                if (imageData[i].COLOR_WAY == '@ViewBag.colorWay') {
+                    $("#image" + (j + 1)).attr("src", url)
+                    $("#currentQtyLbl").text(imageData[i].CURRENT_QTY + " / yards");
+                    addToCartButtonControl(imageData[i].CURRENT_QTY);
+                    $("#colorBtn_" + (i+1)).find("img").addClass("color-select-border");
+                }
+                else if ('@ViewBag.colorWay' == "" && i == 0) {
+                    $("#image" + (j + 1)).attr("src", url)
+                    $("#currentQtyLbl").text(imageData[i].CURRENT_QTY + " / yards");
+                    addToCartButtonControl(imageData[i].CURRENT_QTY);
+                    $("#colorBtn_" + (i + 1)).find("img").addClass("color-select-border");
+                }
+            }
+        }
+        if (videoCnt != "0" && isNaN(videoCnt) == false) {
+            var videoBtn = $("<button>").attr("id", "videoBtn");
+            var videoPlayUrl = "../ViewsHelpers/CommonIcon/Play/Play.png"
+            videoBtn.attr("class", "video-btn");
+            videoBtn.attr("type", "button");
+            var btnImg = $("<img>").attr("src", videoPlayUrl);
+            btnImg.attr("class", "card");
+            btnImg.addClass('image-sm');
+            videoBtn.append(btnImg);
+            $("#color-selection-content").append(videoBtn);
+            $("#videoBtn").click(function () {
+                $("#video-modal").modal("show");
+            })
+        }
+    }
+
+    function addToCartButtonControl(currentQty) { //disable add to cart button when current quantity is 0
+        if (currentQty > 0)
+            $('#btnAddToCart').prop("disabled", false);
+        else
+            $('#btnAddToCart').prop("disabled", true);
+    }
+</script>
+
+<!-- Common Script to submit add to cart -->
+<script src="~/ViewsHelpers/CommonRFIDPage/RFIDPage.js"></script>

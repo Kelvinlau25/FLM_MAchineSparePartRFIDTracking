@@ -1,0 +1,84 @@
+﻿@model PAB_NewAquarium.Models.MM_PRODUCT_MATERIAL
+
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var UrlActionView = Url.Action("MM_ProductMaterial_View", "MM_ProductMaterial", new { id = Model.PRODUCT_MATERIAL_ID });
+}
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(model => model.PRODUCT_MATERIAL_ID)
+    <div class="row g-0 px-3 tr-listing-header">
+        <div class="col-sm-6 align-self-center">
+            <p class="text-muted m-0 tr-listing-header-title">Material</p>
+        </div>
+    </div>
+    <div class="tr-btm-line"></div>
+    <div class="page-container px-3 overflow-auto">
+        <div class="tr-btm-btn-margin">
+            <div class="card mt-3 mb-2 card-height">
+                <div class="card-body">
+                    <div class="row header-row">
+                        <div class="col"><h6 class="text-muted card-title m-0">Edit Material</h6></div>
+                    </div>
+                    <hr />
+                    <div class="row mt-2 align-items-baseline">
+                        <div class="col-sm-2">
+                            <p class="text-muted">Material Type <span class="text-danger">*</span><span class="float-end">:</span></p>
+                        </div>
+                        <div class="col-sm-4">
+                            @Html.TextBoxFor(model => model.MATERIAL_TYPE, new { @class = "form-control grayed-out" })
+                            @Html.ValidationMessageFor(model => model.MATERIAL_TYPE, null, new { @class = "text-danger validate-text" })
+                        </div>
+                    </div>
+                    <div class="row mt-2 align-items-baseline">
+                        <div class="col-sm-2">
+                            <p class="text-muted">Description <span class="text-danger">*</span><span class="float-end">:</span></p>
+                        </div>
+                        <div class="col-sm-4">
+                            @Html.TextBoxFor(model => model.MATERIAL_DESC, null, new { @class = "form-control form-valid", @maxlength = "100" })
+                            @Html.ValidationMessageFor(model => model.MATERIAL_DESC, null, new { @class = "text-danger validate-text" })
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row tr-btm-btn-area">
+                <div class="col"></div>
+                <div class="col text-end me-3">
+                    <button id="btnBack" type="button" class="btn btn-sm btn-secondary mx-1" onclick="location.href='@UrlActionView'">Back</button>
+                    <button id="btnSubmit" type="button" class="btn btn-sm btn-primary mx-1" data-bs-toggle="modal" data-bs-target="#modalSubmit">Submit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal dialog -->
+    <div class="modal fade" id="modalSubmit" tabindex="-1" aria-hidden="true">
+        @Html.Partial("_Modal_Submit")
+    </div>
+}
+
+<script>
+    var returnMessage = "@ViewBag.ReturnMessage";
+    var url = "@UrlActionView";
+
+    $(document).ready(function () {
+
+        toastMessage();
+
+        $('#btnSubmitConfirm').click(function () {
+            $('#modalSubmit').modal('hide');
+        });
+    });
+
+    function toastMessage() {
+        if (returnMessage != null && returnMessage != "" && returnMessage == "Success") {
+            showAlert('Success', 'Record editted successfully.', url);
+        }
+
+        else if (returnMessage != null && returnMessage != "" && returnMessage == "Fail") {
+            showAlert('Error', 'Failed to edit, Duplicated Material Type.');
+        }
+    }
+</script>

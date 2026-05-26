@@ -1,0 +1,1064 @@
+﻿@model PAB_NewAquarium.Models.AllProductsModel
+
+@{
+    Layout = ViewBag.LOGIN_USER == "" ? "~/Views/Shared/_Layout.cshtml" : "~/Views/Shared/_Layout_Customer.cshtml";
+}
+
+<style>
+    a {
+        text-decoration: none;
+    }
+
+    tr {
+        border-color: transparent;
+    }
+
+    button:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+    }
+
+    .page-title {
+        font-size: 20px;
+    }
+
+    .page-div-left {
+        flex-grow: 1;
+        border-right: 1px solid #EBEBEB;
+    }
+
+    .page-container {
+        overflow-x: hidden;
+        overflow-y: scroll;
+        max-height: calc(100vh - 70px - 30px);
+    }
+
+        .page-container > div > div {
+            border-radius: 5px;
+        }
+
+    .btnFilter {
+        background-color: transparent;
+        border: none;
+        margin-right: 30px;
+        color: #54575A;
+    }
+
+    .btnActive {
+        color: #004098;
+        font-weight: bold;
+    }
+
+    .btnExpand {
+        cursor: pointer;
+        color: #004098;
+    }
+
+    .btnExpand, .list-filter {
+        user-select: none;
+    }
+
+    .list-filter {
+        max-height: 34px;
+        overflow: hidden;
+        transition: max-height 0.3s ease;
+    }
+
+        .list-filter li a {
+            margin-right: 30px;
+            color: #54575A;
+        }
+
+            .list-filter li a:hover {
+                color: #004098;
+            }
+
+    .divider-line-1px {
+        border-bottom: 1px solid #EBEBEB;
+    }
+
+    .divider-line-2px {
+        border-bottom: 2px solid #EBEBEB;
+    }
+
+    .td-content:hover {
+        background-color: #EBF3FE;
+        cursor: pointer;
+    }
+
+    .fa-spinner {
+        font-size: 40px;
+    }
+
+    .custom-spinner {
+        padding-top: 30vh;
+    }
+
+    .datatable-footer {
+        position: sticky;
+        bottom: 0;
+        z-index: 10;
+    }
+
+    div.dataTables_wrapper div.dataTables_info {
+        padding-top: 0;
+    }
+
+    @@media only screen and (max-device-height: 799px) {
+        img {
+            height: 180px;
+            width: 180px;
+            border-radius: 0.5rem;
+        }
+
+        .image-container {
+            width: 180px;
+            margin: 0 auto;
+        }
+
+        .page-container {
+            overflow-x: hidden;
+            overflow-y: scroll;
+            max-height: calc(100vh - 55px - 20px);
+        }
+    }
+
+    @@media only screen and (max-device-width: 1280px) and (min-device-height: 800px) {
+        img {
+            height: 180px;
+            width: 180px;
+            border-radius: 0.5rem;
+        }
+
+        .image-container {
+            width: 180px;
+            margin: 0 auto;
+        }
+
+        .header-title {
+            font-size: 14px;
+        }
+
+        .page-container {
+            overflow-x: hidden;
+            overflow-y: scroll;
+            max-height: calc(100vh - 55px - 20px);
+        }
+    }
+
+    @@media only screen and (min-device-width: 1281px) and (max-device-width: 1919px) and (min-device-height: 800px) {
+        img {
+            height: 220px;
+            width: 220px;
+            border-radius: 0.5rem;
+        }
+
+        .image-container {
+            width: 220px;
+            margin: 0 auto;
+        }
+
+        .header-title {
+            font-size: 16px;
+        }
+
+        .page-container {
+            overflow-x: hidden;
+            overflow-y: scroll;
+            max-height: calc(100vh - 55px - 20px);
+        }
+    }
+
+    @@media only screen and (min-device-width: 1920px) and (min-device-height: 800px) {
+        img {
+            height: 220px;
+            width: 220px;
+            border-radius: 0.5rem;
+        }
+
+        .image-container {
+            width: 220px;
+            margin: 0 auto;
+        }
+
+        .header-title {
+            font-size: 18px;
+        }
+    }
+</style>
+
+<div class="page-container">
+    <div class="bg-light-grey p-2">
+        <div class="bg-light d-flex @(Model.ALL_PRODUCTS.Count == 0 ? "vh-100": "")">
+            <div class="page-div-left">
+                <div class="px-3 py-2">
+                    <text class="page-title"><b>@ViewBag.Title</b></text>
+                </div>
+                <div class="divider-line-1px"></div>
+                <div class="filter-section @(Model.ALL_PRODUCTS.Count == 0 ? "hidden": "")">
+                    <div class="row px-3 py-2">
+                        <div class="col-sm-2 py-1">
+                            <text><b>Usage:</b></text>
+                        </div>
+                        <div class="col-sm-10">
+                            <ul id="ul-garment" class="list-filter list-unstyled m-0">
+                                <li class="li-garment" filterType="garment">
+                                    <button type="button" class="btnFilter py-1">Garment</button>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="divider-line-1px"></div>
+                    <div class="row px-3 py-2">
+                        <div class="col-sm-2 py-1">
+                            <text><b>Fabric Type:</b></text>
+                        </div>
+                        <div class="col-sm-9">
+                            <ul id="ul-fabric" class="list-filter list-unstyled m-0">
+                                <li class="li-fabric" filterType="fabric">
+                                    @foreach (var item in Model.FABRIC_TYPE_LIST)
+                                    {
+                                        <button type="button" class="btnFilter py-1">@item.FABRIC_TYPE</button>
+                                    }
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="col-sm-1 px-0 py-1">
+                            <text id="show-fabric" href="#" class="btnExpand hidden text-decoration-underline" filterType="fabric">Show More</text>
+                        </div>
+                    </div>
+                    <div class="divider-line-1px"></div>
+                    <div class="row px-3 py-2">
+                        <div class="col-sm-2 py-1">
+                            <text><b>Product Type:</b></text>
+                        </div>
+                        <div class="col-sm-9">
+                            <ul id="ul-product" class="list-filter list-unstyled m-0">
+                                <li class="li-product" filterType="product">
+                                    @foreach (var item in Model.PRODUCT_TYPE_LIST)
+                                    {
+                                        <button type="button" class="btnFilter py-1">@item.PRODUCT_TYPE</button>
+                                    }
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="col-sm-1 px-0 py-1">
+                            <text id="show-product" href="#" class="btnExpand hidden text-decoration-underline" filterType="product">Show More</text>
+                        </div>
+                    </div>
+                    <div class="divider-line-1px"></div>
+                    <div class="row px-3 py-2">
+                        <div class="col-sm-2 py-1">
+                            <text><b>Material:</b></text>
+                        </div>
+                        <div class="col-sm-9">
+                            <ul id="ul-material" class="list-filter list-unstyled m-0">
+                                <li class="li-material" filterType="material">
+                                    @foreach (var item in Model.MATERIAL_TYPE_LIST)
+                                    {
+                                        <button type="button" class="btnFilter py-1">@item.MATERIAL_TYPE</button>
+                                    }
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="col-sm-1 px-0 py-1">
+                            <text id="show-material" href="#" class="btnExpand hidden text-decoration-underline" filterType="material">Show More</text>
+                        </div>
+                    </div>
+                    <div class="divider-line-1px"></div>
+                    <div class="row px-3 py-2">
+                        <div class="col-sm-2 py-1">
+                            <text><b>Weave Type:</b></text>
+                        </div>
+                        <div class="col-sm-9">
+                            <ul id="ul-weave" class="list-filter list-unstyled m-0">
+                                <li class="li-weave" filterType="weave">
+                                    @foreach (var item in Model.WEAVE_TYPE_LIST)
+                                    {
+                                        <button type="button" class="btnFilter py-1">@item.WEAVE_TYPE</button>
+                                    }
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="col-sm-1 px-0 py-1">
+                            <text id="show-weave" href="#" class="btnExpand hidden text-decoration-underline" filterType="weave">Show More</text>
+                        </div>
+                    </div>
+                    <div class="divider-line-1px"></div>
+                    <div class="row px-3 py-2">
+                        <div class="col-sm-2 py-1">
+                            <text><b>Weight (gsm):</b></text>
+                        </div>
+                        <div class="col-sm-9">
+                            <ul id="ul-weight" class="list-filter list-unstyled m-0">
+                                <li class="li-weight" filterType="weight">
+                                    @foreach (var item in Model.WEIGHT_LIST)
+                                    {
+                                        <button type="button" class="btnFilter py-1">@item.FAB_WEIGHT_GSM</button>
+                                    }
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="col-sm-1 px-0 py-1">
+                            <text id="show-weight" href="#" class="btnExpand hidden text-decoration-underline" filterType="weight">Show More</text>
+                        </div>
+                    </div>
+                    <div class="divider-line-1px"></div>
+                    <!-- If empty means login user is sales person, only sales person can see stock availability -->
+                    <div class="sales-display row px-3 py-2 @(ViewBag.LOGIN_USER == "" ? "" : "hidden") ">
+                        <div class="col-sm-2 py-1">
+                            <text><b>Availability:</b></text>
+                        </div>
+                        <div class="col-sm-10">
+                            <ul id="ul-quantity" class="list-filter list-unstyled m-0">
+                                <li class="li-stock" filterType="stock">
+                                    <button type="button" class="btnFilter py-1"> In Stock </button>
+                                    <button type="button" class="btnFilter py-1"> Low Stock </button>
+                                    <button type="button" class="btnFilter py-1"> Out of Stock </button>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="divider-line-1px"></div>
+                </div>
+                <div class="row px-3 pt-2">
+                    <text>Showing search results</text>
+                </div>
+                <div>
+                    <table class="table">
+                        <thead class="d-none">
+                            <tr>
+                                <th class="w-20"></th>
+                                <th class="w-20"></th>
+                                <th class="w-20"></th>
+                                <th class="w-20"></th>
+                                <th class="w-20"></th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="page-div-right">
+                <div class="px-3 py-2">
+                    <text class="page-title"><b>Recommended</b></text>
+                </div>
+                <div class="recommend-section">
+                    <div class="custom-overlay bg-overlay invisible">
+                        <div class="custom-spinner">
+                            <div class="px-3 pt-2">
+                                <div class="image-container d-flex justify-content-center align-items-center">
+                                    <span class="fa-duotone fa-spinner fa-spin-pulse dark-blue"></span>
+                                </div>
+                            </div>
+                            <div class="px-3 pt-2">
+                                <div class="image-container d-flex justify-content-center align-items-center ps-3">
+                                    <text class="fw-bold white">Loading...</text>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var urlActionView = "@Url.Action("ProductDetail", "ProductDetail")";
+    var urlSimilarProducts = "@Url.Action("GetSimilarityProducts", "AllProducts")";
+    var allProducts = @Html.Raw(Model.ALL_PRODUCTS_JSON);
+    var user = "@ViewBag.LOGIN_USER";
+    var pageTitle = "@ViewBag.Title";
+    var activeProduct = [], activeMaterial = [], activeWeave = [], activeWeight = [];
+    var filterData = allProducts;
+    var table, customerID;
+    var disabledTitle = "No items meet the criteria for this filter";
+
+    $(document).ready(function () {
+        $('div.spanner').addClass("show");
+        setTimeout(function () {
+            contentLoad();
+            $('div.spanner').removeClass("show");
+            $('.custom-overlay').height($('.page-div-left').height());
+            $('.custom-overlay').removeClass("invisible");
+            displayRecommendedProduct();
+        }, 100);
+
+        $('.btnExpand').on('click', function () {
+            var type = $(this).attr('filterType');
+            var list = $(`#ul-${type}`);
+
+            if (list.css('max-height') !== 'none') {
+                list.css('max-height', 'none');
+                $(this).text('Show Less');
+                $(this).addClass('vivid-red');
+                $(this).removeClass('dark-blue');                
+            } else {
+                list.css('max-height', '34px');
+                $(this).text('Show More');
+                $(this).addClass('dark-blue');
+                $(this).removeClass('vivid-red');  
+            }
+        });
+
+        $('.btnFilter').on('click', function () {
+            var btnFilter = $(this);
+
+            $('div.spanner').addClass("show");
+
+            setTimeout(function () {
+                btnFilter.toggleClass('btnActive');
+                var activeGarment = $('.li-garment > .btnActive');
+                var activeFabric = $('.li-fabric > .btnActive');
+                var activeProduct = $('.li-product > .btnActive');
+                var activeMaterial = $('.li-material > .btnActive');
+                var activeWeave = $('.li-weave > .btnActive');
+                var activeWeight = $('.li-weight > .btnActive');
+                var activeStock = $('.li-stock > .btnActive');
+                var array = [];
+                var arrayGarment = [], arrayFabric = [], arrayProduct = [], arrayMaterial = [], arrayWeave = [], arrayWeight = [], arrayStock = [];
+                var arrayGarmentAdd = [], arrayFabricAdd = [], arrayProductAdd = [], arrayMaterialAdd = [], arrayWeaveAdd = [], arrayWeightAdd = [], arrayStockAdd = [];
+
+                if (activeGarment.length == 0 && activeFabric.length == 0 && activeProduct.length == 0 && activeMaterial.length == 0 && activeWeave.length == 0 && activeWeight.length == 0 && activeStock.length == 0) {
+                    // If none of filter button selected, display all products
+                    filterData = allProducts;
+
+                    $('[class^="li-"] > button').each(function () {
+                        if (!$(this).hasClass('notAllowed')) {
+                            $(this).prop('disabled', false);
+                            $(this).removeAttr('title');
+                        }
+                    });
+                }
+                else {
+                    for (var i = 0; i < allProducts.length; i++) {
+                        var selectedGarment = activeGarment.length == 0;
+                        var selectedFabric = activeFabric.length == 0;
+                        var selectedProduct = activeProduct.length == 0;
+                        var selectedMaterial = activeMaterial.length == 0;
+                        var selectedWeave = activeWeave.length == 0;
+                        var selectedWeight = activeWeight.length == 0;
+                        var selectedStock = activeStock.length == 0;
+
+                        // Below logic is if the selected filter match criteria of product, condition set to true
+                        activeGarment.each(function () {
+                            var activeText = $(this).text().trim();
+                            var garment = parseInt(allProducts[i].ISGARMENT);
+                            if (activeText == "Garment" && garment == 1) {
+                                selectedGarment = true;
+                            }
+                        });
+
+                        activeFabric.each(function () {
+                            var activeText = $(this).text().trim();
+                            if (allProducts[i].FABRIC_TYPE.includes(activeText)) {
+                                selectedFabric = true;
+                            }
+                        });
+
+                        activeProduct.each(function () {
+                            var activeText = $(this).text().trim();
+                            var splitArray = allProducts[i].PRODUCT_TYPE.split(',');
+
+                            if (splitArray.includes(activeText)) {
+                                selectedProduct = true;
+                            }
+                        });
+
+                        activeMaterial.each(function () {
+                            var activeText = $(this).text().trim();
+                            var splitArray = allProducts[i].MATERIAL_TYPE.split(',');
+
+                            if (splitArray.includes(activeText)) {
+                                selectedMaterial = true;
+                            }
+                        });
+
+                        activeWeave.each(function () {
+                            var activeText = $(this).text().trim();
+                            if (allProducts[i].WEAVE_TYPE.includes(activeText)) {
+                                selectedWeave = true;
+                            }
+                        });
+
+                        activeWeight.each(function () {
+                            var activeText = $(this).text().trim();
+                            var range = activeText.split(" - ");
+                            var weight = allProducts[i].FAB_WEIGHT_GSM;
+                            if (weight >= parseInt(range[0]) && weight <= parseInt(range[1])) {
+                                selectedWeight = true;
+                            }
+                        });
+
+                        activeStock.each(function () {
+                            var activeText = $(this).text().trim();
+                            var qty = parseInt(allProducts[i].CURRENT_QTY);
+                            if (activeText == "In Stock") {
+                                if (qty > 0) {
+                                    selectedStock = true;
+                                }
+                            }
+                            else if (activeText == "Low Stock") {
+                                if (qty > 0 && qty < 10) {
+                                    selectedStock = true;
+                                }
+                            }
+                            else {
+                                if (qty == 0) {
+                                    selectedStock = true;
+                                }
+                            }
+                        });
+
+                        // So if the product meets all criteria of selected filter, it will push in array for display image
+                        if (selectedGarment && selectedFabric && selectedProduct && selectedMaterial && selectedWeave && selectedWeight && selectedStock) {
+                            if (!array.includes(allProducts[i])) {
+                                array.push(allProducts[i]);
+                            }
+
+                            // Code below is used for display or disable available filter
+                            $.each(allProducts[i].ISGARMENT.split(','), function (index, item) {
+                                arrayGarment.push(item.trim());
+                            });
+                            $.each(allProducts[i].FABRIC_TYPE.split(','), function (index, item) {
+                                arrayFabric.push(item.trim());
+                            });
+                            $.each(allProducts[i].PRODUCT_TYPE.split(','), function (index, item) {
+                                arrayProduct.push(item.trim());
+                            });
+                            $.each(allProducts[i].MATERIAL_TYPE.split(','), function (index, item) {
+                                arrayMaterial.push(item.trim());
+                            });
+                            $.each(allProducts[i].WEAVE_TYPE.split(','), function (index, item) {
+                                arrayWeave.push(item.trim());
+                            });
+                            $.each(allProducts[i].FAB_WEIGHT_GSM.split(','), function (index, item) {
+                                arrayWeight.push(item.trim());
+                            });
+                            $.each(allProducts[i].CURRENT_QTY.split(','), function (index, item) {
+                                arrayStock.push(item.trim());
+                            });
+                        }
+                        filterData = array;
+                    }
+                }
+
+                // Code below is used for display or disable available filter
+                for (var i = 0; i < allProducts.length; i++) {
+                    for (var j = 0; j < arrayGarment.length; j++) {
+                        if (arrayGarment[j] == 1 && !arrayGarmentAdd.includes("Garment")) {
+                            arrayGarmentAdd.push("Garment");
+                        }
+                    }
+
+                    for (var j = 0; j < arrayFabric.length; j++) {
+                        if (allProducts[i].FABRIC_TYPE.includes(arrayFabric[j])) {
+                            $.each(allProducts[i].FABRIC_TYPE.split(','), function (index, item) {
+                                if (!arrayFabricAdd.includes(item.trim()) && arrayFabric.includes(item.trim())) {
+                                    arrayFabricAdd.push(item.trim());
+                                }
+                            });
+                        }
+                    }
+
+                    for (var j = 0; j < arrayProduct.length; j++) {
+                        if (allProducts[i].PRODUCT_TYPE.includes(arrayProduct[j])) {
+                            $.each(allProducts[i].PRODUCT_TYPE.split(','), function (index, item) {
+                                if (!arrayProductAdd.includes(item.trim()) && arrayProduct.includes(item.trim())) {
+                                    arrayProductAdd.push(item.trim());
+                                }
+                            });
+                        }
+                    }
+
+                    for (var j = 0; j < arrayMaterial.length; j++) {
+                        if (allProducts[i].MATERIAL_TYPE.includes(arrayMaterial[j])) {
+                            $.each(allProducts[i].MATERIAL_TYPE.split(','), function (index, item) {
+                                if (!arrayMaterialAdd.includes(item.trim()) && arrayMaterial.includes(item.trim())) {
+                                    arrayMaterialAdd.push(item.trim());
+                                }
+                            });
+                        }
+                    }
+
+                    for (var j = 0; j < arrayWeave.length; j++) {
+                        if (allProducts[i].WEAVE_TYPE.includes(arrayWeave[j])) {
+                            $.each(allProducts[i].WEAVE_TYPE.split(','), function (index, item) {
+                                if (!arrayWeaveAdd.includes(item.trim()) && arrayWeave.includes(item.trim())) {
+                                    arrayWeaveAdd.push(item.trim());
+                                }
+                            });
+                        }
+                    }
+
+                    for (var j = 0; j < arrayWeight.length; j++) {
+                        $('.li-weight > button').each(function () {
+                            var range = $(this).text().trim().split(" - ");
+                            var item = $(this).text().trim();
+
+                            if (arrayWeight[j] >= parseInt(range[0]) && arrayWeight[j] <= parseInt(range[1]) && !arrayWeightAdd.includes(item)) {
+                                arrayWeightAdd.push($(this).text().trim());
+                            }
+                        });
+                    }
+
+                    for (var j = 0; j < arrayStock.length; j++) {
+                        if (parseInt(arrayStock[j]) > 0 && !arrayStockAdd.includes("In Stock")) {
+                            arrayStockAdd.push("In Stock");
+                        }
+                        else if (parseInt(arrayStock[j]) > 0 && parseInt(arrayStock[j]) < 10 && !arrayStockAdd.includes("Low Stock")) {
+                            arrayStockAdd.push("Low Stock");
+                        }
+                        else if (parseInt(arrayStock[j]) == 0 && !arrayStockAdd.includes("Out of Stock")) {
+                            arrayStockAdd.push("Out of Stock");
+                        }
+                    }
+                }
+
+                if (arrayGarmentAdd.length != 0) {
+                    var reset = activeFabric.length == 0 && activeProduct.length == 0 && activeMaterial.length == 0 && activeWeave.length == 0 && activeWeight.length == 0 && activeStock.length == 0;
+
+                    $('.li-garment > button').each(function () {
+                        var text = $(this).text().trim();
+                        if (!arrayGarmentAdd.includes(text)) {
+                            $(this).prop('disabled', true);
+                            $(this).attr('title', disabledTitle);
+                            $(this).removeClass('btnActive');
+                        }
+                        else {
+                            $(this).prop('disabled', false);
+                            $(this).removeAttr('title');
+                        }
+                        // If other filters not clicked, all garment filters can be click
+                        if (reset) {
+                            $(this).prop('disabled', false);
+                            $(this).removeAttr('title');
+                        }
+                    });
+                }
+
+                if (arrayFabricAdd.length != 0) {
+                    var reset = activeGarment.length == 0 && activeProduct.length == 0 && activeMaterial.length == 0 && activeWeave.length == 0 && activeWeight.length == 0 && activeStock.length == 0;
+
+                    $('.li-fabric > button').each(function () {
+                        var text = $(this).text().trim();
+                        if (!arrayFabricAdd.includes(text)) {
+                            $(this).prop('disabled', true);
+                            $(this).attr('title', disabledTitle);
+                            $(this).removeClass('btnActive');
+                        }
+                        else {
+                            $(this).prop('disabled', false);
+                            $(this).removeAttr('title');
+                        }
+                        // If other filters not clicked, all fabric filters can be click
+                        if (reset) {
+                            $(this).prop('disabled', false);
+                            $(this).removeAttr('title');
+                        }
+                    });
+                }
+
+                if (arrayProductAdd.length != 0) {
+                    var reset = activeGarment.length == 0 && activeFabric.length == 0 && activeMaterial.length == 0 && activeWeave.length == 0 && activeWeight.length == 0 && activeStock.length == 0;
+
+                    $('.li-product > button').each(function () {
+                        var text = $(this).text().trim();
+                        if (!arrayProductAdd.includes(text)) {
+                            $(this).prop('disabled', true);
+                            $(this).attr('title', disabledTitle);
+                            $(this).removeClass('btnActive');
+                        }
+                        else {
+                            $(this).prop('disabled', false);
+                            $(this).removeAttr('title');
+                        }
+                        // If other filters not clicked, all product filters can be click
+                        if (reset) {
+                            $(this).prop('disabled', false);
+                            $(this).removeAttr('title');
+                        }
+                    });
+                }
+
+                if (arrayMaterialAdd.length != 0) {
+                    var reset = activeGarment.length == 0 && activeFabric.length == 0 && activeProduct.length == 0 && activeWeave.length == 0 && activeWeight.length == 0 && activeStock.length == 0;
+
+                    $('.li-material > button').each(function () {
+                        var text = $(this).text().trim();
+                        if (!arrayMaterialAdd.includes(text)) {
+                            $(this).prop('disabled', true);
+                            $(this).attr('title', disabledTitle);
+                            $(this).removeClass('btnActive');
+                        }
+                        else {
+                            $(this).prop('disabled', false);
+                            $(this).removeAttr('title');
+                        }
+                        // If other filters not clicked, all weave filters can be click
+                        if (reset) {
+                            $(this).prop('disabled', false);
+                            $(this).removeAttr('title');
+                        }
+                    });
+                }
+
+                if (arrayWeaveAdd.length != 0) {
+                    var reset = activeGarment.length == 0 && activeFabric.length == 0 && activeProduct.length == 0 && activeMaterial.length == 0 && activeWeight.length == 0 && activeStock.length == 0;
+
+                    $('.li-weave > button').each(function () {
+                        var text = $(this).text().trim();
+                        if (!arrayWeaveAdd.includes(text)) {
+                            $(this).prop('disabled', true);
+                            $(this).attr('title', disabledTitle);
+                            $(this).removeClass('btnActive');
+                        }
+                        else {
+                            $(this).prop('disabled', false);
+                            $(this).removeAttr('title');
+                        }
+                        // If other filters not clicked, all weave filters can be click
+                        if (reset) {
+                            $(this).prop('disabled', false);
+                            $(this).removeAttr('title');
+                        }
+                    });
+                }
+
+                if (arrayWeightAdd.length != 0) {
+                    var reset = activeGarment.length == 0 && activeFabric.length == 0 && activeProduct.length == 0 && activeMaterial.length == 0 && activeWeave.length == 0 && activeStock.length == 0;
+
+                    $('.li-weight > button').each(function () {
+                        var text = $(this).text().trim();
+                        if (!$(this).hasClass('notAllowed')) {
+                            if (!arrayWeightAdd.includes(text)) {
+                                $(this).prop('disabled', true);
+                                $(this).attr('title', disabledTitle);
+                                $(this).removeClass('btnActive');
+                            }
+                            else {
+                                $(this).prop('disabled', false);
+                                $(this).removeAttr('title');
+                            }
+                            // If other filters not clicked, all weight filters can be click
+                            if (reset) {
+                                $(this).prop('disabled', false);
+                                $(this).removeAttr('title');
+                            }
+                        }
+                    });
+                }
+
+                if (arrayStockAdd.length != 0) {
+                    var reset = activeGarment.length == 0 && activeFabric.length == 0 && activeProduct.length == 0 && activeMaterial.length == 0 && activeWeave.length == 0 && activeWeight.length == 0;
+
+                    $('.li-stock > button').each(function () {
+                        var text = $(this).text().trim();
+                        if (!$(this).hasClass('notAllowed')) {
+                            if (!arrayStockAdd.includes(text)) {
+                                $(this).prop('disabled', true);
+                                $(this).attr('title', disabledTitle);
+                                $(this).removeClass('btnActive');
+                            }
+                            else {
+                                $(this).prop('disabled', false);
+                                $(this).removeAttr('title');
+                            }
+                            // If other filters not clicked, all stock filters can be click
+                            if (reset) {
+                                $(this).prop('disabled', false);
+                                $(this).removeAttr('title');
+                            }
+                        }
+                    });
+                }
+
+                displayImage();
+
+                $('div.spanner').removeClass("show");
+            }, 100); 
+        });
+
+        $(window).on('resize', function () {
+            displayShowButton();
+        })
+    });
+
+    // Function to load all contents when document ready
+    function contentLoad() {     
+        checkUser();
+        disableFilterButton();
+        displayShowButton();
+        displayImage();
+    }
+
+    // Function to check either sales or customer view this page
+    function checkUser() {
+        customerID = user == "" ? 0 : localStorage.getItem('customerID');
+    }
+
+    // Function to display show more button depends on length of filter buttons;
+    function displayShowButton() {
+        $('[class^="li-"]').each(function () {
+            var type = $(this).attr('filterType');
+            var height = $(this).height();
+            if (height < 40) {
+                $(`#show-${type}`).addClass('hidden');
+            }
+            else {
+                $(`#show-${type}`).removeClass('hidden');
+            }
+        });
+    }
+
+    // Function to display image;
+    function displayImage() {
+        var html = '';
+        table = $('.table').DataTable();
+        table.destroy();
+
+        // Function to insert image in row, 1 row contains 5 image
+        for (var i = 0; i < filterData.length; i++) {
+            html += '<tr>';
+            html += `<td class="td-content align-top w-20" onclick="location.href='${urlActionView}?id=${filterData[i].PRODUCT_H_ID}&groupDID=${customerID}'">`;
+            html += '<div class="image-container">';
+            html += `<div><img src="${filterData[i].IMAGE_URL}" loading="lazy"></div>`;
+            html += `<div class="my-1"><text class="header-title fw-bold">${filterData[i].CATEGORY_NAME}</text></div>`;
+            html += '<div class="divider-line-2px"></div>';
+            html += `<div class="my-1"><text>${filterData[i].CHOP_NO}</text></div>`;
+            html += '</div>';
+            html += '</td>';
+            // If next element got item
+            if (i < filterData.length - 1) {
+                i++;
+                html += `<td class="td-content align-top w-20" onclick="location.href='${urlActionView}?id=${filterData[i].PRODUCT_H_ID}&groupDID=${customerID}'">`;
+                html += '<div class="image-container">';
+                html += `<div><img src="${filterData[i].IMAGE_URL}" loading="lazy"></div>`;
+                html += `<div class="my-1"><text class="header-title fw-bold">${filterData[i].CATEGORY_NAME}</text></div>`;
+                html += '<div class="divider-line-2px"></div>';
+                html += `<div class="my-1"><text>${filterData[i].CHOP_NO}</text></div>`;
+                html += '</div>';
+                html += '</td>';
+            }
+            else {
+                html += '<td class="w-20">';
+            }
+            // If next element got item
+            if (i < filterData.length - 1) {
+                i++;
+                html += `<td class="td-content align-top w-20" onclick="location.href='${urlActionView}?id=${filterData[i].PRODUCT_H_ID}&groupDID=${customerID}'">`;
+                html += '<div class="image-container">';
+                html += `<div><img src="${filterData[i].IMAGE_URL}" loading="lazy"></div>`;
+                html += `<div class="my-1"><text class="header-title fw-bold">${filterData[i].CATEGORY_NAME}</text></div>`;
+                html += '<div class="divider-line-2px"></div>';
+                html += `<div class="my-1"><text>${filterData[i].CHOP_NO}</text></div>`;
+                html += '</div>';
+                html += '</td>';
+            }
+            else {
+                html += '<td class="w-20">';
+            }
+            // If next element got item
+            if (i < filterData.length - 1) {
+                i++;
+                html += `<td class="td-content align-top w-20" onclick="location.href='${urlActionView}?id=${filterData[i].PRODUCT_H_ID}&groupDID=${customerID}'">`;
+                html += '<div class="image-container">';
+                html += `<div><img src="${filterData[i].IMAGE_URL}" loading="lazy"></div>`;
+                html += `<div class="my-1"><text class="header-title fw-bold">${filterData[i].CATEGORY_NAME}</text></div>`;
+                html += '<div class="divider-line-2px"></div>';
+                html += `<div class="my-1"><text>${filterData[i].CHOP_NO}</text></div>`;
+                html += '</div>';
+                html += '</td>';
+            }
+            else {
+                html += '<td class="w-20">';
+            }
+            // If next element got item
+            if (i < filterData.length - 1) {
+                i++;
+                html += `<td class="td-content align-top w-20" onclick="location.href='${urlActionView}?id=${filterData[i].PRODUCT_H_ID}&groupDID=${customerID}'">`;
+                html += '<div class="image-container">';
+                html += `<div><img src="${filterData[i].IMAGE_URL}" loading="lazy"></div>`;
+                html += `<div class="my-1"><text class="header-title fw-bold">${filterData[i].CATEGORY_NAME}</text></div>`;
+                html += '<div class="divider-line-2px"></div>';
+                html += `<div class="my-1"><text>${filterData[i].CHOP_NO}</text></div>`;
+                html += '</div>';
+                html += '</td>';
+            }
+            else {
+                html += '<td class="w-20">';
+            }
+            html += '</tr>';
+        }
+        $('tbody').html(html);
+
+        // Code below is initialize the table & it's component after insert image into tbody
+        table = $('.table').DataTable({
+            ordering: false,
+            pageLength: 10,
+            dom: "<'row'<'col-sm-12'tr>>" +
+                "<'row mx-1 datatable-footer bg-light'<'col-sm-12 col-md-5 d-flex align-items-center'i><'col-sm-12 col-md-7'<'d-flex justify-content-end my-2'p<'go-to align-self-center mx-2'>>>>",
+            drawCallback: function (settings) {
+                var api = this.api();
+                $("#txtGoTo").val(api.page() + 1);
+            },
+            fixedHeader: {
+                header: true,
+                footer: false
+            },
+            fnInfoCallback: function (oSettings, iStart, iEnd, iMax, iTotal, sPre) {
+                return "Showing " + (iStart == 1 ? 1 : iStart * 5 - 4) + " to " + (iEnd * 5 < filterData.length ? iEnd * 5 : filterData.length) + " of " + (filterData.length) + " entries";
+            },
+            language: {
+                emptyTable: "No results found"
+            }
+        });
+        $("div.go-to").html('<div class="d-flex align-items-center p-0"><input class="form-control" type="text" id="txtGoTo" style="width:75px" value=1> &nbsp; <div class="page-info">of ' + table.page.info().pages + '</div></div>');
+        $("#txtGoTo").on('keyup', function (e) {
+            try {
+                var page = e.target.value;
+                if ($.isNumeric(page) && page > 0 && page <= table.page.info().pages) {
+                    table.page(page - 1).draw('page');
+                }
+                else if (e.target.value.trim() == '') {
+
+                }
+                else {
+                    e.target.value = table.page() + 1;
+                }
+
+            } catch (ex) {
+                e.target.value = 1;
+            }
+        });
+        $("#txtGoTo").on('blur', function (e) {
+            try {
+                var page = e.target.value;
+                if (page.trim() == '') {
+                    $("#txtGoTo").val(1);
+                    table.page(0).draw('page');
+                    $("#txtGoTo").focus();
+                }
+            } catch (ex) {
+                e.target.value = 1;
+            }
+        });
+        $(".dataTables_length .form-select").on('change', function () {
+            $("#txtGoTo").val(table.page() + 1);
+            $("div.page-info").html('of ' + table.page.info().pages + '</div>');
+        });
+    }
+
+    // Function to get similar products using matrix comparison API
+    function displayRecommendedProduct() {        
+        $.ajax({
+            type: "get",
+            url: urlSimilarProducts,
+            data: {
+                user: user,
+                type: (pageTitle == "All Products") ? "ALL" : "MOM"
+            },
+            datatype: "json",
+            traditional: true,
+            success: function (data) {
+                if (data != "Failed" && data.length != 0) {
+                    var html = '';
+                    for (var i = 0; i < data.length; i++) {
+                        html += `<div class="td-content align-top px-3 pt-2 pb-2" onclick="location.href='${urlActionView}?id=${data[i].PRODUCT_H_ID}&groupDID=${customerID}'">`;
+                        html += `<div><img src="${data[i].IMAGE_URL}" loading="lazy"></div>`;
+                        html += `<div class="my-1"><text class="header-title fw-bold">${data[i].CATEGORY_NAME}</text></div>`;
+                        html += '<div class="divider-line-2px"></div>';
+                        html += `<div class="my-1"><text>${data[i].CHOP_NO}</text></div>`;
+                        html += '</div>';
+                    }
+                    $('.recommend-section').html(html);
+                }
+                else {
+                    $('.page-div-right').addClass('hidden');
+                    $('.custom-overlay').addClass('invisible');
+                }
+            },
+        });
+    }
+
+    // Function to disable filter button
+    function disableFilterButton() {
+        var inStock = false;
+        var lowStock = false;
+        var outStock = false;
+        var isGarment = false;
+
+        // Indicate which filter is valid, true is valid
+        for (var i = 0; i < allProducts.length; i++) {
+            var qty = allProducts[i].CURRENT_QTY;
+            var garment = allProducts[i].ISGARMENT;
+
+            if (qty > 0) {
+                inStock = true;
+            }
+            else {
+                outStock = true;
+            }
+            if (garment != 0) {
+                isGarment = true;
+            }
+            if (qty > 0 && qty < 10) {
+                lowStock = true;
+            }
+        }
+
+        $('.li-weight > button').each(function () {
+            var text = $(this).text().trim();
+            var range = text.split(" - ");
+            var selectedWeight = false;
+
+            for (var i = 0; i < allProducts.length; i++) {
+                var weight = allProducts[i].FAB_WEIGHT_GSM;
+                if (weight >= parseInt(range[0]) && weight <= parseInt(range[1])) {
+                    selectedWeight = true;
+                    return false;
+                }
+            }
+
+            // If false, disable the filter button
+            if (!selectedWeight) {
+                $(this).addClass('notAllowed');
+                $(this).prop('disabled', true);
+                $(this).attr('title', "No items meet the criteria for this filter");
+            }
+        });
+
+        $('.li-stock > button').each(function () {
+            var text = $(this).text().trim();
+
+            // If false, disable the filter button
+            if (!inStock && text == "In Stock") {
+                $(this).addClass('notAllowed');
+                $(this).prop('disabled', true);
+                $(this).attr('title', "No items meet the criteria for this filter");
+            }
+            // If false, disable the filter button
+            if (!lowStock && text == "Low Stock") {
+                $(this).addClass('notAllowed');
+                $(this).prop('disabled', true);
+                $(this).attr('title', "No items meet the criteria for this filter");
+            }
+            // If false, disable the filter button
+            if (!outStock && text == "Out Stock") {
+                $(this).addClass('notAllowed');
+                $(this).prop('disabled', true);
+                $(this).attr('title', "No items meet the criteria for this filter");
+            }
+        });
+
+        $('.li-garment > button').each(function () {
+            // If false, disable the filter button
+            if (!isGarment) {
+                $(this).addClass('notAllowed');
+                $(this).prop('disabled', true);
+                $(this).attr('title', "No items meet the criteria for this filter");
+            }
+        });
+    }    
+</script>
