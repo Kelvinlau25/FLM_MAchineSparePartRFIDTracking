@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("FILM_Sparepart_MVC")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+dc524b110ba1c986fe8e5451de0afeb8fbb38069")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7eca10c84e4df556c2748b5bdaca96a3950eab8d")]
 [assembly: System.Reflection.AssemblyProductAttribute("FILM_Sparepart_MVC")]
 [assembly: System.Reflection.AssemblyTitleAttribute("FILM_Sparepart_MVC")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

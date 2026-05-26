@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\NET8 PROJECT\\FLM_MAchineSparePartRFIDTracking\\01. Web\\FLM_MachineSparePart\\FILM_Sparepart_MVC.csproj": {}
+    "C:\\CONVERTED PROJECT\\FLM_MAchineSparePartRFIDTracking\\01. Web\\FLM_MachineSparePart\\FILM_Sparepart_MVC.csproj": {}
   },
   "projects": {
-    "C:\\NET8 PROJECT\\FLM_MAchineSparePartRFIDTracking\\01. Web\\FLM_MachineSparePart\\FILM_Sparepart_MVC.csproj": {
+    "C:\\CONVERTED PROJECT\\FLM_MAchineSparePartRFIDTracking\\01. Web\\FLM_MachineSparePart\\FILM_Sparepart_MVC.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\NET8 PROJECT\\FLM_MAchineSparePartRFIDTracking\\01. Web\\FLM_MachineSparePart\\FILM_Sparepart_MVC.csproj",
+        "projectUniqueName": "C:\\CONVERTED PROJECT\\FLM_MAchineSparePartRFIDTracking\\01. Web\\FLM_MachineSparePart\\FILM_Sparepart_MVC.csproj",
         "projectName": "FILM_Sparepart_MVC",
-        "projectPath": "C:\\NET8 PROJECT\\FLM_MAchineSparePartRFIDTracking\\01. Web\\FLM_MachineSparePart\\FILM_Sparepart_MVC.csproj",
+        "projectPath": "C:\\CONVERTED PROJECT\\FLM_MAchineSparePartRFIDTracking\\01. Web\\FLM_MachineSparePart\\FILM_Sparepart_MVC.csproj",
         "packagesPath": "C:\\Users\\ong_chun_zhao\\.nuget\\packages\\",
-        "outputPath": "C:\\NET8 PROJECT\\FLM_MAchineSparePartRFIDTracking\\01. Web\\FLM_MachineSparePart\\obj\\",
+        "outputPath": "C:\\CONVERTED PROJECT\\FLM_MAchineSparePartRFIDTracking\\01. Web\\FLM_MachineSparePart\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages",

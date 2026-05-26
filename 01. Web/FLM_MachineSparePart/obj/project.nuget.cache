@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "ei+/bfJVXWs=",
+  "dgSpecHash": "ozsY/7mkLDs=",
   "success": true,
-  "projectFilePath": "C:\\NET8 PROJECT\\FLM_MAchineSparePartRFIDTracking\\01. Web\\FLM_MachineSparePart\\FILM_Sparepart_MVC.csproj",
+  "projectFilePath": "C:\\CONVERTED PROJECT\\FLM_MAchineSparePartRFIDTracking\\01. Web\\FLM_MachineSparePart\\FILM_Sparepart_MVC.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\ong_chun_zhao\\.nuget\\packages\\azure.core\\1.38.0\\azure.core.1.38.0.nupkg.sha512",
     "C:\\Users\\ong_chun_zhao\\.nuget\\packages\\azure.identity\\1.11.4\\azure.identity.1.11.4.nupkg.sha512",
