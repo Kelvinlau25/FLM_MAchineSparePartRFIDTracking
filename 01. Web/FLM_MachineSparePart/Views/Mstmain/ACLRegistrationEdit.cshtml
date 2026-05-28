@@ -1,0 +1,91 @@
+﻿@using DBModel
+@model AclViewModel
+@using ACL_System.Helper_Code.Objects;
+
+@{
+    var url = @Url.Action("RoleRegistration", "Mstmain").ToString();
+    ViewBag.Title = "ACLRegistrationEdit";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var grid = new WebGrid(source: Model.resourceAclModel,
+    defaultSort: "id",
+    canPage: true,
+    ajaxUpdateContainerId: "grid",
+    rowsPerPage: 5);
+}
+
+<h2>
+    ACL Registration - Edit
+</h2>
+<hr />
+
+
+@using (Html.BeginForm("ACLRegistrationEdit", "Mstmain", FormMethod.Post))
+{
+    @Html.AntiForgeryToken()
+    <div class="col-100">
+        <div style="width:66.66666667%">
+                <div>@Html.HiddenFor(a => a.roleModel.ID_ACL_ROLE)</div>
+                <div class="col-md-3">
+                    @Html.LabelFor(a => a.roleModel.ROLE_NAME)
+                </div>
+                <div class="form-group">
+                    <div class="col-md-9">
+                        @Html.TextBoxFor(a => a.roleModel.ROLE_NAME, null, new { @class = "form-control", @readonly = "true" })
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    @Html.LabelFor(a => a.roleModel.ROLE_DESC)
+                </div>
+                <div class="form-group">
+                    <div class="col-md-9">
+                        @Html.TextBoxFor(a => a.roleModel.ROLE_DESC, null, new { @class = "form-control", @readonly = "true" })
+                    </div>
+                </div>
+        </div>   
+
+            <div class="col-md-12">&nbsp;</div>
+
+            <div id="grid">
+                @grid.GetHtml(
+                tableStyle: "table table-bordered",
+                headerStyle: "head",
+                numericLinksCount: 5,
+                mode: WebGridPagerModes.All,
+                firstText: "First",
+                previousText: "Previous",
+                nextText: "Next",
+                lastText: "Last",
+                alternatingRowStyle: "alt",
+                columns: grid.Columns(
+                         grid.Column("Resource Name", format: @<text> @item.RESOURCE_NAME </text>),
+                         grid.Column("Resource Desc", format: @<text> @item.RESOURCE_DESC </text>),
+                         grid.Column("View_Right", "View", format: @<text><input type="checkbox" name="chkRowV" value="@item.ID_ACL_RESOURCE" checked="@item.View_Right" /></text>),
+                         grid.Column("Add_Right", "Add", format: @<text><input type="checkbox" name="chkRowA" value="@item.ID_ACL_RESOURCE" checked="@item.Add_Right" /></text>),
+                         grid.Column("Edit_Right", "Edit", format: @<text><input type="checkbox" name="chkRowE" value="@item.ID_ACL_RESOURCE" checked="@item.Edit_Right" /></text>),
+                         grid.Column("Delete_Right", "Delete", format: @<text><input type="checkbox" name="chkRowD" value="@item.ID_ACL_RESOURCE" checked="@item.Delete_Right" /></text>)
+                                     )
+                 )
+            </div>
+
+            @TempData["Message"]
+
+
+            <div class="col-md-8">
+                <input id="Submit" type="submit" name="ActionType" value="Submit" class="btn btn-primary" />
+                @Html.BackButton(url)
+            </div>
+
+     </div>
+}
+
+@{
+    if (ViewBag.Result != "" && ViewBag.Result != null)
+    {
+        <script type="text/javascript" language="javascript">
+            alert("@ViewBag.Result");
+            var url = '@Url.Action("RoleRegistration", "Mstmain")';
+            window.location.href = url;
+        </script>
+    }
+}
+

@@ -1,0 +1,75 @@
+﻿@using UserMMModel
+@model IEnumerable<SparePartMachine>
+@{
+    ViewBag.Title = "MM Spare Part Machine";
+    Layout = "~/Views/Shared/_Layout_iFrame.cshtml";
+    var grid = new WebGrid(source: Model, defaultSort: "id", canPage: true, ajaxUpdateContainerId: "grid", rowsPerPage: 10);
+}
+
+@if (TempData["result"] != null)
+{
+    <script type="text/javascript">
+        //alert("viewdata");
+        alert("@TempData["result"]");
+        window.location.href = "@Url.Action("MM_SPARE_PART_M_LST", "Mstmain")";
+    </script>
+}
+
+<script type="text/javascript">
+    //$(document).ready(function () {
+    //    //$('.webgrid-table thead td:nth-child(0), thead th:nth-child(0').hide();
+    //    //$('.webgrid-table tbody td:nth-child(0), tbody th:nth-child(0').hide();
+    //    $('td:nth-child(1), th:nth-child(1)').hide();
+    //});
+    function popUpDelete(rowid)
+    {
+        //var row = rowid.parentNode.parentNode;
+        //var machineid = row.getElementsByTagName("TD")[1].innerHTML;
+        var machineid = rowid.toString();
+        //alert(machineid);
+        var agree = confirm("Are you sure to delete?");
+        if (agree) {
+            //alert("deleted.");
+            var url = '@Url.Action("MM_SPARE_PART_M_DELETE", "Mstmain")?id=' + machineid;
+            window.location.href = url;
+        }
+    }
+</script>
+
+<h2>Spare Part Machine Master Maintenance</h2>
+<hr />
+@{
+    @Html.Partial("_Header",new ViewDataDictionary(this.ViewData) {
+        { "Act", "MM_SPARE_PART_M_ADD" },
+        { "Ctrl", "Mstmain" },
+        { "SrcAct", "MM_SPARE_PART_M_LST" },
+        { "SrcVal", "SEARCH_VALUE" }
+    })
+}
+@{
+<div id="grid">
+    @grid.GetHtml(
+    tableStyle: "table table-bordered",
+    headerStyle: "head",
+    numericLinksCount: 5,
+    mode: WebGridPagerModes.All,
+    firstText: "First",
+    previousText: "Previous",
+    nextText: "Next",
+    lastText: "Last",
+    alternatingRowStyle: "alt",
+    columns: grid.Columns(
+          //grid.Column("", format: @<a href="@Url.Action("MM_SPARE_PART_M_DELETE", "Mstmain",new { id = item.SPARE_PART_MACHINE_ID })"><i class="fa fa-trash"></i></a>),          
+          //grid.Column(null, null, format: @<text> @item.SPARE_PART_MACHINE_ID </text>),                
+          //grid.Column("", format: @<a href="#" onclick="popUpDelete(this);"><i class="fa fa-trash"></i></a>),
+          grid.Column("", format: @<a href="#" onclick="popUpDelete('@item.SPARE_PART_MACHINE_ID');"><i class="fa fa-trash"></i></a>),
+          grid.Column("Machine Model", format: @<text> @item.Machine_Model </text>),
+          grid.Column("Remarks", format: @<text> @item.Remarks </text>),
+          grid.Column("Edit", format: @<a href="@Url.Action("MM_SPARE_PART_M_EDIT", "Mstmain",new { id = item.SPARE_PART_MACHINE_ID })"><i class="fa fa-pencil"></i></a>)
+    )
+    )
+</div>
+}
+
+<input type="button" value="Export to Excel" class="btn btn-primary" onclick="location.href='@Url.Action("ExportExcelSparePartMac", "Mstmain")'" />
+  

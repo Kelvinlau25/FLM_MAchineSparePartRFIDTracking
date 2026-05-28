@@ -1,0 +1,84 @@
+﻿@using UserMMModel
+@model IEnumerable<Manufacturer>
+
+@{
+    ViewBag.Title = "MM Manufacturer";
+    Layout = "~/Views/Shared/_Layout_iFrame.cshtml";
+    var grid = new WebGrid(source: Model,
+    defaultSort: "id",
+    canPage: true,
+    ajaxUpdateContainerId: "grid",
+    rowsPerPage: 10);
+}
+
+
+@if (TempData["result"] != null)
+{
+    <script type="text/javascript">
+        //alert("viewdata");
+        alert("@TempData["result"]");
+        window.location.href = "@Url.Action("MM_MANUF_LST", "Mstmain")";
+    </script>
+}
+
+<script type="text/javascript">
+    //$(document).ready(function () {
+    //    //$('.webgrid-table thead td:nth-child(0), thead th:nth-child(0').hide();
+    //    //$('.webgrid-table tbody td:nth-child(0), tbody th:nth-child(0').hide();
+    //    $('td:nth-child(1), th:nth-child(1)').hide();
+    //});
+    function popUpDelete(rowid)
+    {
+        //var row = rowid.parentNode.parentNode;
+        //var manufid = row.getElementsByTagName("TD")[0].innerHTML;
+        var manufid = rowid.toString();
+        //alert(manufid);
+        var agree = confirm("Are you sure to delete?");
+        if (agree) {
+            //alert("deleted.");
+            var url = '@Url.Action("MM_MANUF_DELETE", "Mstmain")?id=' + manufid;
+            window.location.href = url;
+        }
+    }
+</script>
+
+<h2>
+    Manufacturer Master Maintenance
+</h2>
+<hr />
+@{
+    @Html.Partial("_Header",
+    new ViewDataDictionary(this.ViewData) {
+        { "Act", "MM_MANUF_ADD" },
+        { "Ctrl", "Mstmain" },
+        { "SrcAct", "MM_MANUF_LST" },
+        { "SrcVal", "SEARCH_VALUE" }
+    })
+}
+@{
+<div id="grid">
+    @grid.GetHtml(
+    tableStyle: "table table-bordered",
+    headerStyle: "head",
+    numericLinksCount: 5,
+    mode: WebGridPagerModes.All,
+    firstText: "First",
+    previousText: "Previous",
+    nextText: "Next",
+    lastText: "Last",
+    alternatingRowStyle: "alt",
+    columns: grid.Columns(
+         //grid.Column("", format: @<a hef="@Url.Action("MM_MANUF_DELETE", "Mstmain",new { id = item.Manufacturer_ID })"><i class="fa fa-trash"></i></a>),
+         //grid.Column(null,null, format: @<text> @item.Manufacturer_ID </text>),
+         //grid.Column("", format: @<a href="#" onclick="popUpDelete(this);"><i class="fa fa-trash"></i></a>),
+         grid.Column("", format: @<a href="#" onclick="popUpDelete('@item.Manufacturer_ID');"><i class="fa fa-trash"></i></a>),
+         grid.Column("Manufacturer Code", format: @<text> @item.Manufacturer_Code </text>),
+         grid.Column("Manufacturer Description", format: @<text> @item.Manufacturer_Desc </text>),
+         grid.Column("Remarks", format: @<text> @item.Remarks </text>),
+         grid.Column("Edit", format: @<a href="@Url.Action("MM_MANUF_EDIT", "Mstmain",new { id = item.Manufacturer_ID })"><i class="fa fa-pencil"></i></a>)
+         )
+    )
+</div>
+}
+<input type="button" value="Export to Excel" class="btn btn-primary" onclick="location.href='@Url.Action("ExportExcelManuf", "Mstmain")'" />
+
