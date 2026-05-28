@@ -46,9 +46,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<!-- Native RFID DLL Reference (x86 required) -->
+		<!-- RFID managed wrapper – v1.2.0.0 (same DLL used by PAB_NewAquarium) -->
 		<Reference Include="Symbol.RFID3.Host">
-			<HintPath>..\..\02. RFID\Film_SparePart_RFID\reader_dll\Symbol.RFID3.Host.dll</HintPath>
+			<HintPath>SDK\Symbol.RFID3.Host.dll</HintPath>
 			<Private>true</Private>
 		</Reference>
 	</ItemGroup>
@@ -63,11 +63,11 @@
 
 	<ItemGroup>
 		<!-- Copy native RFID DLLs to output directory -->
-		<None Include="..\..\02. RFID\Film_SparePart_RFID\reader_dll\*.dll">
-			<Link>%(Filename)%(Extension)</Link>
+		<None Include="SDK\Symbol.RFID3.Host.dll">
+			<Link>Symbol.RFID3.Host.dll</Link>
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
-		<None Include="..\..\02. RFID\Film_SparePart_RFID\RFIDAPI32PC.dll">
+		<None Include="SDK\RFIDAPI32PC.dll">
 			<Link>RFIDAPI32PC.dll</Link>
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
