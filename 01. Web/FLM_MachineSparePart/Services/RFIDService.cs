@@ -19,6 +19,9 @@ namespace FILM_Sparepart_MVC.Services
         private static bool _isInitialized = false;
         private static List<RFIDModel> _readerConfigs = new List<RFIDModel>();
 
+        // Connection string name for the Tower database (SP2/SERVER2)
+        private const string TowerConnectionStringName = "SQLConTower";
+
         /// <summary>
         /// Loads RFID reader configurations from the database (equivalent to bg_GetRFIDConfig in Form1.vb)
         /// </summary>
@@ -297,7 +300,9 @@ namespace FILM_Sparepart_MVC.Services
         }
 
         /// <summary>
-        /// Handle RFID tag read events (equivalent to Events_ReadNotify / myUpdateRead in Form1.vb)
+        /// Handle RFID tag read events (equivalent to Events_ReadNotify / myUpdateRead in Form1.vb).
+        /// When a new tag is detected, the stored procedure from RFID_CONFIG is automatically executed,
+        /// matching the original WinForm behaviour in StartUpdateDB / StartUpdateDBTower.
         /// </summary>
         private void Events_ReadNotify(object sender, Events.ReadEventArgs e)
         {
@@ -332,8 +337,42 @@ namespace FILM_Sparepart_MVC.Services
                             string tagID = tag.TagID;
                             int antennaID = tag.AntennaID;
 
+                            // --- Tag deduplication (equivalent to ht_TagDetected in Form1.vb) ---
+                            bool isNewTag = conn.TagDetected.TryAdd(tagID, DateTime.UtcNow);
+
                             // Broadcast tag to all connected web clients
                             hubContext.Clients.All.tagRead(readerHostName, tagID, antennaID, DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+
+                            // --- Execute stored procedure for NEW tags only (equivalent to StartUpdateDB / StartUpdateDBTower) ---
+                            if (isNewTag)
+                            {
+                                string storedProcedure;
+                                string server;
+
+                                if (antennaID == 1)
+                                {
+                                    storedProcedure = conn.Config.STORED_PROCEDURE;
+                                    server = conn.Config.SERVER;
+                                }
+                                else
+                                {
+                                    // Antenna 2+: use SP2/SERVER2 if available, otherwise fall back to SP/SERVER
+                                    storedProcedure = !string.IsNullOrEmpty(conn.Config.STORED_PROCEDURE2) ? conn.Config.STORED_PROCEDURE2 : conn.Config.STORED_PROCEDURE;
+                                    server = !string.IsNullOrEmpty(conn.Config.SERVER2) ? conn.Config.SERVER2 : conn.Config.SERVER;
+                                }
+
+                                if (!string.IsNullOrEmpty(storedProcedure) && !string.IsNullOrEmpty(server) && server == "MSSQL")
+                                {
+                                    bool useTowerConnection = antennaID != 1
+                                        && !string.IsNullOrEmpty(conn.Config.SERVER2)
+                                        && !string.IsNullOrEmpty(conn.Config.STORED_PROCEDURE2);
+
+                                    var spResult = ExecuteStoredProcedure("IN", tagID, conn.Config.READER_NAME, conn.Config.READER_IP, storedProcedure, useTowerConnection);
+
+                                    // Broadcast stored procedure result to web clients
+                                    hubContext.Clients.All.tagProcessed(readerHostName, tagID, antennaID, spResult.Success, spResult.Message);
+                                }
+                            }
                         }
                     }
                 }
@@ -342,6 +381,63 @@ namespace FILM_Sparepart_MVC.Services
             {
                 // Silently handle read errors
             }
+        }
+
+        /// <summary>
+        /// Execute the configured stored procedure for a scanned RFID tag.
+        /// Equivalent to RFID_Common_MSSQL / RFID_Common_MSSQL_Tower in Library.Database/RFID_COMMON.vb.
+        /// Parameters match the original WinForm: @pTRAN_TYPE, @pRFID, @pIPADDR, @pRETURN_VALUE1 (output).
+        /// </summary>
+        private StoredProcedureResult ExecuteStoredProcedure(string tranType, string rfidTag, string readerName, string ipAddress, string storedProcedure, bool useTowerConnection)
+        {
+            var result = new StoredProcedureResult();
+
+            string connectionStringName = useTowerConnection ? TowerConnectionStringName : "SQLCon";
+            var connStringSetting = ConfigurationManager.ConnectionStrings[connectionStringName];
+            if (connStringSetting == null)
+            {
+                // Fall back to default connection string if tower connection is not configured
+                connStringSetting = ConfigurationManager.ConnectionStrings["SQLCon"];
+            }
+
+            string connectionString = connStringSetting.ConnectionString;
+
+            using (var con = new SqlConnection(connectionString))
+            using (var cmd = new SqlCommand(storedProcedure, con))
+            {
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.CommandTimeout = 0;
+
+                cmd.Parameters.Add(new SqlParameter("@pTRAN_TYPE", tranType));
+                cmd.Parameters.Add(new SqlParameter("@pRFID", rfidTag));
+                cmd.Parameters.Add(new SqlParameter("@pIPADDR", ipAddress));
+                cmd.Parameters.Add(new SqlParameter("@pRETURN_VALUE1", SqlDbType.NVarChar, 4000) { Direction = ParameterDirection.Output });
+
+                try
+                {
+                    con.Open();
+                    cmd.ExecuteNonQuery();
+
+                    string returnValue = cmd.Parameters["@pRETURN_VALUE1"].Value?.ToString() ?? "";
+                    if (returnValue != "0")
+                    {
+                        result.Success = false;
+                        result.Message = returnValue;
+                    }
+                    else
+                    {
+                        result.Success = true;
+                        result.Message = "OK";
+                    }
+                }
+                catch (Exception ex)
+                {
+                    result.Success = false;
+                    result.Message = ex.Message;
+                }
+            }
+
+            return result;
         }
 
         /// <summary>
@@ -420,6 +516,12 @@ namespace FILM_Sparepart_MVC.Services
     {
         public RFIDReader Reader { get; set; }
         public RFIDModel Config { get; set; }
+
+        /// <summary>
+        /// Tracks detected tags to avoid duplicate processing (equivalent to ht_TagDetected in Form1.vb).
+        /// Key = TagID, Value = first detection time (UTC).
+        /// </summary>
+        public ConcurrentDictionary<string, DateTime> TagDetected { get; set; } = new ConcurrentDictionary<string, DateTime>();
     }
 
     /// <summary>
@@ -430,5 +532,14 @@ namespace FILM_Sparepart_MVC.Services
         public bool Success { get; set; }
         public string Message { get; set; }
         public string ReaderIP { get; set; }
+    }
+
+    /// <summary>
+    /// Result of executing a stored procedure for a scanned RFID tag
+    /// </summary>
+    public class StoredProcedureResult
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; }
     }
 }
