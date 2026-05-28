@@ -1,0 +1,5174 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Data;
+using Microsoft.Data.SqlClient;
+using System.Data.SqlTypes;
+using System.IO;
+using System.Linq;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.Extensions.Configuration;
+using DBModel;
+using FILM_Sparepart_MVC.DAL;
+using FILM_Sparepart_MVC.Enums;
+using FILM_Sparepart_MVC.Extensions;
+using FILM_Sparepart_MVC.Filters;
+using FILM_Sparepart_MVC.Helper_Code.Objects;
+using FILM_Sparepart_MVC.Models;
+using FILM_Sparepart_MVC.Repositories;
+using FILM_Sparepart_MVC.Repository;
+using OfficeOpenXml;
+using UserMMModel;
+using DB = DBModel.DB;
+using MMDB = UserMMModel.DB;
+using SparePart = FILM_Sparepart_MVC.Models.SparePart;
+using System.Text.Json;
+
+namespace FILM_Sparepart_MVC.Controllers
+{
+    public class RfidAuditController : Controller
+    {
+        private readonly IConfiguration _configuration;
+        private RfidAuditRepo _rfidAuditRepo;
+
+        public RfidAuditController(IConfiguration configuration, RfidAuditContext rfidAuditContext, TMS_ITEquiptContext tmsItEquiptContext)
+        {
+            _configuration = configuration;
+            _rfidAuditRepo = new RfidAuditRepo(rfidAuditContext, tmsItEquiptContext);
+        }
+
+        public static class CommonMethod
+        {
+            public static List<T> ConvertToList<T>(DataTable dt)
+            {
+                var columnNames = dt.Columns.Cast<DataColumn>().Select(c => c.ColumnName.ToLower()).ToList();
+                var properties = typeof(T).GetProperties();
+                return dt.AsEnumerable().Select(row =>
+                {
+                    var objT = Activator.CreateInstance<T>();
+                    foreach (var pro in properties)
+                    {
+                        if (columnNames.Contains(pro.Name.ToLower()))
+                        {
+                            try
+                            {
+                                if (pro.PropertyType.Name.Equals("Boolean"))
+                                {
+                                    if (row[pro.Name].ToString().ToUpper().Equals("TRUE")) { pro.SetValue(objT, true); }
+                                    else { pro.SetValue(objT, false); }
+                                }
+                                else { pro.SetValue(objT, row[pro.Name]); }
+                            }
+                            catch (Exception ex) { }
+                        }
+                    }
+                    return objT;
+                }).ToList();
+            }
+
+
+
+        }
+
+        public ActionResult SearchDetail(string[] search)
+        {
+            foreach (var col in search)
+            {
+                string[] c = col.Split(new Char[] { '/' });
+            }
+            return View();
+        }
+
+        public ActionResult AddNew(string act, string ctrl)
+        {
+            return RedirectToAction(act, ctrl);
+        }
+
+
+        #region RFID
+        [HttpGet]
+        public JsonResult GETdepartmentDDL(string pID)
+        {
+            DB1 db = new DB1();
+            return Json(db.getDepartmentDropDown(pID));
+        }
+
+        [HttpGet]
+        public JsonResult GETlocationDDL(string pID, string pID1)
+        {
+            DB1 db = new DB1();
+            return Json(db.getLocationtDropDown(pID, pID1));
+        }
+
+        [HttpGet]
+        public JsonResult CheckLocationStatus(string pID)
+        {
+            DB1 db = new DB1();
+
+            return Json(db.CheckLocationStatus(pID));
+
+        }
+
+        [HttpGet]
+        public JsonResult GetReaderByLocation(string locationText)
+        {
+            var rfidService = HttpContext.RequestServices.GetService<FILM_Sparepart_MVC.Services.RFIDService>();
+            if (rfidService == null)
+                return Json(new { hostName = "" });
+
+            var readers = rfidService.GetDefaultReaders();
+            var match = readers.FirstOrDefault(r =>
+                string.Equals(r.LOCATION, locationText, StringComparison.OrdinalIgnoreCase));
+
+            return Json(new { hostName = match?.HOST_NAME ?? "" });
+        }
+
+        [HttpGet]
+        public JsonResult UPDATERFID(string pTYPE, string pID, string pRFID, string pUSER)
+        {
+            DB1 db = new DB1();
+            
+            // For certain operation types (like type "1" - start audit), pRFID can be empty
+            // Pass null instead of empty string to the database method
+            if (string.IsNullOrEmpty(pRFID))
+            {
+                pRFID = null;
+            }
+
+            return Json(db.UPDATERFID(pTYPE, pID, pRFID, pUSER));
+
+        }
+
+        private List<SelectListItem> getCompanyDropDown()
+        {
+            List<SelectListItem> items = new List<SelectListItem>();
+            string constr = _configuration.GetConnectionString("SQLCon");
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                //string query = "SELECT ID,CODE,NAME FROM [dbo].[mm_company] WHERE RECORD_TYP<>'5' AND UPPER(STATUS_IND)='ACTIVE';";
+                string query = "SELECT distinct col6 FROM [dbo].[PVIEW_RFID_DATA] WHERE Record_Type<>'5' AND UPPER(Status_ind)='ACTIVE' AND col6 = 'PENFIBRE FILM';";
+                using (SqlCommand cmd = new SqlCommand(query))
+                {
+                    cmd.Connection = con;
+                    con.Open();
+                    using (SqlDataReader sdr = cmd.ExecuteReader())
+                    {
+                        while (sdr.Read())
+                        {
+                            items.Add(new SelectListItem
+                            {
+                                //Text = sdr["NAME"].ToString(),
+                                //Value = sdr["ID"].ToString()
+                                Text = sdr["col6"].ToString(),
+                                Value = sdr["col6"].ToString()
+                            });
+                        }
+                    }
+                    con.Close();
+                }
+            }
+
+            return items;
+        }
+
+        //private static List<SelectListItem> getLocationDropDown()
+        //{
+        //    List<SelectListItem> items = new List<SelectListItem>();
+        //    string constr = ConfigurationManager.ConnectionStrings["SQLCon"].ConnectionString;
+        //    using (SqlConnection con = new SqlConnection(constr))
+        //    {
+        //        string query = "SELECT distinct col7 FROM [dbo].[rfid_data] WHERE col7<> '' AND RECORD_TYP<>'5' AND UPPER(STATUS_IND)='ACTIVE';";
+        //        using (SqlCommand cmd = new SqlCommand(query))
+        //        {
+        //            cmd.Connection = con;
+        //            con.Open();
+        //            using (SqlDataReader sdr = cmd.ExecuteReader())
+        //            {
+        //                while (sdr.Read())
+        //                {
+        //                    items.Add(new SelectListItem
+        //                    {
+        //                        Text = sdr["col7"].ToString(),
+        //                        Value = sdr["col7"].ToString()
+        //                    });
+        //                }
+        //            }
+        //            con.Close();
+        //        }
+        //    }
+
+        //    return items;
+        //}
+
+        //public ActionResult RFID_SCAN() // Calling when we first hit controller
+        //{
+        //    DB1 db = new DB1();
+        //    RFIDModel RFIDModel = new RFIDModel();
+        //    RFIDModel.DropdownCompany = getCompanyDropDown();
+        //    //RFIDModel.DropdownLocation = getLocationDropDown();
+        //    return View(RFIDModel);
+        //}
+
+
+        public ActionResult entry() // Calling when we first hit controller
+        {
+            RFIDModel RFIDModel = new RFIDModel();
+
+            List<SelectListItem> items = new List<SelectListItem>();
+            items.Add(new SelectListItem { Text = "PENFIBRE FILM", Value = "PENFIBRE FILM" });
+            RFIDModel.DropdownCompany = items;
+            items = new List<SelectListItem>();
+            items.Add(new SelectListItem { Text = "ENGINEERING", Value = "ENGINEERING" });
+            RFIDModel.DropdownDepartment = items;
+
+            // Load locations dynamically from DB so they match the LOCATION column in SP_FILM_GET_RFID_CONFIG
+            var rfidService = HttpContext.RequestServices.GetService<FILM_Sparepart_MVC.Services.RFIDService>();
+            items = new List<SelectListItem>();
+            if (rfidService != null)
+            {
+                var readers = rfidService.GetDefaultReaders();
+                foreach (var reader in readers.Where(r => !string.IsNullOrEmpty(r.LOCATION)))
+                {
+                    items.Add(new SelectListItem { Text = reader.LOCATION, Value = reader.LOCATION });
+                }
+            }
+            RFIDModel.DropdownLocation = items;
+            return View(RFIDModel);
+        }
+
+        #endregion
+
+        public CommonRepo CommonRepo = new CommonRepo();
+
+        #region ASSET MANAGEMENT
+
+        #region Master Maintenance MainDropdown (Asset Type, Status, Site, HelpDesk)
+        //-----------------------------------------------------------------
+        //                      Asset Type
+        //-----------------------------------------------------------------
+        #region MM Asset Type
+        public ActionResult AssetTypeDesList() // Calling when we first hit controller
+        {
+            List<MainDropDownModel> AssetTypeDesMaintList = new List<MainDropDownModel>();
+            DB1 db = new DB1();
+            try
+            {
+                AssetTypeDesMaintList = db.getALLtypelistFROMmaindropdown("Asset Type", "");
+
+            }
+            catch (Exception ex)
+            {
+                Console.Write(ex);
+            }
+
+            return View(AssetTypeDesMaintList);
+
+        }
+        [HttpPost]
+        public ActionResult AssetTypeDesList(string SEARCH_VALUE) // Calling when we first hit controller
+        {
+            List<MainDropDownModel> AssetTypeDesMaintList = new List<MainDropDownModel>();
+            DB1 db = new DB1();
+            try
+            {
+                AssetTypeDesMaintList = db.getALLtypelistFROMmaindropdown("Asset Type", SEARCH_VALUE);
+
+            }
+            catch (Exception ex)
+            {
+                Console.Write(ex);
+            }
+
+            return View(AssetTypeDesMaintList);
+
+        }
+
+        public ActionResult AssetTypeDesDtl(string id)
+        {
+            ViewBag.id = id;
+
+            var searchval = string.Empty;
+
+
+
+            if (id == null)
+            {
+                return View();
+            }
+            else
+            {
+                DB1 db = new DB1();
+                MainDropDownModel MainDropDownModel = new MainDropDownModel();
+
+                try
+                {
+                    MainDropDownModel = db.getMainDropDownData(id);
+
+                }
+                catch (Exception ex)
+                {
+                    Console.Write(ex);
+                }
+                return View(MainDropDownModel);
+            }
+        }
+        [HttpPost]
+        [SessionExpire]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+
+        public ActionResult AssetTypeDesDtl(MainDropDownModel MainDropDownModel)
+        {
+            string record_type = String.Empty;
+
+
+            if (MainDropDownModel.ID_MM_MAIN_DROPDOWN < 1)
+            {
+                record_type = "1";
+            }
+            else
+            {
+                record_type = "3";
+            }
+            try
+            {
+                DB1 db = new DB1();
+                string loc = HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty;
+                string result = db.AssetMainDropDownMaint(MainDropDownModel, record_type, "Asset Type");
+                ViewBag.Result = result;
+                ViewBag.RecType = record_type;
+                ModelState.Clear();
+            }
+            catch (Exception ex)
+            {
+                TempData["alertMessage"] = ex.ToString();
+                Console.Write(ex);
+            }
+            return View(MainDropDownModel);
+        }
+
+        public ActionResult AssetTypeDesRmv(string id)
+        {
+            ViewBag.id = id;
+
+            if (id == null)
+            {
+                return View();
+            }
+            else
+            {
+                DB1 db = new DB1();
+                MainDropDownModel MainDropDownModel = new MainDropDownModel();
+
+                try
+                {
+                    MainDropDownModel = db.getMainDropDownData(id);
+
+                }
+                catch (Exception ex)
+                {
+                    Console.Write(ex);
+                }
+                return View(MainDropDownModel);
+            }
+        }
+        [HttpPost]
+        [SessionExpire]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+
+        public ActionResult AssetTypeDesRmv(MainDropDownModel MainDropDownModel)
+        {
+            string recordType = String.Empty;
+
+            if (MainDropDownModel.ID_MM_MAIN_DROPDOWN < 1)
+            {
+                //recordType = "5";
+            }
+            else
+            {
+                recordType = "5";
+            }
+
+            try
+            {
+                DB1 db = new DB1();
+                string loc = HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty;
+                //string result = db.AllTypeMainDropDownMaint(MainDropDownModel, recordType, "Asset Type");
+                string result = db.AssetMainDropDownMaint(MainDropDownModel, recordType, "Asset Type");
+                ViewBag.Result = result;
+                ModelState.Clear();
+            }
+            catch (Exception ex)
+            {
+                TempData["alertMessage"] = ex.ToString();
+                Console.Write(ex);
+            }
+            return View(MainDropDownModel);
+        }
+        #endregion
+        //-----------------------------------------------------------------
+        //                      STATUS MAINTENANCE 
+        //-----------------------------------------------------------------
+        #region MM Status
+        public ActionResult StatusMaintList() // Calling when we first hit controller
+        {
+            List<MainDropDownModel> StatusMaintList = new List<MainDropDownModel>();
+            DB1 db = new DB1();
+            try
+            {
+                StatusMaintList = db.getALLtypelistFROMmaindropdown("Status Maint", "");
+            }
+            catch (Exception ex)
+            {
+                Console.Write(ex);
+            }
+
+            return View(StatusMaintList);
+
+        }
+
+        [HttpPost]
+        public ActionResult StatusMaintList(string SEARCH_VALUE)
+        {
+
+            List<MainDropDownModel> GetdataSite = new List<MainDropDownModel>();
+            DB1 db = new DB1();
+            try
+            {
+                GetdataSite = db.getALLtypelistFROMmaindropdown("Status Maint", SEARCH_VALUE);
+
+            }
+            catch (Exception ex)
+            {
+                Console.Write(ex);
+            }
+
+            return View(GetdataSite);
+        }
+
+        public ActionResult StatusMaintDtl(string id)
+        {
+            ViewBag.id = id;
+
+            if (id == null)
+            {
+                return View();
+            }
+            else
+            {
+                DB1 db = new DB1();
+                MainDropDownModel MainDropDownModel = new MainDropDownModel();
+
+                try
+                {
+                    MainDropDownModel = db.getMainDropDownData(id);
+
+                }
+                catch (Exception ex)
+                {
+                    Console.Write(ex);
+                }
+
+                return View(MainDropDownModel);
+            }
+        }
+        [HttpPost]
+        [SessionExpire]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+
+        public ActionResult StatusMaintDtl(MainDropDownModel MainDropDownModel)
+        {
+            string recordType = String.Empty;
+
+            if (MainDropDownModel.ID_MM_MAIN_DROPDOWN < 1)
+            {
+                recordType = "1";
+            }
+            else
+            {
+                recordType = "3";
+            }
+            try
+            {
+
+                DB1 db = new DB1();
+                string loc = HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty;
+                string result = db.AllTypeMainDropDownMaint(MainDropDownModel, recordType, "Status Maint");
+                ViewBag.Result = result;
+                ViewBag.RecType = recordType;
+                ModelState.Clear(); //clearing model
+            }
+            catch (Exception ex)
+            {
+                TempData["alertMessage"] = ex.ToString();
+                // Info
+                Console.Write(ex);
+            }
+            return View();
+        }
+        public ActionResult StatusMaintRmv(string id)
+        {
+            ViewBag.id = id;
+
+            if (id == null)
+            {
+                return View();
+            }
+            else
+            {
+                DB1 db = new DB1();
+                MainDropDownModel MainDropDownModel = new MainDropDownModel();
+
+                try
+                {
+                    MainDropDownModel = db.getMainDropDownData(id);
+
+                }
+                catch (Exception ex)
+                {
+                    Console.Write(ex);
+                }
+
+                return View(MainDropDownModel);
+            }
+        }
+        [HttpPost]
+        [SessionExpire]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+
+        public ActionResult StatusMaintRmv(MainDropDownModel MainDropDownModel)
+        {
+            string recordType = String.Empty;
+
+            if (MainDropDownModel.ID_MM_MAIN_DROPDOWN < 1)
+            {
+
+            }
+            else
+            {
+                recordType = "5";
+            }
+            try
+            {
+
+                DB1 db = new DB1();
+                string loc = HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty;
+                //string result = db.StatusMaintMainDropDownMaint(MainDropDownModel, recordType, "Status Maint");
+                string result = db.AllTypeMainDropDownMaint(MainDropDownModel, recordType, "Status Maint");
+                ViewBag.Result = result;
+                ModelState.Clear(); //clearing model
+            }
+            catch (Exception ex)
+            {
+                TempData["alertMessage"] = ex.ToString();
+                // Info
+                Console.Write(ex);
+            }
+            return View(MainDropDownModel);
+        }
+        #endregion
+        //-----------------------------------------------------------------
+        //                              SITE
+        //-----------------------------------------------------------------
+        #region MM Site
+        public ActionResult SiteList() // Calling when we first hit controller
+        {
+            List<MainDropDownModel> GetdataSite = new List<MainDropDownModel>();
+            DB1 db = new DB1();
+            try
+            {
+                GetdataSite = db.getALLtypelistFROMmaindropdown("Site", "");
+
+            }
+            catch (Exception ex)
+            {
+                Console.Write(ex);
+            }
+
+            return View(GetdataSite);
+
+        }
+        // Searching method
+        [HttpPost]
+        public ActionResult SiteList(string SEARCH_VALUE)
+        {
+
+            List<MainDropDownModel> GetdataSite = new List<MainDropDownModel>();
+            DB1 db = new DB1();
+            try
+            {
+                GetdataSite = db.getALLtypelistFROMmaindropdown("Site", SEARCH_VALUE);
+
+            }
+            catch (Exception ex)
+            {
+                Console.Write(ex);
+            }
+
+            return View(GetdataSite);
+        }
+
+
+        public ActionResult SiteDtl(string id)
+        {
+            ViewBag.id = id;
+
+            if (id == null)
+            {
+                return View();
+
+            }
+            else
+            {
+                DB1 db = new DB1();
+                MainDropDownModel MainDropDownModel = new MainDropDownModel();
+
+                try
+                {
+                    MainDropDownModel = db.getMainDropDownData(id);
+                }
+                catch (Exception ex)
+                {
+                    // Info
+                    Console.Write(ex);
+                }
+
+                return View(MainDropDownModel);
+            }
+        }
+
+        [HttpPost]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+        public ActionResult SiteDtl(MainDropDownModel MainDropDownModel)
+        {
+            string recordType = String.Empty;
+
+            if (MainDropDownModel.ID_MM_MAIN_DROPDOWN < 1)
+            {
+                recordType = "1";
+            }
+            else
+            {
+                recordType = "3";
+            }
+
+            try
+            {
+
+                DB1 db = new DB1();
+                string loc = HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty;
+                //string result = db.SiteMainDropDownMaint(MainDropDownModel, recordType, "Site");
+                string result = db.AllTypeMainDropDownMaint(MainDropDownModel, recordType, "Site");
+                ViewBag.Result = result;
+                ViewBag.RecType = recordType;
+                ModelState.Clear(); //clearing model
+            }
+            catch (Exception ex)
+            {
+                TempData["alertMessage"] = ex.ToString();
+                // Info
+                Console.Write(ex);
+            }
+            return View(MainDropDownModel);
+        }
+        public ActionResult SiteRmv(string id)
+        {
+            ViewBag.id = id;
+
+            if (id == null)
+            {
+                return View();
+            }
+            else
+            {
+                DB1 db = new DB1();
+                MainDropDownModel MainDropDownModel = new MainDropDownModel();
+
+                try
+                {
+                    MainDropDownModel = db.getMainDropDownData(id);
+
+                }
+                catch (Exception ex)
+                {
+                    Console.Write(ex);
+                }
+
+                return View(MainDropDownModel);
+            }
+        }
+        [HttpPost]
+        [SessionExpire]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+
+        public ActionResult SiteRmv(MainDropDownModel MainDropDownModel)
+        {
+            string recordType = String.Empty;
+
+            if (MainDropDownModel.ID_MM_MAIN_DROPDOWN < 1)
+            {
+                //recordType = "5";
+            }
+            else
+            {
+                recordType = "5";
+            }
+
+            try
+            {
+                DB1 db = new DB1();
+                string loc = HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty;
+                //string result = db.SiteMainDropDownMaint(MainDropDownModel, recordType, "Site");
+                string result = db.AllTypeMainDropDownMaint(MainDropDownModel, recordType, "Site");
+                ViewBag.Result = result;
+                ModelState.Clear();
+            }
+            catch (Exception ex)
+            {
+                TempData["alertMessage"] = ex.ToString();
+                Console.Write(ex);
+            }
+            return View(MainDropDownModel);
+        }
+        #endregion
+        //-----------------------------------------------------------------
+        //                              HelpDesk Name (UPDATE BY)
+        //-----------------------------------------------------------------
+        #region MM HelpDesk
+        public ActionResult HelpDeskNameList() // Calling when we first hit controller
+        {
+            List<MainDropDownModel> GetdataSite = new List<MainDropDownModel>();
+            DB1 db = new DB1();
+            try
+            {
+                GetdataSite = db.getALLtypelistFROMmaindropdown("UpdateBy", ""); //To get the data from database
+
+            }
+            catch (Exception ex)
+            {
+                Console.Write(ex);
+            }
+
+            return View(GetdataSite);
+
+        }
+        // Searching method
+        [HttpPost]
+        public ActionResult HelpDeskNameList(string SEARCH_VALUE)
+        {
+
+            List<MainDropDownModel> GetdataSite = new List<MainDropDownModel>();
+            DB1 db = new DB1();
+            try
+            {
+                GetdataSite = db.getALLtypelistFROMmaindropdown("UpdateBy", SEARCH_VALUE); //For Searching
+
+            }
+            catch (Exception ex)
+            {
+                Console.Write(ex);
+            }
+
+            return View(GetdataSite);
+        }
+
+
+        public ActionResult HelpDeskNameDtl(string id)
+        {
+            ViewBag.id = id;
+
+            if (id == null)
+            {
+                return View();
+
+            }
+            else
+            {
+                DB1 db = new DB1();
+                MainDropDownModel MainDropDownModel = new MainDropDownModel();
+
+                try
+                {
+                    MainDropDownModel = db.getMainDropDownData(id);
+                }
+                catch (Exception ex)
+                {
+                    // Info
+                    Console.Write(ex);
+                }
+
+                return View(MainDropDownModel);
+            }
+        }
+
+        [HttpPost]
+        [SessionExpire]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+        public ActionResult HelpDeskNameDtl(MainDropDownModel MainDropDownModel)
+        {
+            string recordType = String.Empty;
+
+            if (MainDropDownModel.ID_MM_MAIN_DROPDOWN < 1)
+            {
+                recordType = "1";
+                // 1=add
+                // 3= edit
+            }
+            else
+            {
+                recordType = "3";
+            }
+
+            try
+            {
+
+                DB1 db = new DB1();
+                string loc = HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty;
+                string result = db.AllTypeMainDropDownMaint(MainDropDownModel, recordType, "UpdateBy");
+                ViewBag.Result = result;
+                ViewBag.RecType = recordType;
+                ModelState.Clear(); //clearing model
+            }
+            catch (Exception ex)
+            {
+                TempData["alertMessage"] = ex.ToString();
+                // Info
+                Console.Write(ex);
+            }
+            return View(MainDropDownModel);
+        }
+        public ActionResult HelpDeskNameRmv(string id)
+        {
+            ViewBag.id = id;
+
+            if (id == null)
+            {
+                return View();
+            }
+            else
+            {
+                DB1 db = new DB1();
+                MainDropDownModel MainDropDownModel = new MainDropDownModel();
+
+                try
+                {
+                    MainDropDownModel = db.getMainDropDownData(id);
+
+                }
+                catch (Exception ex)
+                {
+                    Console.Write(ex);
+                }
+
+                return View(MainDropDownModel);
+            }
+        }
+        [HttpPost]
+        [SessionExpire]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+
+        public ActionResult HelpDeskNameRmv(MainDropDownModel MainDropDownModel)
+        {
+            string recordType = String.Empty;
+
+            if (MainDropDownModel.ID_MM_MAIN_DROPDOWN < 1)
+            {
+                //recordType = "5";
+            }
+            else
+            {
+                recordType = "5";
+            }
+
+            try
+            {
+                DB1 db = new DB1();
+                string loc = HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty;
+                string result = db.AllTypeMainDropDownMaint(MainDropDownModel, recordType, "UpdateBy");
+                ViewBag.Result = result;
+                ModelState.Clear();
+            }
+            catch (Exception ex)
+            {
+                TempData["alertMessage"] = ex.ToString();
+                Console.Write(ex);
+            }
+            return View(MainDropDownModel);
+        }
+        #endregion
+        //-------------------------------------------------------------------------------
+        //                              Movement Status
+        //-------------------------------------------------------------------------------
+        #region MM Movement Status
+        public ActionResult MovementSttList(string searchValue)
+        {
+            List<MainDropDownModel> GetMovStt = new List<MainDropDownModel>();
+            DB1 db = new DB1();
+            try
+            {
+                if (searchValue == "" || searchValue == null)
+                {
+                    GetMovStt = db.getALLtypelistFROMmaindropdown("Movement Status", "");
+                }
+                else
+                {
+                    searchValue = searchValue.Replace(",", "");
+                    searchValue = searchValue + " AND MAIN_DROPDOWN_TYPE = 'Movement Status' ";
+                    GetMovStt = db.getALLtypelistFROMmaindropdown("", searchValue);
+
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.Write(ex);
+            }
+            return View(GetMovStt);
+        }
+        [HttpPost]
+        public ActionResult MovementSttList(string SEARCH_VALUE, string searchValue)
+        {
+            List<MainDropDownModel> GetMovStt = new List<MainDropDownModel>();
+            DB1 db = new DB1();
+            try
+            {
+                if (searchValue == "" || searchValue == null)
+                {
+                    GetMovStt = db.getALLtypelistFROMmaindropdown("Movement Status", SEARCH_VALUE);
+                }
+                else
+                {
+                    searchValue = searchValue.Replace(",", "");
+                    searchValue = searchValue + " AND MAIN_DROPDOWN_TYPE = 'Movement Status' ";
+                    GetMovStt = db.getALLtypelistFROMmaindropdown("", searchValue);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.Write(ex);
+            }
+            return View(GetMovStt);
+        }
+
+        public ActionResult MovementSttDtl(string id)
+        {
+            ViewBag.id = id;
+            if (id == null)
+            {
+                return View();
+            }
+            else
+            {
+                DB1 db = new DB1();
+                MainDropDownModel MainDropDownModel = new MainDropDownModel();
+                try
+                {
+                    MainDropDownModel = db.getMainDropDownData(id);
+                }
+                catch (Exception ex)
+                {
+                    Console.Write(ex);
+                }
+                return View(MainDropDownModel);
+            }
+        }
+        [HttpPost]
+        [SessionExpire]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+        public ActionResult MovementSttDtl(MainDropDownModel MainDropDownModel)
+        {
+            string recordType = String.Empty;
+            if (MainDropDownModel.ID_MM_MAIN_DROPDOWN < 1)
+            {
+                recordType = "1";
+            }
+            else
+            {
+                recordType = "3";
+            }
+            try
+            {
+                DB1 db = new DB1();
+                string loc = HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty;
+                string result = db.AllTypeMainDropDownMaint(MainDropDownModel, recordType, "Movement Status");
+                ViewBag.Result = result;
+                ViewBag.RecType = recordType;
+                ModelState.Clear();
+            }
+            catch (Exception ex)
+            {
+                TempData["alertMessage"] = ex.ToString();
+                Console.Write(ex);
+            }
+            return View(MainDropDownModel);
+        }
+        public ActionResult MovementSttRmv(string id)
+        {
+            ViewBag.id = id;
+            if (id == null)
+            {
+                return View();
+            }
+            else
+            {
+                DB1 db = new DB1();
+                MainDropDownModel MainDropDownModel = new MainDropDownModel();
+                try
+                {
+                    MainDropDownModel = db.getMainDropDownData(id);
+                }
+                catch (Exception ex)
+                {
+                    Console.Write(ex);
+                }
+                return View(MainDropDownModel);
+            }
+        }
+        [HttpPost]
+        [SessionExpire]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+        public ActionResult MovementSttRmv(MainDropDownModel MainDropDownModel)
+        {
+            string recordType = String.Empty;
+            if (MainDropDownModel.ID_MM_MAIN_DROPDOWN < 1)
+            {
+
+            }
+            else
+            {
+                recordType = "5";
+            }
+            try
+            {
+                DB1 db = new DB1();
+                string loc = HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty;
+                string result = db.AllTypeMainDropDownMaint(MainDropDownModel, recordType, "Movement Status");
+                ViewBag.Result = result;
+                ModelState.Clear();
+            }
+            catch (Exception ex)
+            {
+                TempData["alertMessage"] = ex.ToString();
+                Console.Write(ex);
+            }
+            return View(MainDropDownModel);
+        }
+        #endregion
+        //-------------------------------------------------------------------------------
+        //                 Master Maintenance MainDropdown Audit Trail
+        //-------------------------------------------------------------------------------
+        #region MM MainDropdown Audit Trail
+        public ActionResult MainDropdownAuditTrail(string id)
+        {
+            DB1 db = new DB1();
+            var dt = db.List("PVIEW_MM_MAIN_DROPDOWN_A", id, "", "", "SQ_ID", "0", "1", "50000", "0");
+
+            List<MainDropdown_AT> MainDropdown_AT = new List<MainDropdown_AT>();
+            MainDropdown_AT = CommonMethod.ConvertToList<MainDropdown_AT>(dt);
+            return View(MainDropdown_AT);
+        }
+
+        public ActionResult MainDropdownView_AT(string id)
+        {
+            MainDropdown_AT MainDropdown_AT = new MainDropdown_AT();
+
+            DB1 db = new DB1();
+            MainDropdown_AT = db.getMainDropDownATData(id);
+            ViewBag.Edit = "True";
+            return View(MainDropdown_AT);
+        }
+        #endregion
+        #endregion
+
+        #region Master Maintenance SubDropdown (Store Location, Department, Categories(Item Type))
+        //------------------------------------------------------------------------------
+        //     Dropdown List for Store Location, Department, Categories(Item Type))
+        //------------------------------------------------------------------------------
+        #region Dropdown list for Subdropdown
+        private List<SelectListItem> getItemDropDown()
+        {
+            List<SelectListItem> items = new List<SelectListItem>();
+            string constr = _configuration.GetConnectionString("SQLCon");
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                string query = "SELECT ID_MM_MAIN_DROPDOWN, MAIN_DROPDOWN_TEXT FROM [dbo].[MM_MAIN_DROPDOWN] WHERE REC_TYPE <> '5' AND MAIN_DROPDOWN_TYPE = 'Site';";
+                using (SqlCommand CMD = new SqlCommand(query))
+                {
+                    CMD.Connection = con;
+                    con.Open();
+                    using (SqlDataReader sdr = CMD.ExecuteReader())
+                    {
+                        while (sdr.Read())
+                        {
+                            items.Add(new SelectListItem
+
+                            {
+                                Text = sdr["MAIN_DROPDOWN_TEXT"].ToString(),
+                                Value = sdr["ID_MM_MAIN_DROPDOWN"].ToString()
+                            });
+                        }
+                    }
+                    con.Close();
+                }
+            }
+            return items;
+        }
+
+        private List<SelectListItem> getSiteAssetDropDown()
+        {
+            List<SelectListItem> items = new List<SelectListItem>();
+            string constr = _configuration.GetConnectionString("SQLCon");
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                string query = "SELECT MAIN_DROPDOWN_TEXT, ID_MM_MAIN_DROPDOWN FROM [dbo].[MM_MAIN_DROPDOWN] WHERE REC_TYPE <> '5' AND MAIN_DROPDOWN_TYPE = 'Asset Type';";
+                using (SqlCommand CMD = new SqlCommand(query))
+                {
+                    CMD.Connection = con;
+                    con.Open();
+                    using (SqlDataReader sdr = CMD.ExecuteReader())
+                    {
+                        while (sdr.Read())
+                        {
+                            items.Add(new SelectListItem
+                            {
+                                Text = sdr["MAIN_DROPDOWN_TEXT"].ToString(),
+                                Value = sdr["ID_MM_MAIN_DROPDOWN"].ToString()
+                            });
+                        }
+                    }
+                    con.Close();
+                }
+            }
+            return items;
+        }
+        #endregion
+        //------------------------------------------------------------------------------
+        //                      Store Location Maint
+        //------------------------------------------------------------------------------
+        #region MM Store Location
+        public ActionResult StoreLocMaintList()
+        {
+            //passing to view page
+            List<SubDropdownModel> testing = new List<SubDropdownModel>();
+            DB1 db = new DB1();
+
+            try
+            {
+                testing = db.getListData("STORE LOCATION", "");
+
+            }
+            catch (Exception ex)
+
+            {
+                Console.Write(ex);
+            }
+
+            return View(testing);
+        }
+
+        [HttpPost]
+        public ActionResult StoreLocMaintList(string SEARCH_VALUE)
+        {
+            //passing search value and show in view
+            List<SubDropdownModel> testing = new List<SubDropdownModel>();
+            DB1 db = new DB1();
+            try
+            {
+
+                testing = db.getListData("STORE LOCATION", SEARCH_VALUE);
+                ViewBag.search = SEARCH_VALUE;
+
+            }
+            catch (Exception ex)
+
+            {
+                Console.Write(ex);
+            }
+
+            return View(testing);
+        }
+        //pass edit value to view
+        public ActionResult StoreLocMaintDtl(string id)
+        {
+            ViewBag.id = id;
+
+            var searchval = string.Empty;
+
+            SubDropdownViewModel SubDropdownViewModel = new SubDropdownViewModel();
+            SubDropdownViewModel.DropdownItem = getItemDropDown();
+
+
+            if (id == null)
+            {
+
+            }
+            else
+            {
+                DB1 db = new DB1();
+
+                try
+                {
+                    SubDropdownViewModel.SubDropdownModel = db.getSubDropdownData(id);
+
+                }
+                catch (Exception ex)
+                {
+                    Console.Write(ex);
+                }
+            }
+            return View(SubDropdownViewModel);
+        }
+        [HttpPost]
+        [SessionExpire]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+        //add page, 1= add, 3= edit
+        public ActionResult StoreLocMaintDtl(SubDropdownViewModel SubDropdownViewModel)
+        {
+            string recordType = String.Empty;
+            SubDropdownViewModel.DropdownItem = getItemDropDown();
+
+            if (SubDropdownViewModel.SubDropdownModel.ID_MM_SUB_DROPDOWN < 1)
+            {
+                recordType = "1";
+            }
+            else
+            {
+                recordType = "3";
+            }
+            try
+            {
+                DB1 db = new DB1();
+                string loc = HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty;
+                string result = db.SubDropdownMaint(SubDropdownViewModel.SubDropdownModel, recordType, "STORE LOCATION");
+                ViewBag.Result = result;
+                ViewBag.RecType = recordType;
+                ModelState.Clear();
+            }
+            catch (Exception ex)
+            {
+                TempData["alertMessage"] = ex.ToString();
+                Console.Write(ex);
+            }
+            return View(SubDropdownViewModel);
+        }
+        //pass the remove value to view
+        public ActionResult StoreLocMaintRmv(string id)
+        {
+            ViewBag.id = id;
+
+            SubDropdownViewModel SubDropdownViewModel = new SubDropdownViewModel();
+            SubDropdownViewModel.DropdownItem = getItemDropDown();
+
+            if (id == null)
+            {
+
+            }
+            else
+            {
+                DB1 db = new DB1();
+
+                try
+                {
+                    SubDropdownViewModel.SubDropdownModel = db.getSubDropdownData(id);
+
+                }
+                catch (Exception ex)
+                {
+                    Console.Write(ex);
+                }
+            }
+            return View(SubDropdownViewModel);
+        }
+        [HttpPost]
+        [SessionExpire]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+        //remove page, 5= remove
+        public ActionResult StoreLocMaintRmv(SubDropdownViewModel SubDropdownViewModel)
+        {
+            string recordType = String.Empty;
+            SubDropdownViewModel.DropdownItem = getItemDropDown();
+
+            if (SubDropdownViewModel.SubDropdownModel.ID_MM_SUB_DROPDOWN < 1)
+            {
+
+            }
+            else
+            {
+                recordType = "5";
+            }
+
+            try
+            {
+                DB1 db = new DB1();
+                string loc = HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty;
+                string result = db.SubDropdownMaint(SubDropdownViewModel.SubDropdownModel, recordType, "STORE LOCATION");
+                ViewBag.Result = result;
+                ModelState.Clear();
+            }
+            catch (Exception ex)
+            {
+                TempData["alertMessage"] = ex.ToString();
+                Console.Write(ex);
+            }
+            return View(SubDropdownViewModel);
+        }
+        #endregion
+        //------------------------------------------------------------------------------
+        //                      Categories(Item Type)
+        //------------------------------------------------------------------------------
+        #region MM Categories(Item Type)
+        public ActionResult CategoriesList()
+        {
+            //ViewBag.id = id;
+            List<SubDropdownModel> testing = new List<SubDropdownModel>();
+            DB1 db = new DB1();
+            try
+            {
+                testing = db.getListData("Categories", "");
+
+            }
+            catch (Exception ex)
+            {
+                Console.Write(ex);
+            }
+
+            return View(testing);
+        }
+        [HttpPost]
+        public ActionResult CategoriesList(string SEARCH_VALUE)
+        {
+            //ViewBag.id = id;
+            List<SubDropdownModel> testing = new List<SubDropdownModel>();
+            DB1 db = new DB1();
+            try
+            {
+                testing = db.getListData("Categories", SEARCH_VALUE);
+
+            }
+            catch (Exception ex)
+            {
+                Console.Write(ex);
+            }
+
+            return View(testing);
+        }
+
+        public ActionResult CategoriesDtl(string id)
+        {
+            ViewBag.id = id;
+
+            var searchval = string.Empty;
+
+            SubDropdownViewModel SubDropdownViewModel = new SubDropdownViewModel();
+            SubDropdownViewModel.DropdownItem = getSiteAssetDropDown();
+
+
+            if (id == null)
+            {
+
+            }
+            else
+            {
+                DB1 db = new DB1();
+
+                try
+                {
+                    SubDropdownViewModel.SubDropdownModel = db.getSubDropdownData(id);
+
+                }
+                catch (Exception ex)
+                {
+                    Console.Write(ex);
+                }
+            }
+            return View(SubDropdownViewModel);
+        }
+        [HttpPost]
+        [SessionExpire]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+
+        public ActionResult CategoriesDtl(SubDropdownViewModel SubDropdownViewModel)
+        {
+            string recordType = String.Empty;
+            SubDropdownViewModel.DropdownItem = getSiteAssetDropDown();
+
+            if (SubDropdownViewModel.SubDropdownModel.ID_MM_SUB_DROPDOWN < 1)
+            {
+                recordType = "1";
+            }
+            else
+            {
+                recordType = "3";
+            }
+            try
+            {
+                DB1 db = new DB1();
+                string loc = HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty;
+                string result = db.SubDropdownMaint(SubDropdownViewModel.SubDropdownModel, recordType, "Categories");
+                ViewBag.Result = result;
+                ViewBag.RecType = recordType;
+                ModelState.Clear();
+            }
+            catch (Exception ex)
+            {
+                TempData["alertMessage"] = ex.ToString();
+                Console.Write(ex);
+            }
+            return View(SubDropdownViewModel);
+        }
+
+        public ActionResult CategoriesRmv(string id)
+        {
+            ViewBag.id = id;
+
+            SubDropdownViewModel SubDropdownViewModel = new SubDropdownViewModel();
+            SubDropdownViewModel.DropdownItem = getSiteAssetDropDown();
+
+            if (id == null)
+            {
+
+            }
+            else
+            {
+                DB1 db = new DB1();
+
+                try
+                {
+
+                    SubDropdownViewModel.SubDropdownModel = db.getSubDropdownData(id);
+
+                }
+                catch (Exception ex)
+                {
+                    Console.Write(ex);
+                }
+            }
+            return View(SubDropdownViewModel);
+        }
+        [HttpPost]
+        [SessionExpire]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+
+        public ActionResult CategoriesRmv(SubDropdownViewModel SubDropdownViewModel)
+        {
+            string recordType = String.Empty;
+            SubDropdownViewModel.DropdownItem = getSiteAssetDropDown();
+
+            if (SubDropdownViewModel.SubDropdownModel.ID_MM_SUB_DROPDOWN < 1)
+            {
+                //recordType = "5";
+            }
+            else
+            {
+                recordType = "5";
+            }
+
+            try
+            {
+                DB1 db = new DB1();
+                string loc = HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty;
+                string result = db.SubDropdownMaint(SubDropdownViewModel.SubDropdownModel, recordType, "Categories");
+                ViewBag.Result = result;
+                ModelState.Clear();
+            }
+            catch (Exception ex)
+            {
+                TempData["alertMessage"] = ex.ToString();
+                Console.Write(ex);
+            }
+            return View(SubDropdownViewModel);
+        }
+        #endregion
+        //------------------------------------------------------------------------------
+        //                      Department Maint
+        //------------------------------------------------------------------------------
+        #region MM Department
+        public ActionResult DepMaintList()
+        {
+            //ViewBag.id = id;
+            List<SubDropdownModel> testing = new List<SubDropdownModel>();
+            DB1 db = new DB1();
+            try
+            {
+                testing = db.getListData("Department", "");
+
+            }
+            catch (Exception ex)
+            {
+                Console.Write(ex);
+            }
+
+            return View(testing);
+        }
+        [HttpPost]
+        public ActionResult DepMaintList(string SEARCH_VALUE)
+        {
+            //ViewBag.id = id;
+            List<SubDropdownModel> testing = new List<SubDropdownModel>();
+            DB1 db = new DB1();
+            try
+            {
+                testing = db.getListData("Department", SEARCH_VALUE);
+
+            }
+            catch (Exception ex)
+            {
+                Console.Write(ex);
+            }
+
+            return View(testing);
+        }
+
+        public ActionResult DepMaintDtl(string id)
+        {
+            ViewBag.id = id;
+
+            var searchval = string.Empty;
+
+            SubDropdownViewModel SubDropdownViewModel = new SubDropdownViewModel();
+            SubDropdownViewModel.DropdownItem = getItemDropDown();
+
+            if (id == null)
+            {
+
+            }
+            else
+            {
+                DB1 db = new DB1();
+
+                try
+                {
+                    SubDropdownViewModel.SubDropdownModel = db.getSubDropdownData(id);
+
+                }
+                catch (Exception ex)
+                {
+                    Console.Write(ex);
+                }
+            }
+            return View(SubDropdownViewModel);
+        }
+        [HttpPost]
+        [SessionExpire]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+
+        public ActionResult DepMaintDtl(SubDropdownViewModel SubDropdownViewModel)
+        {
+            string recordType = String.Empty;
+            SubDropdownViewModel.DropdownItem = getItemDropDown();
+
+            if (SubDropdownViewModel.SubDropdownModel.ID_MM_SUB_DROPDOWN < 1)
+            {
+                recordType = "1";
+            }
+            else
+            {
+                recordType = "3";
+            }
+            try
+            {
+                DB1 db = new DB1();
+                string loc = HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty;
+                string result = db.SubDropdownMaint(SubDropdownViewModel.SubDropdownModel, recordType, "Department");
+                ViewBag.Result = result;
+                ViewBag.RecType = recordType;
+                ModelState.Clear();
+            }
+            catch (Exception ex)
+            {
+                TempData["alertMessage"] = ex.ToString();
+                Console.Write(ex);
+            }
+            return View(SubDropdownViewModel);
+        }
+
+        public ActionResult DepMaintRmv(string id)
+        {
+            ViewBag.id = id;
+
+            SubDropdownViewModel SubDropdownViewModel = new SubDropdownViewModel();
+            SubDropdownViewModel.DropdownItem = getItemDropDown();
+
+            if (id == null)
+            {
+
+            }
+            else
+            {
+                DB1 db = new DB1();
+
+                try
+                {
+
+                    SubDropdownViewModel.SubDropdownModel = db.getSubDropdownData(id);
+
+                }
+                catch (Exception ex)
+                {
+                    Console.Write(ex);
+                }
+            }
+            return View(SubDropdownViewModel);
+        }
+        [HttpPost]
+        [SessionExpire]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+
+        public ActionResult DepMaintRmv(SubDropdownViewModel SubDropdownViewModel)
+        {
+            string recordType = String.Empty;
+            SubDropdownViewModel.DropdownItem = getItemDropDown();
+
+            if (SubDropdownViewModel.SubDropdownModel.ID_MM_SUB_DROPDOWN < 1)
+            {
+                //recordType = "5";
+            }
+            else
+            {
+                recordType = "5";
+            }
+
+            try
+            {
+                DB1 db = new DB1();
+                string loc = HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty;
+                string result = db.SubDropdownMaint(SubDropdownViewModel.SubDropdownModel, recordType, "Department");
+                ViewBag.Result = result;
+                ModelState.Clear();
+            }
+            catch (Exception ex)
+            {
+                TempData["alertMessage"] = ex.ToString();
+                Console.Write(ex);
+            }
+            return View(SubDropdownViewModel);
+        }
+        #endregion
+        //------------------------------------------------------------------------------
+        //                      SubDropdown Audit Trail
+        //------------------------------------------------------------------------------
+        #region MM Subdropdown Audit Trail
+        public ActionResult SubDropdownAuditTrail(string id)
+        {
+            DB1 db = new DB1();
+            var dt = db.List2("PVIEW_MM_SUB_DROPDOWN_A", id, "", "", "SQ_ID", "0", "1", "50000", "0");
+
+            List<SubDropdown_AT> SubDropdown_AT = new List<SubDropdown_AT>();
+            SubDropdown_AT = CommonMethod.ConvertToList<SubDropdown_AT>(dt);
+            return View(SubDropdown_AT);
+        }
+
+        public ActionResult SubDropdownView_AT(string id)
+        {
+            SubDropdown_AT SubDropdown_AT = new SubDropdown_AT();
+
+            DB1 db = new DB1();
+            SubDropdown_AT = db.getSubDropDownATData(id);
+            ViewBag.Edit = "True";
+            return View(SubDropdown_AT);
+        }
+        #endregion
+        #endregion
+
+        #region Revolution Lab
+        //------------------------------------------------------------------------------
+        //                      Dropdown List for Rev Lab
+        //------------------------------------------------------------------------------
+        #region rev dropdown list
+        private List<SelectListItem> getMovSttDropDown()
+        {
+            List<SelectListItem> items = new List<SelectListItem>();
+            string constr = _configuration.GetConnectionString("SQLCon");
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                string query = "SELECT ID_MM_MAIN_DROPDOWN, MAIN_DROPDOWN_TEXT FROM [dbo].[MM_MAIN_DROPDOWN] WHERE REC_TYPE <> '5' AND MAIN_DROPDOWN_TYPE = 'Movement Status';";
+                using (SqlCommand CMD = new SqlCommand(query))
+                {
+                    CMD.Connection = con;
+                    con.Open();
+                    using (SqlDataReader sdr = CMD.ExecuteReader())
+                    {
+                        while (sdr.Read())
+                        {
+                            items.Add(new SelectListItem
+
+                            {
+                                Text = sdr["MAIN_DROPDOWN_TEXT"].ToString(),
+                                Value = sdr["ID_MM_MAIN_DROPDOWN"].ToString()
+                            });
+                        }
+                    }
+                    con.Close();
+                }
+            }
+            return items;
+        }
+        private List<SelectListItem> getPICDropDown()
+        {
+            List<SelectListItem> items = new List<SelectListItem>();
+            string constr = _configuration.GetConnectionString("DBAccess");
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                //string query = "SELECT NAME, COMPANYEMAIL FROM [dbo].[PVIEW_USER_1_LST];";
+                string query = "SELECT distinct USER_ID, USR_EMAIL FROM ACL_User where RECORD_TYP <> '5' AND STATUS_IND <> 'Inactive';";
+                using (SqlCommand CMD = new SqlCommand(query))
+                {
+                    CMD.Connection = con;
+                    con.Open();
+                    using (SqlDataReader sdr = CMD.ExecuteReader())
+                    {
+                        while (sdr.Read())
+                        {
+                            items.Add(new SelectListItem
+
+                            {
+                                //Text = sdr["NAME"].ToString(),
+                                //Value = sdr["COMPANYEMAIL"].ToString()
+                                Text = sdr["USER_ID"].ToString(),
+                                Value = sdr["USR_EMAIL"].ToString()
+                            });
+                        }
+                    }
+                    con.Close();
+                }
+            }
+            return items;
+        }
+        private List<SelectListItem> getLocDropDown()
+        {
+            List<SelectListItem> items = new List<SelectListItem>();
+            string constr = _configuration.GetConnectionString("SQLCon");
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                string query = "SELECT ID_MM_SUB_DROPDOWN, SUB_DROPDOWN_TEXT FROM [dbo].[MM_SUB_DROPDOWN] WHERE RECORD_TYP <> '5' AND SUB_DROPDOWN_TYPE = 'STORE LOCATION';";
+                using (SqlCommand CMD = new SqlCommand(query))
+                {
+                    CMD.Connection = con;
+                    con.Open();
+                    using (SqlDataReader sdr = CMD.ExecuteReader())
+                    {
+                        while (sdr.Read())
+                        {
+                            items.Add(new SelectListItem
+
+                            {
+                                Text = sdr["SUB_DROPDOWN_TEXT"].ToString(),
+                                Value = sdr["ID_MM_SUB_DROPDOWN"].ToString()
+                            });
+                        }
+                    }
+                    con.Close();
+                }
+            }
+            return items;
+        }
+
+        private List<SelectListItem> getActionDropDown()
+        {
+            List<SelectListItem> items = new List<SelectListItem>();
+            string constr = _configuration.GetConnectionString("SQLCon");
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                string query = "SELECT MAIN_DROPDOWN_TEXT, ID_MM_MAIN_DROPDOWN FROM [dbo].[MM_MAIN_DROPDOWN] WHERE REC_TYPE <> '5' AND MAIN_DROPDOWN_TYPE = 'Status Maint';";
+                using (SqlCommand CMD = new SqlCommand(query))
+                {
+                    CMD.Connection = con;
+                    con.Open();
+                    using (SqlDataReader sdr = CMD.ExecuteReader())
+                    {
+                        while (sdr.Read())
+                        {
+                            items.Add(new SelectListItem
+                            {
+                                Text = sdr["MAIN_DROPDOWN_TEXT"].ToString(),
+                                Value = sdr["ID_MM_MAIN_DROPDOWN"].ToString()
+                            });
+                        }
+                    }
+                    con.Close();
+                }
+            }
+            return items;
+        }
+
+        private List<SelectListItem> getHelpDeskDropDown()
+        {
+            List<SelectListItem> items = new List<SelectListItem>();
+            string constr = _configuration.GetConnectionString("SQLCon");
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                string query = "SELECT MAIN_DROPDOWN_TEXT, ID_MM_MAIN_DROPDOWN FROM [dbo].[MM_MAIN_DROPDOWN] WHERE REC_TYPE <> '5' AND MAIN_DROPDOWN_TYPE = 'UpdateBy';";
+                using (SqlCommand CMD = new SqlCommand(query))
+                {
+                    CMD.Connection = con;
+                    con.Open();
+                    using (SqlDataReader sdr = CMD.ExecuteReader())
+                    {
+                        while (sdr.Read())
+                        {
+                            items.Add(new SelectListItem
+
+                            {
+                                Text = sdr["MAIN_DROPDOWN_TEXT"].ToString(),
+                                Value = sdr["ID_MM_MAIN_DROPDOWN"].ToString()
+                            });
+                        }
+                    }
+                    con.Close();
+                }
+            }
+            return items;
+        }
+        #endregion
+        //------------------------------------------------------------------------------
+        //                      Revolution Lab
+        //------------------------------------------------------------------------------
+        public ActionResult RevLabList()
+        {
+            List<RevRegModel> testing = new List<RevRegModel>();
+            DB1 db = new DB1();
+
+            try
+            {
+                testing = db.getRevData("");
+
+            }
+            catch (Exception ex)
+
+            {
+                TempData["alertMessage"] = ex.ToString();
+                Console.Write(ex);
+            }
+
+            return View(testing);
+        }
+
+        [HttpPost]
+        public ActionResult RevLabList(RevRegModel RevRegModel, string SEARCH_VALUE)
+        {
+            List<RevRegModel> test = new List<RevRegModel>();
+            DB1 db = new DB1();
+            try
+            {
+                test = db.getRevData(SEARCH_VALUE);
+            }
+            catch (Exception ex)
+            {
+                TempData["alertMessage"] = ex.ToString();
+                Console.Write(ex);
+
+            }
+            return View(test);
+        }
+        public ActionResult RevLabDtl(string id)
+        {
+            ViewBag.id = id;
+
+            var searchval = string.Empty;
+
+            RevolutionLabViewModel RevolutionLabViewModel = new RevolutionLabViewModel();
+            RevolutionLabViewModel.DropdownLoc = getLocDropDown();
+            RevolutionLabViewModel.DropdownStt = getActionDropDown();
+            //RevolutionLabViewModel.DropdownUpBy = getHelpDeskDropDown();
+            RevolutionLabViewModel.DropdownUpBy = getPICDropDown();
+            RevolutionLabViewModel.DropdownMovStt = getMovSttDropDown();
+            ViewBag.AllStockList = getPICDropDown();
+
+            if (id == null)
+            {
+
+            }
+            else
+            {
+                DB1 db = new DB1();
+
+                try
+                {
+                    RevolutionLabViewModel.RevRegModel = db.getRevLabData(id);
+
+                }
+                catch (Exception ex)
+                {
+                    TempData["alertMessage"] = ex.ToString();
+                    Console.Write(ex);
+                }
+            }
+
+            return View(RevolutionLabViewModel);
+
+        }
+        [HttpPost]
+        [SessionExpire]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+
+        public ActionResult RevLabDtl(RevolutionLabViewModel RevolutionLabViewModel)
+        {
+            string recordType = String.Empty;
+            RevolutionLabViewModel.DropdownLoc = getLocDropDown();
+            RevolutionLabViewModel.DropdownStt = getActionDropDown();
+            RevolutionLabViewModel.DropdownUpBy = getPICDropDown();
+            //RevolutionLabViewModel.DropdownUpBy = getHelpDeskDropDown();
+            RevolutionLabViewModel.DropdownMovStt = getMovSttDropDown();
+            ViewBag.AllStockList = getPICDropDown();
+
+            if (RevolutionLabViewModel.RevRegModel.ID_REV_LAB < 1)
+            {
+                return View();
+            }
+            else
+            {
+                recordType = "3";
+            }
+            try
+            {
+                DB1 db = new DB1();
+                string loc = HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty;
+                string result = db.RevLabMaint(RevolutionLabViewModel.RevRegModel, recordType);
+                ViewBag.Result = result;
+                ModelState.Clear();
+            }
+            catch (Exception ex)
+            {
+                TempData["alertMessage"] = ex.ToString();
+                Console.Write(ex);
+            }
+            return View(RevolutionLabViewModel);
+        }
+
+        public ActionResult RevLabRmv(string id)
+        {
+            ViewBag.id = id;
+
+            var searchval = string.Empty;
+
+            RevolutionLabViewModel RevolutionLabViewModel = new RevolutionLabViewModel();
+            RevolutionLabViewModel.DropdownLoc = getLocDropDown();
+            RevolutionLabViewModel.DropdownStt = getActionDropDown();
+            RevolutionLabViewModel.DropdownUpBy = getPICDropDown();
+            //RevolutionLabViewModel.DropdownUpBy = getHelpDeskDropDown();
+            RevolutionLabViewModel.DropdownMovStt = getMovSttDropDown();
+
+            if (id == null)
+            {
+                return View();
+            }
+            else
+            {
+                DB1 db = new DB1();
+
+                try
+                {
+                    RevolutionLabViewModel.RevRegModel = db.getRevLabData(id);
+
+                }
+                catch (Exception ex)
+                {
+                    Console.Write(ex);
+                }
+            }
+            return View(RevolutionLabViewModel);
+        }
+        [HttpPost]
+        [SessionExpire]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+
+        public ActionResult RevLabRmv(RevolutionLabViewModel RevolutionLabViewModel)
+        {
+            string recordType = String.Empty;
+            RevolutionLabViewModel.DropdownLoc = getLocDropDown();
+            RevolutionLabViewModel.DropdownStt = getActionDropDown();
+            RevolutionLabViewModel.DropdownUpBy = getPICDropDown();
+            //RevolutionLabViewModel.DropdownUpBy = getHelpDeskDropDown();
+            RevolutionLabViewModel.DropdownMovStt = getMovSttDropDown();
+
+            if (RevolutionLabViewModel.RevRegModel.ID_REV_LAB < 1)
+            {
+                return RedirectToAction("RevLabRmv", "Mstmain");
+            }
+            else
+            {
+                recordType = "5";
+            }
+            try
+            {
+                DB1 db = new DB1();
+                string loc = HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty;
+                string result = db.RevLabMaint(RevolutionLabViewModel.RevRegModel, recordType);
+                ViewBag.Result = result;
+                ModelState.Clear();
+            }
+            catch (Exception ex)
+            {
+                TempData["alertMessage"] = ex.ToString();
+                Console.Write(ex);
+            }
+            return View(RevolutionLabViewModel);
+        }
+        #endregion
+
+        #region record movement
+
+        #region RecMov dropdown
+        private List<SelectListItem> getCELDropDown()
+        {
+            List<SelectListItem> items = new List<SelectListItem>();
+            string constr = _configuration.GetConnectionString("SQLCon");
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                string query = "SELECT CEL_Number, ID FROM [dbo].[Registration_Asset_Management] WHERE Record_Type <> '5';";
+                using (SqlCommand CMD = new SqlCommand(query))
+                {
+                    CMD.Connection = con;
+                    con.Open();
+                    using (SqlDataReader sdr = CMD.ExecuteReader())
+                    {
+                        while (sdr.Read())
+                        {
+                            items.Add(new SelectListItem
+                            {
+                                Text = sdr["CEL_Number"].ToString(),
+                                Value = sdr["CEL_Number"].ToString()
+                            });
+                        }
+                    }
+                    con.Close();
+                }
+            }
+            return items;
+        }
+
+        private List<SelectListItem> getRFIDDropDown()
+        {
+            List<SelectListItem> items = new List<SelectListItem>();
+            string constr = _configuration.GetConnectionString("SQLCon");
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                string query = "SELECT RFID, ID FROM [dbo].[Registration_Asset_Management] WHERE Record_Type <> '5' AND RFID <> '' AND RFID <> 'NA' AND RFID <> 'N/A' AND RFID <> '0';";
+                using (SqlCommand CMD = new SqlCommand(query))
+                {
+                    CMD.Connection = con;
+                    con.Open();
+                    using (SqlDataReader sdr = CMD.ExecuteReader())
+                    {
+                        while (sdr.Read())
+                        {
+                            items.Add(new SelectListItem
+                            {
+                                Text = sdr["RFID"].ToString(),
+                                Value = sdr["RFID"].ToString()
+                            });
+                        }
+                    }
+                    con.Close();
+                }
+            }
+            return items;
+        }
+        private List<SelectListItem> getPIC_DropDown()
+        {
+            List<SelectListItem> items = new List<SelectListItem>();
+            string constr = _configuration.GetConnectionString("SQLCon");
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                //string query = "SELECT NAME, COMPANYEMAIL FROM [dbo].[PVIEW_USER_1_LST];";
+                //string query = "SELECT distinct USER_ID, USR_EMAIL FROM ACL_User where RECORD_TYP <> '5' AND STATUS_IND <> 'Inactive';";
+                string query = "select NAME COLLATE SQL_Latin1_General_CP1_CI_AS as NAME, COMPANYEMAIL COLLATE SQL_Latin1_General_CP1_CI_AS as COMPANYEMAIL from PVIEW_TMS_CONTRACTOR union select NAME COLLATE SQL_Latin1_General_CP1_CI_AS AS NAME, COMPANYEMAIL COLLATE SQL_Latin1_General_CP1_CI_AS AS COMPANYEMAIL from PVIEW_USER_1_LST; ";
+                using (SqlCommand CMD = new SqlCommand(query))
+                {
+                    CMD.Connection = con;
+                    con.Open();
+                    using (SqlDataReader sdr = CMD.ExecuteReader())
+                    {
+                        while (sdr.Read())
+                        {
+                            items.Add(new SelectListItem
+                            {
+                                Text = sdr["NAME"].ToString(),
+                                Value = sdr["COMPANYEMAIL"].ToString()
+                                //Text = sdr["USER_ID"].ToString(),
+                                //Value = sdr["USR_EMAIL"].ToString()
+                            });
+                        }
+                    }
+                    con.Close();
+                }
+            }
+            return items;
+        }
+        private List<SelectListItem> getRecMovDropDown()
+        {
+            List<SelectListItem> items = new List<SelectListItem>();
+            string constr = _configuration.GetConnectionString("SQLCon");
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                string query = "select MAIN_DROPDOWN_TEXT, ID_MM_MAIN_DROPDOWN from MM_MAIN_DROPDOWN where MAIN_DROPDOWN_TYPE = 'Movement Status' AND REC_TYPE <> '5'; ";
+                using (SqlCommand CMD = new SqlCommand(query))
+                {
+                    CMD.Connection = con;
+                    con.Open();
+                    using (SqlDataReader sdr = CMD.ExecuteReader())
+                    {
+                        while (sdr.Read())
+                        {
+                            items.Add(new SelectListItem
+                            {
+                                Text = sdr["MAIN_DROPDOWN_TEXT"].ToString(),
+                                Value = sdr["ID_MM_MAIN_DROPDOWN"].ToString()
+                            });
+                        }
+                    }
+                    con.Close();
+                }
+            }
+            return items;
+        }
+
+        #endregion
+        //--------------------------------------------------cel number autocomplete---------------------------------------------------//
+        public DataSet GetName(string prefix)
+        {
+            string constr = _configuration.GetConnectionString("SQLCon");
+            SqlConnection con = new SqlConnection(constr);
+            SqlCommand com = new SqlCommand("SELECT * FROM PVIEW_REGISTER_LST WHERE CEL_Number like '%'+@prefix+'%'", con);
+            com.Parameters.AddWithValue("@prefix", prefix);
+
+            DataSet ds = new DataSet();
+            SqlDataAdapter da = new SqlDataAdapter(com);
+            da.Fill(ds);
+
+            return ds;
+        }
+        public JsonResult GetRecord(string prefix)
+        {
+            DataSet ds = GetName(prefix);
+            List<RegistrationModel> reglst = new List<RegistrationModel>();
+            foreach (DataRow dr in ds.Tables[0].Rows)
+            {
+                reglst.Add(new RegistrationModel
+                {
+                    CEL_Number = dr["CEL_Number"].ToString(),
+                });
+            }
+            return Json(reglst);
+        }
+        //------------------------------------------RFID autocomplete----------------------------------------------//
+        public DataSet GetRFID(string prefix)
+        {
+            string constr = _configuration.GetConnectionString("SQLCon");
+            SqlConnection con = new SqlConnection(constr);
+            SqlCommand com = new SqlCommand("SELECT * FROM PVIEW_REGISTER_LST WHERE RFID like '%'+@prefix+'%'", con);
+            com.Parameters.AddWithValue("@prefix", prefix);
+
+            DataSet ds = new DataSet();
+            SqlDataAdapter da = new SqlDataAdapter(com);
+            da.Fill(ds);
+
+            return ds;
+        }
+        public JsonResult GetRecord2(string prefix)
+        {
+            DataSet ds = GetRFID(prefix);
+            List<RegistrationModel> reglst = new List<RegistrationModel>();
+            foreach (DataRow dr in ds.Tables[0].Rows)
+            {
+                reglst.Add(new RegistrationModel
+                {
+                    RFID = dr["RFID"].ToString(),
+                });
+            }
+            return Json(reglst);
+        }
+        //--------------------------------------------------------//
+        public ActionResult RecMovList()
+        {
+            List<RecordMovement> RecordMovement = new List<RecordMovement>();
+            DB1 db = new DB1();
+            try
+            {
+                RecordMovement = db.getRecMovData("");
+            }
+            catch (Exception ex)
+            {
+                Console.Write(ex);
+            }
+            return View(RecordMovement);
+        }
+        [HttpPost]
+        public ActionResult RecMovList(string SEARCH_VALUE)
+        {
+            List<RecordMovement> RecordMovement = new List<RecordMovement>();
+            DB1 db = new DB1();
+            try
+            {
+                RecordMovement = db.getRecMovData(SEARCH_VALUE);
+
+            }
+            catch (Exception ex)
+            {
+                Console.Write(ex);
+            }
+            return View(RecordMovement);
+        }
+
+        public ActionResult RecMovDtl(string id, string cel)
+        {
+            ViewBag.id = id;
+            ViewBag.cel = cel;
+
+            var searchval = string.Empty;
+
+            RecordMovementViewModel RecordMovementViewModel = new RecordMovementViewModel();
+            RecordMovementViewModel.CELdropdownitem = getCELDropDown();
+            RecordMovementViewModel.RFIDdropdownitem = getRFIDDropDown();
+            RecordMovementViewModel.PICdropdownitem = getPIC_DropDown();
+            RecordMovementViewModel.RecMovSttdropdownitem = getRecMovDropDown();
+
+            if (id == null && cel == null)
+            {
+
+            }
+            else
+            {
+                DB1 db = new DB1();
+
+                try
+                {
+                    RecordMovementViewModel.RecordMovement = db.getRecMov(id, cel);
+
+                }
+                catch (Exception ex)
+                {
+                    Console.Write(ex);
+                }
+            }
+            return View(RecordMovementViewModel);
+        }
+
+        //public ActionResult RecMovCelDtl(string cel)
+        //{
+        //    ViewBag.cel = cel;
+
+        //    var searchval = string.Empty;
+
+        //    RecordMovementViewModel RecordMovementViewModel = new RecordMovementViewModel();
+        //    RecordMovementViewModel.CELdropdownitem = getCELDropDown();
+        //    RecordMovementViewModel.RFIDdropdownitem = getRFIDDropDown();
+        //    RecordMovementViewModel.PICdropdownitem = getPIC_DropDown();
+        //    RecordMovementViewModel.RecMovSttdropdownitem = getRecMovDropDown();
+
+        //    if (cel == null)
+        //    {
+
+        //    }
+        //    else
+        //    {
+        //        DB1 db = new DB1();
+
+        //        try
+        //        {
+        //            RecordMovementViewModel.RecordMovement = db.getRecMov(id);
+
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            Console.Write(ex);
+        //        }
+        //    }
+        //    return View(RecordMovementViewModel);
+        //}
+
+        [HttpPost]
+        [SessionExpire]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+
+        public ActionResult RecMovDtl(RecordMovementViewModel RecordMovementViewModel)
+        {
+            string recordType = String.Empty;
+            RecordMovementViewModel.CELdropdownitem = getCELDropDown();
+            RecordMovementViewModel.RFIDdropdownitem = getRFIDDropDown();
+            RecordMovementViewModel.PICdropdownitem = getPIC_DropDown();
+            RecordMovementViewModel.RecMovSttdropdownitem = getRecMovDropDown();
+
+            if (RecordMovementViewModel.RecordMovement.ID < 1)
+            {
+                recordType = "1";
+            }
+            else
+            {
+                recordType = "3";
+            }
+            try
+            {
+                DB1 db = new DB1();
+                string loc = HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty;
+                string result = db.RecMovMaint(RecordMovementViewModel.RecordMovement, recordType);
+                ViewBag.Result = result;
+                ViewBag.RecType = recordType;
+                ModelState.Clear();
+            }
+            catch (Exception ex)
+            {
+                TempData["alertMessage"] = ex.ToString();
+                Console.Write(ex);
+            }
+            return View(RecordMovementViewModel);
+        }
+
+        public ActionResult RecMovRmv(string id, string cel)
+        {
+            ViewBag.id = id;
+
+            RecordMovementViewModel RecordMovementViewModel = new RecordMovementViewModel();
+            RecordMovementViewModel.CELdropdownitem = getCELDropDown();
+            RecordMovementViewModel.RFIDdropdownitem = getRFIDDropDown();
+            RecordMovementViewModel.PICdropdownitem = getPIC_DropDown();
+            RecordMovementViewModel.RecMovSttdropdownitem = getRecMovDropDown();
+
+            if (id == null)
+            {
+
+            }
+            else
+            {
+                DB1 db = new DB1();
+
+                try
+                {
+
+                    RecordMovementViewModel.RecordMovement = db.getRecMov(id, cel);
+
+                }
+                catch (Exception ex)
+                {
+                    Console.Write(ex);
+                }
+            }
+            return View(RecordMovementViewModel);
+        }
+        [HttpPost]
+        [SessionExpire]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+
+        public ActionResult RecMovRmv(RecordMovementViewModel RecordMovementViewModel)
+        {
+            string recordType = String.Empty;
+            RecordMovementViewModel.CELdropdownitem = getCELDropDown();
+            RecordMovementViewModel.RFIDdropdownitem = getRFIDDropDown();
+            RecordMovementViewModel.PICdropdownitem = getPIC_DropDown();
+            RecordMovementViewModel.RecMovSttdropdownitem = getRecMovDropDown();
+
+            if (RecordMovementViewModel.RecordMovement.ID < 1)
+            {
+                //recordType = "5";
+            }
+            else
+            {
+                recordType = "5";
+            }
+
+            try
+            {
+                DB1 db = new DB1();
+                string loc = HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty;
+                string result = db.RecMovMaintRmv(RecordMovementViewModel.RecordMovement, recordType);
+                ViewBag.Result = result;
+                ModelState.Clear();
+            }
+            catch (Exception ex)
+            {
+                TempData["alertMessage"] = ex.ToString();
+                Console.Write(ex);
+            }
+            return View(RecordMovementViewModel);
+        }
+        //-------------------get data base on cel or rfid----------------------------------//
+        public JsonResult GetData(string cel, string rfid)
+        {
+            RecordMovement model = new RecordMovement();
+            DB1 db = new DB1();
+            model = db.getAssetData(cel, rfid);
+            return Json(model);
+        }
+
+        #region Record Movement Detail Audit Trail
+        public ActionResult RecMovAuditTrail(string id)
+        {
+            DB1 db = new DB1();
+            var dt = db.List("PVIEW_RECMOV_A", id, "", "", "SQ_ID", "0", "1", "50000", "0");
+
+            List<RecMov_AT> RecMov_AT = new List<RecMov_AT>();
+            RecMov_AT = CommonMethod.ConvertToList<RecMov_AT>(dt);
+            return View(RecMov_AT);
+        }
+
+        public ActionResult RecMovView_AT(string id)
+        {
+            RecMov_AT RecMovView_AT = new RecMov_AT();
+
+            DB1 db = new DB1();
+            RecMovView_AT = db.getRecMovATData(id);
+            ViewBag.Edit = "True";
+            return View(RecMovView_AT);
+        }
+        #endregion
+        #endregion
+
+        #region Registration IT and Non-IT
+
+        //------------------------------------------------------------------------------
+        //                      Dropdown list for Registration
+        //------------------------------------------------------------------------------
+        #region registration dropdown list
+        private List<SelectListItem> getMainDropDown()
+        {
+            List<SelectListItem> items = new List<SelectListItem>();
+            string constr = _configuration.GetConnectionString("SQLCon");
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                string query = "SELECT MAIN_DROPDOWN_TEXT, ID_MM_MAIN_DROPDOWN FROM [dbo].[MM_MAIN_DROPDOWN] WHERE REC_TYPE <> '5' AND MAIN_DROPDOWN_TYPE = 'Status Maint';";
+                using (SqlCommand CMD = new SqlCommand(query))
+                {
+                    CMD.Connection = con;
+                    con.Open();
+                    using (SqlDataReader sdr = CMD.ExecuteReader())
+                    {
+                        while (sdr.Read())
+                        {
+                            items.Add(new SelectListItem
+                            {
+                                Text = sdr["MAIN_DROPDOWN_TEXT"].ToString(),
+                                Value = sdr["ID_MM_MAIN_DROPDOWN"].ToString()
+                            });
+                        }
+                    }
+                    con.Close();
+                }
+            }
+            return items;
+        }
+        private List<SelectListItem> getMainDropDown2()
+        {
+            List<SelectListItem> items = new List<SelectListItem>();
+            string constr = _configuration.GetConnectionString("SQLCon");
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                string query = "SELECT MAIN_DROPDOWN_TEXT, ID_MM_MAIN_DROPDOWN FROM [dbo].[MM_MAIN_DROPDOWN] WHERE REC_TYPE <> '5' AND MAIN_DROPDOWN_TYPE = 'Site' AND CODE <> null OR CODE <> '';";
+                using (SqlCommand CMD = new SqlCommand(query))
+                {
+                    CMD.Connection = con;
+                    con.Open();
+                    using (SqlDataReader sdr = CMD.ExecuteReader())
+                    {
+                        while (sdr.Read())
+                        {
+                            items.Add(new SelectListItem
+                            {
+                                Text = sdr["MAIN_DROPDOWN_TEXT"].ToString(),
+                                Value = sdr["ID_MM_MAIN_DROPDOWN"].ToString()
+                            });
+                        }
+                    }
+                    con.Close();
+                }
+            }
+            return items;
+        }
+        private List<SelectListItem> getSubDropDown()
+        {
+            List<SelectListItem> items = new List<SelectListItem>();
+            string constr = _configuration.GetConnectionString("SQLCon");
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                string query = "SELECT SUB_DROPDOWN_TEXT, ID_MM_SUB_DROPDOWN FROM [dbo].[MM_SUB_DROPDOWN] WHERE RECORD_TYP <> '5' AND SUB_DROPDOWN_TYPE = 'STORE LOCATION';";
+                using (SqlCommand CMD = new SqlCommand(query))
+                {
+                    CMD.Connection = con;
+                    con.Open();
+                    using (SqlDataReader sdr = CMD.ExecuteReader())
+                    {
+                        while (sdr.Read())
+                        {
+                            items.Add(new SelectListItem
+                            {
+                                Text = sdr["SUB_DROPDOWN_TEXT"].ToString(),
+                                Value = sdr["ID_MM_SUB_DROPDOWN"].ToString()
+                            });
+                        }
+                    }
+                    con.Close();
+                }
+            }
+            return items;
+        }
+        private List<SelectListItem> getSubDropDown2()
+        {
+            List<SelectListItem> items = new List<SelectListItem>();
+            string constr = _configuration.GetConnectionString("SQLCon");
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                string query = "SELECT SUB_DROPDOWN_TEXT, ID_MM_SUB_DROPDOWN, CODE FROM [dbo].[PVIEW_FORDROPDOWN_LST] WHERE RECORD_TYP <> '5' AND SUB_DROPDOWN_TYPE = 'Categories' AND (MAIN_DROPDOWN_TYPE = 'Asset Type' AND MAIN_DROPDOWN_TEXT = 'IT' OR MAIN_DROPDOWN_TEXT = 'IT Asset' OR MAIN_DROPDOWN_TEXT = 'ITASSET') AND CODE <> null OR CODE <> '';";
+                using (SqlCommand CMD = new SqlCommand(query))
+                {
+                    CMD.Connection = con;
+                    con.Open();
+                    using (SqlDataReader sdr = CMD.ExecuteReader())
+                    {
+                        while (sdr.Read())
+                        {
+                            items.Add(new SelectListItem
+                            {
+                                Text = sdr["SUB_DROPDOWN_TEXT"].ToString(),
+                                Value = sdr["ID_MM_SUB_DROPDOWN"].ToString()
+                            });
+                        }
+                    }
+                    con.Close();
+                }
+            }
+            return items;
+        }
+        private List<SelectListItem> getSubDropDown3()
+        {
+            List<SelectListItem> items = new List<SelectListItem>();
+            string constr = _configuration.GetConnectionString("SQLCon");
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                string query = "SELECT SUB_DROPDOWN_TEXT, ID_MM_SUB_DROPDOWN FROM [dbo].[PVIEW_FORDROPDOWN_LST] WHERE RECORD_TYP <> '5' AND SUB_DROPDOWN_TYPE = 'Department';";
+                using (SqlCommand CMD = new SqlCommand(query))
+                {
+                    CMD.Connection = con;
+                    con.Open();
+                    using (SqlDataReader sdr = CMD.ExecuteReader())
+                    {
+                        while (sdr.Read())
+                        {
+                            items.Add(new SelectListItem
+                            {
+                                Text = sdr["SUB_DROPDOWN_TEXT"].ToString(),
+                                Value = sdr["ID_MM_SUB_DROPDOWN"].ToString()
+                            });
+                        }
+                    }
+                    con.Close();
+                }
+            }
+            return items;
+        }
+        private List<SelectListItem> getSubDropDown4()
+        {
+            List<SelectListItem> items = new List<SelectListItem>();
+            string constr = _configuration.GetConnectionString("SQLCon");
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                string query = "SELECT SUB_DROPDOWN_TEXT, ID_MM_SUB_DROPDOWN FROM [dbo].[PVIEW_FORDROPDOWN_LST] WHERE RECORD_TYP <> '5' AND SUB_DROPDOWN_TYPE = 'Categories' AND (MAIN_DROPDOWN_TYPE = 'Asset Type' AND MAIN_DROPDOWN_TEXT = 'Non-IT' OR MAIN_DROPDOWN_TEXT = 'Non-IT Asset' OR MAIN_DROPDOWN_TEXT = 'Non IT Asset' OR MAIN_DROPDOWN_TEXT = 'Non IT' OR MAIN_DROPDOWN_TEXT = 'NonIT' OR MAIN_DROPDOWN_TEXT = 'NonIT Asset');";
+                using (SqlCommand CMD = new SqlCommand(query))
+                {
+                    CMD.Connection = con;
+                    con.Open();
+                    using (SqlDataReader sdr = CMD.ExecuteReader())
+                    {
+                        while (sdr.Read())
+                        {
+                            items.Add(new SelectListItem
+                            {
+                                Text = sdr["SUB_DROPDOWN_TEXT"].ToString(),
+                                Value = sdr["ID_MM_SUB_DROPDOWN"].ToString()
+                            });
+                        }
+                    }
+                    con.Close();
+                }
+            }
+            return items;
+        }
+
+        private List<SelectListItem> PopulateDropDown(string query, string textColumn, string valueColumn)
+        {
+            List<SelectListItem> items = new List<SelectListItem>();
+            string constr = _configuration.GetConnectionString("SQLCon");
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                using (SqlCommand cmd = new SqlCommand(query))
+                {
+                    try
+                    {
+                        cmd.Connection = con;
+                        con.Open();
+                        using (SqlDataReader sdr = cmd.ExecuteReader())
+                        {
+                            while (sdr.Read())
+                            {
+                                items.Add(new SelectListItem
+                                {
+                                    Text = sdr[textColumn].ToString(),
+                                    Value = sdr[valueColumn].ToString()
+                                });
+                            }
+                        }
+                        con.Close();
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.Write(ex);
+                    }
+                }
+            }
+            return items;
+        }
+
+        //Cascading Dropdown Loc
+        public JsonResult AjaxMethod(string type, string value)
+        {
+            RegistrationVIEWmodel model = new RegistrationVIEWmodel();
+            switch (type)
+            {
+                case "RegistrationModel_Site":
+                    model.Locdd = PopulateDropDown("SELECT ID_MM_SUB_DROPDOWN, SUB_DROPDOWN_TEXT FROM [dbo].[MM_SUB_DROPDOWN] WHERE RECORD_TYP <> '5' AND SUB_DROPDOWN_TYPE = 'STORE LOCATION' AND ID_MM_MAIN_DROPDOWN = " + value, "SUB_DROPDOWN_TEXT", "ID_MM_SUB_DROPDOWN");
+                    break;
+            }
+            return Json(model);
+        }
+        //Cascading Dropdown Dept
+        public JsonResult AjaxMethod1(string type, string value)
+        {
+            RegistrationVIEWmodel model = new RegistrationVIEWmodel();
+            switch (type)
+            {
+                case "RegistrationModel_Site":
+                    model.Deptdd = PopulateDropDown("SELECT ID_MM_SUB_DROPDOWN, SUB_DROPDOWN_TEXT FROM [dbo].[MM_SUB_DROPDOWN] WHERE RECORD_TYP <> '5' AND SUB_DROPDOWN_TYPE = 'Department' AND ID_MM_MAIN_DROPDOWN = " + value, "SUB_DROPDOWN_TEXT", "ID_MM_SUB_DROPDOWN");
+                    break;
+            }
+            return Json(model);
+        }
+        #endregion
+        //------------------------------------------------------------------------------
+        //                      Registration IT Asset
+        //------------------------------------------------------------------------------
+        #region Registration IT Asset
+        public JsonResult getAutoCelData(string site, string item)
+        {
+            RegistrationVIEWmodel model = new RegistrationVIEWmodel();
+            DB1 db = new DB1();
+            model = db.getAutoCelData(site, item);
+            return Json(model);
+        }
+        public ActionResult RegITLIST()
+        {
+            List<RegistrationModel> RegistrationModel = new List<RegistrationModel>();
+            DB1 db = new DB1();
+            try
+            {
+                RegistrationModel = db.getRegITdata("");
+            }
+            catch (Exception ex)
+            {
+                Console.Write(ex);
+            }
+            return View(RegistrationModel);
+        }
+
+        [HttpPost]
+        public ActionResult RegITLIST(string SEARCH_VALUE, IFormFile FileUpload)
+
+        {
+            List<RegistrationModel> RegistrationModel = new List<RegistrationModel>();
+            RegistrationModel model = new RegistrationModel(); //10052021
+            DB1 db = new DB1();
+            try
+            {
+                RegistrationModel = db.getRegITdata(SEARCH_VALUE);
+                string result = "";
+                if ((FileUpload != null) && (FileUpload.Length > 0) && !string.IsNullOrEmpty(FileUpload.FileName))
+                {
+                    string filename = FileUpload.FileName;
+                    string fileContentType = FileUpload.ContentType;
+                    byte[] filebytes = new byte[FileUpload.Length];
+
+                    using (var stream = FileUpload.OpenReadStream())
+                    {
+                        var data = stream.Read(filebytes, 0, Convert.ToInt32(FileUpload.Length));
+                    }
+
+                    ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+                    using (var package = new ExcelPackage(FileUpload.OpenReadStream()))
+                    {
+                        var currentSheet = package.Workbook.Worksheets;
+                        var workSheet = currentSheet.First();
+
+                        var noOfCol = workSheet.Dimension.End.Column;
+                        var noOfRow = workSheet.Dimension.End.Row;
+                        var blend = "";
+                        //19052021
+                        //check the excel header column name
+                        if (workSheet.Cells[1, 1].Value.ToString() == "Site" && workSheet.Cells[1, 2].Value.ToString() == "Item_Type" && workSheet.Cells[1, 3].Value.ToString() == "CEL_Number"
+                            && workSheet.Cells[1, 4].Value.ToString() == "Status" && workSheet.Cells[1, 5].Value.ToString() == "Owner" && workSheet.Cells[1, 6].Value.ToString() == "Fixed_Asset"
+                            && workSheet.Cells[1, 7].Value.ToString() == "Location" && workSheet.Cells[1, 8].Value.ToString() == "RFID" && workSheet.Cells[1, 9].Value.ToString() == "Department"
+                            && workSheet.Cells[1, 10].Value.ToString() == "Model" && workSheet.Cells[1, 11].Value.ToString() == "Purchase_Date" && workSheet.Cells[1, 12].Value.ToString() == "Manufacturer"
+                            && workSheet.Cells[1, 13].Value.ToString() == "Waranty_expiry" && workSheet.Cells[1, 14].Value.ToString() == "OS_Version" && workSheet.Cells[1, 15].Value.ToString() == "EOL_Support"
+                            && workSheet.Cells[1, 16].Value.ToString() == "Serial_Number" && workSheet.Cells[1, 17].Value.ToString() == "Description"
+                            && workSheet.Cells[1, 26].Value.ToString() == "IP_Address" && workSheet.Cells[1, 27].Value.ToString() == "MAC_Address" && workSheet.Cells[1, 28].Value.ToString() == "Host_Name"
+                            && workSheet.Cells[1, 29].Value.ToString() == "Sys_App" && workSheet.Cells[1, 30].Value.ToString() == "Installation_Date")
+                        {
+                            for (int rowIteratior = 2; rowIteratior <= noOfRow; rowIteratior++)
+                            {
+                                if (workSheet.Cells[rowIteratior, 1].Value == null && workSheet.Cells[rowIteratior, 2].Value == null && workSheet.Cells[rowIteratior, 3].Value == null
+                                    && workSheet.Cells[rowIteratior, 4].Value == null && workSheet.Cells[rowIteratior, 5].Value == null && workSheet.Cells[rowIteratior, 6].Value == null
+                                    && workSheet.Cells[rowIteratior, 7].Value == null && workSheet.Cells[rowIteratior, 8].Value == null && workSheet.Cells[rowIteratior, 9].Value == null
+                                    && workSheet.Cells[rowIteratior, 10].Value == null && workSheet.Cells[rowIteratior, 11].Value == null && workSheet.Cells[rowIteratior, 12].Value == null
+                                    && workSheet.Cells[rowIteratior, 13].Value == null && workSheet.Cells[rowIteratior, 14].Value == null && workSheet.Cells[rowIteratior, 15].Value == null
+                                    && workSheet.Cells[rowIteratior, 16].Value == null && workSheet.Cells[rowIteratior, 17].Value == null
+                                    && workSheet.Cells[rowIteratior, 26].Value == null && workSheet.Cells[rowIteratior, 27].Value == null && workSheet.Cells[rowIteratior, 28].Value == null
+                                    && workSheet.Cells[rowIteratior, 29].Value == null && workSheet.Cells[rowIteratior, 30].Value == null)
+                                {
+                                    workSheet.DeleteRow(rowIteratior);
+                                }
+                                else
+                                {
+                                    model.Site = workSheet.Cells[rowIteratior, 1].Value == null ? model.Site = null : workSheet.Cells[rowIteratior, 1].Value.ToString();
+                                    model.Item_Type = workSheet.Cells[rowIteratior, 2].Value == null ? model.Item_Type = null : workSheet.Cells[rowIteratior, 2].Value.ToString();
+                                    //model.CEL_Number = workSheet.Cells[rowIteratior, 3].Value == null ? model.CEL_Number = null : workSheet.Cells[rowIteratior, 3].Value.ToString();
+                                    model.CEL_Number = workSheet.Cells[rowIteratior, 3].Value.ToString();
+                                    model.Status = workSheet.Cells[rowIteratior, 4].Value == null ? model.Status = null : workSheet.Cells[rowIteratior, 4].Value.ToString();
+                                    model.Owner = workSheet.Cells[rowIteratior, 5].Value == null ? model.Owner = null : workSheet.Cells[rowIteratior, 5].Value.ToString();
+                                    model.Fixed_Asset = workSheet.Cells[rowIteratior, 6].Value == null ? model.Fixed_Asset = null : workSheet.Cells[rowIteratior, 6].Value.ToString();
+                                    model.Location = workSheet.Cells[rowIteratior, 7].Value == null ? model.Location = null : workSheet.Cells[rowIteratior, 7].Value.ToString();
+                                    model.RFID = workSheet.Cells[rowIteratior, 8].Value == null ? model.RFID = null : workSheet.Cells[rowIteratior, 8].Value.ToString();
+                                    model.Department = workSheet.Cells[rowIteratior, 9].Value == null ? model.Department = null : workSheet.Cells[rowIteratior, 9].Value.ToString();
+                                    model.Model = workSheet.Cells[rowIteratior, 10].Value == null ? model.Model = null : workSheet.Cells[rowIteratior, 10].Value.ToString();
+                                    model.Purchase_Date = workSheet.Cells[rowIteratior, 11].Value == null ? model.Purchase_Date = null : (DateTime)workSheet.Cells[rowIteratior, 11].Value;
+                                    model.Manufacturer = workSheet.Cells[rowIteratior, 12].Value == null ? model.Manufacturer = null : workSheet.Cells[rowIteratior, 12].Value.ToString();
+                                    model.Waranty_Expiry = workSheet.Cells[rowIteratior, 13].Value == null ? model.Waranty_Expiry = null : (DateTime)workSheet.Cells[rowIteratior, 13].Value;
+                                    model.OS_version = workSheet.Cells[rowIteratior, 14].Value == null ? model.OS_version = null : workSheet.Cells[rowIteratior, 14].Value.ToString();
+                                    model.EOL_Support = workSheet.Cells[rowIteratior, 15].Value == null ? model.EOL_Support = null : (DateTime)workSheet.Cells[rowIteratior, 15].Value;
+                                    model.Serial_Number = workSheet.Cells[rowIteratior, 16].Value == null ? model.Serial_Number = null : workSheet.Cells[rowIteratior, 16].Value.ToString();
+                                    model.Description = workSheet.Cells[rowIteratior, 17].Value == null ? model.Description = null : workSheet.Cells[rowIteratior, 17].Value.ToString();
+                                    model.Asset_Type = "IT Asset";
+                                    model.IP_Address = workSheet.Cells[rowIteratior, 26].Value == null ? model.IP_Address = null : workSheet.Cells[rowIteratior, 26].Value.ToString();
+                                    model.MAC_Address = workSheet.Cells[rowIteratior, 27].Value == null ? model.MAC_Address = null : workSheet.Cells[rowIteratior, 27].Value.ToString();
+                                    model.Host_Name = workSheet.Cells[rowIteratior, 28].Value == null ? model.Host_Name = null : workSheet.Cells[rowIteratior, 28].Value.ToString();
+                                    model.Sys_App = workSheet.Cells[rowIteratior, 29].Value == null ? model.Sys_App = null : workSheet.Cells[rowIteratior, 29].Value.ToString();
+                                    model.Installation_Date = workSheet.Cells[rowIteratior, 30].Value == null ? model.Installation_Date = null : (DateTime)workSheet.Cells[rowIteratior, 30].Value;
+                                    result = db.getImport(model, "1");
+                                    ModelState.Clear();
+                                }
+                            }
+                            SEARCH_VALUE = "";
+                            RegistrationModel = db.getRegITdata(SEARCH_VALUE);
+                            ViewBag.result = result;
+                            return View(RegistrationModel);
+                        }
+                        else
+                        {
+                            //alert message when excel header column name format wrong
+                            SEARCH_VALUE = "";
+                            ViewBag.result = "Wrong Column name in Excel";
+                            return View(RegistrationModel);
+                        }
+
+                    }
+                }
+                else
+                {
+                    RegistrationModel = db.getRegITdata(SEARCH_VALUE);
+                    return View(RegistrationModel);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.Write(ex);
+            }
+            return View(RegistrationModel);
+        }
+        public ActionResult RegITDTL(string id)
+        {
+            ViewBag.id = id;
+            var searchval = string.Empty;
+            RegistrationVIEWmodel RegistrationViewModel = new RegistrationVIEWmodel();
+            RegistrationViewModel.Statusdropdownitem = getMainDropDown();
+            RegistrationViewModel.Ctgdropdownitem = getSubDropDown2();
+            RegistrationViewModel.Sitedd = PopulateDropDown("SELECT ID_MM_MAIN_DROPDOWN, MAIN_DROPDOWN_TEXT FROM [dbo].[MM_MAIN_DROPDOWN] WHERE REC_TYPE <> '5' AND MAIN_DROPDOWN_TYPE = 'Site' AND CODE <> null OR CODE <> '' ; ", "MAIN_DROPDOWN_TEXT", "ID_MM_MAIN_DROPDOWN");
+
+            ViewBag.Check = "NB";
+            ViewBag.Check2 = "PC";
+            ViewBag.Check3 = "NOTEBOOK";
+            ViewBag.Check4 = "Macbook";
+            ViewBag.Check5 = "Microsoft Surface";
+            ViewBag.Check6 = "VMC";
+            ViewBag.Check7 = "IPC";
+            ViewBag.Check8 = "MPC";
+
+            if (id == null)
+            {
+                return View(RegistrationViewModel);
+            }
+            else
+            {
+                DB1 db = new DB1();
+                try
+                {
+                    RegistrationViewModel.Locdd = PopulateDropDown("SELECT ID_MM_SUB_DROPDOWN, SUB_DROPDOWN_TEXT FROM [dbo].[MM_SUB_DROPDOWN] WHERE RECORD_TYP <> '5' AND SUB_DROPDOWN_TYPE = 'STORE LOCATION'; ", "SUB_DROPDOWN_TEXT", "ID_MM_SUB_DROPDOWN");
+                    RegistrationViewModel.Deptdd = PopulateDropDown("SELECT ID_MM_SUB_DROPDOWN, SUB_DROPDOWN_TEXT FROM [dbo].[MM_SUB_DROPDOWN] WHERE RECORD_TYP <> '5' AND SUB_DROPDOWN_TYPE = 'Department'; ", "SUB_DROPDOWN_TEXT", "ID_MM_SUB_DROPDOWN");
+                    RegistrationViewModel.RegistrationModel = db.getRegIT(id);
+                    ViewBag.item = RegistrationViewModel.RegistrationModel.Item_Type;
+                }
+                catch (Exception ex)
+                {
+                    Console.Write(ex);
+                }
+            }
+            return View(RegistrationViewModel);
+        }
+
+        [HttpPost]
+        [SessionExpire]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+        public ActionResult RegITDTL(String Site, RegistrationVIEWmodel RegistrationViewModel)
+        {
+            string recordType = String.Empty;
+            RegistrationViewModel.Statusdropdownitem = getMainDropDown();
+            RegistrationViewModel.Ctgdropdownitem = getSubDropDown2();
+
+            RegistrationViewModel.Sitedd = PopulateDropDown("SELECT ID_MM_MAIN_DROPDOWN, MAIN_DROPDOWN_TEXT FROM [dbo].[MM_MAIN_DROPDOWN] WHERE REC_TYPE <> '5' AND MAIN_DROPDOWN_TYPE = 'Site' AND CODE <> null OR CODE <> '' ;", "MAIN_DROPDOWN_TEXT", "ID_MM_MAIN_DROPDOWN");
+            //RegistrationViewModel.Locdd = PopulateDropDown("SELECT ID_MM_SUB_DROPDOWN, SUB_DROPDOWN_TEXT FROM [dbo].[MM_SUB_DROPDOWN] WHERE RECORD_TYP <> '5' AND SUB_DROPDOWN_TYPE = 'STORE LOCATION' AND MAIN_DROPDOWN_ID = " + Site, "SUB_DROPDOWN_TEXT", "ID_MM_SUB_DROPDOWN");
+            //RegistrationViewModel.Deptdd = PopulateDropDown("SELECT ID_MM_SUB_DROPDOWN, SUB_DROPDOWN_TEXT FROM [dbo].[MM_SUB_DROPDOWN] WHERE RECORD_TYP <> '5' AND SUB_DROPDOWN_TYPE = 'Department' AND MAIN_DROPDOWN_ID = " + Site, "SUB_DROPDOWN_TEXT", "ID_MM_SUB_DROPDOWN");
+
+            ViewBag.Check = "NB";
+            ViewBag.Check2 = "PC";
+            ViewBag.Check3 = "NOTEBOOK";
+            ViewBag.Check4 = "Macbook";
+            ViewBag.Check5 = "Microsoft Surface";
+            ViewBag.Check6 = "VMC";
+            ViewBag.Check7 = "IPC";
+            ViewBag.Check8 = "MPC";
+
+            if (RegistrationViewModel.RegistrationModel.ID < 1)
+            {
+                recordType = "1";
+            }
+            else
+            {
+                recordType = "3";
+            }
+            try
+            {
+                DB1 db = new DB1();
+                string loc = HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty;
+                string result = db.RegITMaint(RegistrationViewModel.RegistrationModel, recordType);
+                ViewBag.Result = result;
+                RegistrationViewModel.Locdd = PopulateDropDown("SELECT ID_MM_SUB_DROPDOWN, SUB_DROPDOWN_TEXT FROM [dbo].[MM_SUB_DROPDOWN] WHERE RECORD_TYP <> '5' AND SUB_DROPDOWN_TYPE = 'STORE LOCATION' AND ID_MM_MAIN_DROPDOWN = " + RegistrationViewModel.RegistrationModel.Site, "SUB_DROPDOWN_TEXT", "ID_MM_SUB_DROPDOWN");
+                RegistrationViewModel.Deptdd = PopulateDropDown("SELECT ID_MM_SUB_DROPDOWN, SUB_DROPDOWN_TEXT FROM [dbo].[MM_SUB_DROPDOWN] WHERE RECORD_TYP <> '5' AND SUB_DROPDOWN_TYPE = 'Department' AND ID_MM_MAIN_DROPDOWN = " + RegistrationViewModel.RegistrationModel.Site, "SUB_DROPDOWN_TEXT", "ID_MM_SUB_DROPDOWN");
+                ViewBag.RecType = recordType;
+                ModelState.Clear();
+            }
+            catch (Exception ex)
+            {
+                TempData["alertMessage"] = ex.ToString();
+                Console.Write(ex);
+            }
+            return View(RegistrationViewModel);
+        }
+        public ActionResult RegITRmv(string id)
+        {
+            ViewBag.id = id;
+            var searchval = string.Empty;
+            RegistrationVIEWmodel RegistrationViewModel = new RegistrationVIEWmodel();
+            RegistrationViewModel.Statusdropdownitem = getMainDropDown();
+            RegistrationViewModel.Sitedropdownitem = getMainDropDown2();
+            RegistrationViewModel.Locdropdownitem = getSubDropDown();
+            RegistrationViewModel.Ctgdropdownitem = getSubDropDown2();
+            RegistrationViewModel.Deptdropdownitem = getSubDropDown3();
+
+            if (id == null)
+            {
+                return View(RegistrationViewModel);
+            }
+            else
+            {
+                DB1 db = new DB1();
+                try
+                {
+                    RegistrationViewModel.RegistrationModel = db.getRegIT(id);
+                }
+                catch (Exception ex)
+                {
+                    Console.Write(ex);
+                }
+            }
+            return View(RegistrationViewModel);
+        }
+
+        [HttpPost]
+        [SessionExpire]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+        public ActionResult RegITRmv(RegistrationVIEWmodel RegistrationViewModel)
+        {
+            string recordType = String.Empty;
+            RegistrationViewModel.Statusdropdownitem = getMainDropDown();
+            RegistrationViewModel.Sitedropdownitem = getMainDropDown2();
+            RegistrationViewModel.Locdropdownitem = getSubDropDown();
+            RegistrationViewModel.Ctgdropdownitem = getSubDropDown2();
+            RegistrationViewModel.Deptdropdownitem = getSubDropDown3();
+
+            if (RegistrationViewModel.RegistrationModel.ID < 1)
+            {
+
+            }
+            else
+            {
+                recordType = "5";
+            }
+            try
+            {
+                DB1 db = new DB1();
+                string loc = HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty;
+                string result = db.RegITMaintRmv(RegistrationViewModel.RegistrationModel, recordType);
+                ViewBag.Result = result;
+                ModelState.Clear();
+            }
+            catch (Exception ex)
+            {
+                TempData["alertMessage"] = ex.ToString();
+                Console.Write(ex);
+            }
+            return View(RegistrationViewModel);
+        }
+        #endregion
+        //------------------------------------------------------------------------------
+        //                      Registration Non-IT Asset
+        //------------------------------------------------------------------------------
+        #region Registration Non-IT
+        public ActionResult RegNonITLIST()
+        {
+            List<RegistrationModel> RegirstrationModel = new List<RegistrationModel>();
+            DB1 db = new DB1();
+            try
+            {
+                RegirstrationModel = db.getRegNonITdata("");
+
+            }
+            catch (Exception ex)
+            {
+                Console.Write(ex);
+            }
+            return View(RegirstrationModel);
+        }
+
+        [HttpPost]
+        public ActionResult RegNonITLIST(string SEARCH_VALUE, IFormFile FileUpload)
+        {
+            List<RegistrationModel> RegistrationModel = new List<RegistrationModel>();
+            RegistrationModel model = new RegistrationModel();
+            DB1 db = new DB1();
+            try
+            {
+                //RegistrationModel = db.getRegNonITdata(SEARCH_VALUE);
+                string result = "";
+                if ((FileUpload != null) && (FileUpload.Length > 0) && !string.IsNullOrEmpty(FileUpload.FileName))
+                {
+                    string filename = FileUpload.FileName;
+                    string fileContentType = FileUpload.ContentType;
+                    byte[] filebytes = new byte[FileUpload.Length];
+
+                    using (var stream = FileUpload.OpenReadStream())
+                    {
+                        var data = stream.Read(filebytes, 0, Convert.ToInt32(FileUpload.Length));
+                    }
+
+                    ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+                    using (var package = new ExcelPackage(FileUpload.OpenReadStream()))
+                    {
+                        var currentSheet = package.Workbook.Worksheets;
+                        var workSheet = currentSheet.First();
+
+                        var noOfCol = workSheet.Dimension.End.Column;
+                        var noOfRow = workSheet.Dimension.End.Row;
+                        var blend = "";
+                        //18092021-19052021
+                        //check the excel header column name
+                        if (workSheet.Cells[1, 1].Value.ToString() == "Site" && workSheet.Cells[1, 2].Value.ToString() == "Item_Type" && workSheet.Cells[1, 3].Value.ToString() == "CEL_Number"
+                            && workSheet.Cells[1, 4].Value.ToString() == "Status" && workSheet.Cells[1, 5].Value.ToString() == "Owner" && workSheet.Cells[1, 6].Value.ToString() == "Fixed_Asset"
+                            && workSheet.Cells[1, 7].Value.ToString() == "Location" && workSheet.Cells[1, 8].Value.ToString() == "RFID" && workSheet.Cells[1, 9].Value.ToString() == "Department"
+                            && workSheet.Cells[1, 10].Value.ToString() == "Model" && workSheet.Cells[1, 11].Value.ToString() == "Purchase_Date" && workSheet.Cells[1, 12].Value.ToString() == "Manufacturer"
+                            && workSheet.Cells[1, 13].Value.ToString() == "Waranty_expiry" && workSheet.Cells[1, 14].Value.ToString() == "OS_Version" && workSheet.Cells[1, 15].Value.ToString() == "EOL_Support"
+                            && workSheet.Cells[1, 16].Value.ToString() == "Serial_Number" && workSheet.Cells[1, 17].Value.ToString() == "Description")
+                        {
+                            for (int rowIteratior = 2; rowIteratior <= noOfRow; rowIteratior++)
+                            {
+                                if (workSheet.Cells[rowIteratior, 1].Value == null && workSheet.Cells[rowIteratior, 2].Value == null && workSheet.Cells[rowIteratior, 3].Value == null
+                                    && workSheet.Cells[rowIteratior, 4].Value == null && workSheet.Cells[rowIteratior, 5].Value == null && workSheet.Cells[rowIteratior, 6].Value == null
+                                    && workSheet.Cells[rowIteratior, 7].Value == null && workSheet.Cells[rowIteratior, 8].Value == null && workSheet.Cells[rowIteratior, 9].Value == null
+                                    && workSheet.Cells[rowIteratior, 10].Value == null && workSheet.Cells[rowIteratior, 11].Value == null && workSheet.Cells[rowIteratior, 12].Value == null
+                                    && workSheet.Cells[rowIteratior, 13].Value == null && workSheet.Cells[rowIteratior, 14].Value == null && workSheet.Cells[rowIteratior, 15].Value == null
+                                    && workSheet.Cells[rowIteratior, 16].Value == null && workSheet.Cells[rowIteratior, 17].Value == null)
+                                {
+                                    workSheet.DeleteRow(rowIteratior);
+                                }
+                                else
+                                {
+                                    model.Site = workSheet.Cells[rowIteratior, 1].Value == null ? model.Site = null : workSheet.Cells[rowIteratior, 1].Value.ToString();
+                                    model.Item_Type = workSheet.Cells[rowIteratior, 2].Value == null ? model.Item_Type = null : workSheet.Cells[rowIteratior, 2].Value.ToString();
+                                    model.CEL_Number = workSheet.Cells[rowIteratior, 3].Value == null ? model.CEL_Number = null : workSheet.Cells[rowIteratior, 3].Value.ToString();
+                                    //model.CEL_Number = workSheet.Cells[rowIteratior, 3].Value.ToString();
+                                    model.Status = workSheet.Cells[rowIteratior, 4].Value == null ? model.Status = null : workSheet.Cells[rowIteratior, 4].Value.ToString();
+                                    model.Owner = workSheet.Cells[rowIteratior, 5].Value == null ? model.Owner = null : workSheet.Cells[rowIteratior, 5].Value.ToString();
+                                    //model.Fixed_Asset = workSheet.Cells[rowIteratior, 6].Value == null ? model.Fixed_Asset = null : workSheet.Cells[rowIteratior, 6].Value.ToString();
+                                    model.Fixed_Asset = workSheet.Cells[rowIteratior, 6].Value.ToString();
+                                    model.Location = workSheet.Cells[rowIteratior, 7].Value == null ? model.Location = null : workSheet.Cells[rowIteratior, 7].Value.ToString();
+                                    model.RFID = workSheet.Cells[rowIteratior, 8].Value == null ? model.RFID = null : workSheet.Cells[rowIteratior, 8].Value.ToString();
+                                    model.Department = workSheet.Cells[rowIteratior, 9].Value == null ? model.Department = null : workSheet.Cells[rowIteratior, 9].Value.ToString();
+                                    model.Model = workSheet.Cells[rowIteratior, 10].Value == null ? model.Model = null : workSheet.Cells[rowIteratior, 10].Value.ToString();
+                                    model.Purchase_Date = workSheet.Cells[rowIteratior, 11].Value == null ? model.Purchase_Date = null : (DateTime)workSheet.Cells[rowIteratior, 11].Value;
+                                    model.Manufacturer = workSheet.Cells[rowIteratior, 12].Value == null ? model.Manufacturer = null : workSheet.Cells[rowIteratior, 12].Value.ToString();
+                                    model.Waranty_Expiry = workSheet.Cells[rowIteratior, 13].Value == null ? model.Waranty_Expiry = null : (DateTime)workSheet.Cells[rowIteratior, 13].Value;
+                                    model.OS_version = workSheet.Cells[rowIteratior, 14].Value == null ? model.OS_version = null : workSheet.Cells[rowIteratior, 14].Value.ToString();
+                                    model.EOL_Support = workSheet.Cells[rowIteratior, 15].Value == null ? model.EOL_Support = null : (DateTime)workSheet.Cells[rowIteratior, 15].Value;
+                                    model.Serial_Number = workSheet.Cells[rowIteratior, 16].Value == null ? model.Serial_Number = null : workSheet.Cells[rowIteratior, 16].Value.ToString();
+                                    model.Description = workSheet.Cells[rowIteratior, 17].Value == null ? model.Description = null : workSheet.Cells[rowIteratior, 17].Value.ToString();
+                                    model.Asset_Type = "Non-IT Asset";
+                                    result = db.getImport(model, "1");
+
+                                    ModelState.Clear();
+                                }
+                            }
+                            SEARCH_VALUE = "";
+                            RegistrationModel = db.getRegNonITdata(SEARCH_VALUE);
+                            ViewBag.result = result;
+                            return View(RegistrationModel);
+                        }
+                        else
+                        {
+                            //18092021-19052021
+                            //alert message when excel header column name format wrong
+                            SEARCH_VALUE = "";
+                            ViewBag.result = "Wrong Column name in Excel";
+                            return View(RegistrationModel);
+                        }
+                    }
+                }
+                else
+                {
+                    RegistrationModel = db.getRegNonITdata(SEARCH_VALUE);
+                    return View(RegistrationModel);
+                    //RegistrationModel = db.getRegNonITdata(SEARCH_VALUE);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.Write(ex);
+            }
+            return View(RegistrationModel);
+        }
+        public ActionResult RegNonITDTL(string id)
+        {
+            ViewBag.id = id;
+            var searchval = string.Empty;
+            RegistrationVIEWmodel RegistrationViewModel = new RegistrationVIEWmodel();
+            RegistrationViewModel.Statusdropdownitem = getMainDropDown();
+            RegistrationViewModel.Ctgdropdownitem = getSubDropDown4();
+            RegistrationViewModel.Sitedd = PopulateDropDown("SELECT ID_MM_MAIN_DROPDOWN, MAIN_DROPDOWN_TEXT FROM [dbo].[MM_MAIN_DROPDOWN] WHERE REC_TYPE <> '5' AND MAIN_DROPDOWN_TYPE = 'Site'  AND CODE <> null OR CODE <> '' ; ", "MAIN_DROPDOWN_TEXT", "ID_MM_MAIN_DROPDOWN");
+
+            if (id == null)
+            {
+                return View(RegistrationViewModel);
+            }
+            else
+            {
+                DB1 db = new DB1();
+                try
+                {
+                    RegistrationViewModel.Locdd = PopulateDropDown("SELECT ID_MM_SUB_DROPDOWN, SUB_DROPDOWN_TEXT FROM [dbo].[MM_SUB_DROPDOWN] WHERE RECORD_TYP <> '5' AND SUB_DROPDOWN_TYPE = 'STORE LOCATION'; ", "SUB_DROPDOWN_TEXT", "ID_MM_SUB_DROPDOWN");
+                    RegistrationViewModel.Deptdd = PopulateDropDown("SELECT ID_MM_SUB_DROPDOWN, SUB_DROPDOWN_TEXT FROM [dbo].[MM_SUB_DROPDOWN] WHERE RECORD_TYP <> '5' AND SUB_DROPDOWN_TYPE = 'Department'; ", "SUB_DROPDOWN_TEXT", "ID_MM_SUB_DROPDOWN");
+                    RegistrationViewModel.RegistrationModel = db.getRegIT(id);
+                }
+                catch (Exception ex)
+                {
+                    Console.Write(ex);
+                }
+            }
+            return View(RegistrationViewModel);
+        }
+
+        public IActionResult RegNonITSample()
+        {
+            DataTable table = new DataTable();
+            table.Columns.Add("Site", typeof(string));
+            table.Columns.Add("Item_Type", typeof(string));
+            table.Columns.Add("CEL_Number", typeof(string));
+            table.Columns.Add("Status", typeof(string));
+            table.Columns.Add("Owner", typeof(string));
+            table.Columns.Add("Fixed_Asset", typeof(string));
+            table.Columns.Add("Location", typeof(string));
+            table.Columns.Add("RFID", typeof(string));
+            table.Columns.Add("Department", typeof(string));
+            table.Columns.Add("Model", typeof(string));
+            table.Columns.Add("Purchase_Date", typeof(DateTime));
+            table.Columns.Add("Manufacturer", typeof(string));
+            table.Columns.Add("Waranty_expiry", typeof(DateTime));
+            table.Columns.Add("OS_Version", typeof(string));
+            table.Columns.Add("EOL_Support", typeof(DateTime));
+            table.Columns.Add("Serial_Number", typeof(string));
+            table.Columns.Add("Description", typeof(string));
+            table.Columns.Add("Asset_Type", typeof(string));
+            table.Columns.Add("Record_Type", typeof(string));
+            table.Columns.Add("Created_By", typeof(string));
+            table.Columns.Add("Created_Date", typeof(string));
+            table.Columns.Add("Created_Loc", typeof(string));
+            table.Columns.Add("Updated_By", typeof(string));
+            table.Columns.Add("Updated_Date", typeof(string));
+            table.Columns.Add("Updated_Loc", typeof(string));
+            table.Columns.Add("IP_Address", typeof(string));
+            table.Columns.Add("MAC_Address", typeof(string));
+            table.Columns.Add("Host_Name", typeof(string));
+            table.Columns.Add("Sys_App", typeof(string));
+            table.Columns.Add("Installation_Date", typeof(string));
+            table.Rows.Add(
+                "Penfibre Film", "PRINTER", "-", "Active", "Owner Name", "ST-000015", "Account", "A02021030000000000123456", "Accounts", "22-ABC", DateTime.ParseExact("22/02/2020", "dd/MM/yyyy", null), "DAIKIN", DateTime.ParseExact("22/02/2021", "dd/MM/yyyy", null), "1.1", DateTime.ParseExact("22/02/2021", "dd/MM/yyyy", null), "ABC1231231", "Testing", "Non-IT Asset", "1", "Who", "22/02/2021", "Loc", "Who", "22/2/2021", "Loc", "0.0.0.0", "0.0.0.0", "", "", "20/12/2016"
+                );
+            using (ClosedXML.Excel.XLWorkbook wb = new ClosedXML.Excel.XLWorkbook())
+            {
+
+                wb.Worksheets.Add(table, "Template");
+
+                using (MemoryStream stream = new MemoryStream())
+                {
+                    wb.SaveAs(stream);
+                    stream.Position = 0;
+                    return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "RegNonITSampleTemplate.xlsx");
+                }
+            }
+        }
+
+
+        [HttpPost]
+        [SessionExpire]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+
+        public ActionResult RegNonITDTL(String Site, RegistrationVIEWmodel RegistrationViewModel)
+        {
+            string recordType = String.Empty;
+            RegistrationViewModel.Statusdropdownitem = getMainDropDown();
+            RegistrationViewModel.Ctgdropdownitem = getSubDropDown4();
+
+            RegistrationViewModel.Sitedd = PopulateDropDown("SELECT ID_MM_MAIN_DROPDOWN, MAIN_DROPDOWN_TEXT FROM [dbo].[MM_MAIN_DROPDOWN] WHERE REC_TYPE <> '5' AND MAIN_DROPDOWN_TYPE = 'Site' AND CODE <> null OR CODE <> '' ;", "MAIN_DROPDOWN_TEXT", "ID_MM_MAIN_DROPDOWN");
+
+            if (RegistrationViewModel.RegistrationModel.ID < 1)
+            {
+                recordType = "1";
+            }
+            else
+            {
+                recordType = "3";
+            }
+            try
+            {
+                DB1 db = new DB1();
+                string loc = HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty;
+                string result = db.RegNonITMaint(RegistrationViewModel.RegistrationModel, recordType);
+                ViewBag.Result = result;
+                RegistrationViewModel.Locdd = PopulateDropDown("SELECT ID_MM_SUB_DROPDOWN, SUB_DROPDOWN_TEXT FROM [dbo].[MM_SUB_DROPDOWN] WHERE RECORD_TYP <> '5' AND SUB_DROPDOWN_TYPE = 'STORE LOCATION' AND MAIN_DROPDOWN_ID = " + Site, "SUB_DROPDOWN_TEXT", "ID_MM_SUB_DROPDOWN");
+                RegistrationViewModel.Deptdd = PopulateDropDown("SELECT ID_MM_SUB_DROPDOWN, SUB_DROPDOWN_TEXT FROM [dbo].[MM_SUB_DROPDOWN] WHERE RECORD_TYP <> '5' AND SUB_DROPDOWN_TYPE = 'Department' AND MAIN_DROPDOWN_ID = " + Site, "SUB_DROPDOWN_TEXT", "ID_MM_SUB_DROPDOWN");
+                ViewBag.RecType = recordType;
+                ModelState.Clear();
+            }
+            catch (Exception ex)
+            {
+                TempData["alertMessage"] = ex.ToString();
+                Console.Write(ex);
+            }
+            return View(RegistrationViewModel);
+        }
+        public ActionResult RegNonITRmv(string id)
+        {
+            ViewBag.id = id;
+            RegistrationVIEWmodel RegistrationViewModel = new RegistrationVIEWmodel();
+            RegistrationViewModel.Statusdropdownitem = getMainDropDown();
+            RegistrationViewModel.Sitedropdownitem = getMainDropDown2();
+            RegistrationViewModel.Locdropdownitem = getSubDropDown();
+            RegistrationViewModel.Ctgdropdownitem = getSubDropDown4();
+            RegistrationViewModel.Deptdropdownitem = getSubDropDown3();
+            if (id == null)
+            {
+                return View(RegistrationViewModel);
+            }
+            else
+            {
+                DB1 db = new DB1();
+                try
+                {
+                    RegistrationViewModel.RegistrationModel = db.getRegIT(id);
+                }
+                catch (Exception ex)
+                {
+                    Console.Write(ex);
+                }
+            }
+            return View(RegistrationViewModel);
+        }
+
+        [HttpPost]
+        [SessionExpire]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+        public ActionResult RegNonITRmv(RegistrationVIEWmodel RegistrationViewModel)
+        {
+            string recordType = String.Empty;
+            RegistrationViewModel.Statusdropdownitem = getMainDropDown();
+            RegistrationViewModel.Sitedropdownitem = getMainDropDown2();
+            RegistrationViewModel.Locdropdownitem = getSubDropDown();
+            RegistrationViewModel.Ctgdropdownitem = getSubDropDown4();
+            RegistrationViewModel.Deptdropdownitem = getSubDropDown3();
+
+            if (RegistrationViewModel.RegistrationModel.ID < 1)
+            {
+
+            }
+            else
+            {
+                recordType = "5";
+            }
+            try
+            {
+                DB1 db = new DB1();
+                string loc = HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty;
+                //string result = db.RegNonITMaint(RegistrationViewModel.RegistrationModel, recordType);
+                string result = db.RegNonITMaintRmv(RegistrationViewModel.RegistrationModel, recordType);
+                ViewBag.Result = result;
+                ModelState.Clear();
+            }
+            catch (Exception ex)
+            {
+                TempData["alertMessage"] = ex.ToString();
+                Console.Write(ex);
+            }
+            return View(RegistrationViewModel);
+        }
+        #endregion
+
+        #endregion
+
+        #region Report
+
+        //-------------------------------------------------------------------------
+        //                        Audit Report
+        //-------------------------------------------------------------------------
+        #region Audit Report
+        public ActionResult AuditReport(string Search, string site, string loc, string dept, string stt, string auditby, string item, DateTime? auditdate)//,string auditdatetime)
+        {
+            string constr = _configuration.GetConnectionString("SQLCon");
+            AuditModel AuditModel = new AuditModel();
+
+            DataSet ds = new DataSet();
+            DataTable dt = new DataTable();
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                using (SqlCommand cmd = new SqlCommand("PSP_AuditFilter", con))
+                {
+                    con.Open();
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@Status", "GET");
+                    cmd.Parameters.AddWithValue("@site", site);
+                    cmd.Parameters.AddWithValue("@dept", dept);
+                    cmd.Parameters.AddWithValue("@loc", loc);
+                    cmd.Parameters.AddWithValue("@stt", stt);
+                    cmd.Parameters.AddWithValue("@auditby", auditby);
+                    cmd.Parameters.AddWithValue("@item", item);
+                    cmd.Parameters.AddWithValue("@auditdate", auditdate);
+                    //cmd.Parameters.AddWithValue("@auditdatetime", auditdatetime);
+                    cmd.Parameters.AddWithValue("@search", Search);
+
+                    SqlDataAdapter da = new SqlDataAdapter(cmd);
+                    da.Fill(ds);
+                    List<AuditModel> auditlist = new List<AuditModel>();
+                    DB1 db = new DB1();
+                    ViewBag.Site = getadSite();
+                    ViewBag.Stt = getadStt();
+                    ViewBag.Dept = getadDept();
+                    ViewBag.Loc = getadLoc();
+                    ViewBag.Auditby = getauditby();
+                    ViewBag.Item = getadItem();
+                    for (int i = 0; i < ds.Tables[0].Rows.Count; i++)
+                    {
+                        AuditModel audit = new AuditModel();
+                        audit.Cel_No = ds.Tables[0].Rows[i]["mainKey"].ToString();
+                        audit.Owner = ds.Tables[0].Rows[i]["col2"].ToString();
+                        audit.Type = ds.Tables[0].Rows[i]["col3"].ToString();
+                        audit.Purchase_Date = ds.Tables[0].Rows[i]["col4"].ToString();
+                        audit.Department = ds.Tables[0].Rows[i]["col5"].ToString();
+                        audit.Company = ds.Tables[0].Rows[i]["col6"].ToString();
+                        audit.Location = ds.Tables[0].Rows[i]["col7"].ToString();
+                        audit.Fixed_Asset_Tag = ds.Tables[0].Rows[i]["col10"].ToString();
+                        audit.RFID = ds.Tables[0].Rows[i]["RFID"].ToString();
+                        audit.status = ds.Tables[0].Rows[i]["status"].ToString();
+                        audit.auditby = ds.Tables[0].Rows[i]["audit_by"].ToString();
+                        audit.remark = ds.Tables[0].Rows[i]["remarks"].ToString();
+                        //audit.auditdatetime = ds.Tables[0].Rows[i]["audit_date_time"].ToString();
+                        audit.audit_date = Convert.ToDateTime(ds.Tables[0].Rows[i]["audit_date"]);
+
+                        auditlist.Add(audit);
+                    }
+                    AuditModel.auditinfo = auditlist;
+                    HttpContext.Session.SetObject("auditlist", auditlist.ToList<AuditModel>());
+                }
+                con.Close();
+            }
+            return View(AuditModel);
+        }
+        public IActionResult AuditDataToExcel()
+        {
+            var auditlist = HttpContext.Session.GetObject<List<AuditModel>>("auditlist");
+            DataTable dt = new DataTable("Grid");
+            dt.Columns.AddRange(new DataColumn[12]
+            {
+
+               new DataColumn("Date Time"),
+                new DataColumn("RFID"),
+                new DataColumn("CEL Number"),
+                new DataColumn("Owner"),
+                new DataColumn("Status"),
+                new DataColumn("Site"),
+                new DataColumn("Department"),
+                new DataColumn("Location"),
+                new DataColumn("Type"),
+                new DataColumn("Audit By"),
+                new DataColumn("Purchase Date"),
+                new DataColumn("Remarks")
+            });
+            foreach (var AuditModel in auditlist)
+            {
+                dt.Rows.Add(
+                   //AuditModel.audit_date,
+                   AuditModel.auditdatetime, AuditModel.RFID, AuditModel.Cel_No, AuditModel.Owner, AuditModel.status,
+                    AuditModel.Company, AuditModel.Department, AuditModel.Location, AuditModel.Type,
+                    AuditModel.auditby, AuditModel.Purchase_Date, AuditModel.remark
+                    );
+            }
+            //generate excel
+            using (ClosedXML.Excel.XLWorkbook wb = new ClosedXML.Excel.XLWorkbook())
+            {
+                ClosedXML.Excel.IXLWorksheet workSheet = wb.Worksheets.Add();
+                ClosedXML.Excel.IXLCell title = workSheet.Cell(1, 1);
+                ClosedXML.Excel.IXLCell content = workSheet.Cell(3, 1);
+                title.Value = "Audit Report at " + DateTime.Now.ToString("dd/MM/yyyy HH:mm"); /*+ " Location at " + dt.Rows[0]["Location"];*/
+                title.Style.Font.Bold = true;
+                title.Style.Font.FontSize = 18;
+
+                workSheet.Range(title, workSheet.Cell(2, dt.Columns.Count + 1)).Merge();
+                content.InsertTable(dt);
+                workSheet.Columns("A", "AZ").AdjustToContents();
+
+                using (MemoryStream stream = new MemoryStream())
+                {
+                    wb.SaveAs(stream);
+                    stream.Position = 0;
+                    return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "AuditReport.xlsx");
+                }
+            }
+        }
+        //------------------------------------------------------------------------------
+        //                      Dropdown list for Audit Report
+        //------------------------------------------------------------------------------
+        #region filter audit dropdown list
+        private List<SelectListItem> getadItem()
+        {
+            List<SelectListItem> items = new List<SelectListItem>();
+            string constr = _configuration.GetConnectionString("SQLCon");
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                string query = "SELECT DISTINCT col3 FROM [dbo].[rfid_audit_data] where col3 <> '' AND col3 IS NOT NULL;";
+                using (SqlCommand CMD = new SqlCommand(query))
+                {
+                    CMD.Connection = con;
+                    con.Open();
+                    using (SqlDataReader sdr = CMD.ExecuteReader())
+                    {
+                        while (sdr.Read())
+                        {
+                            items.Add(new SelectListItem
+                            {
+                                Text = sdr["col3"].ToString(),
+                                Value = sdr["col3"].ToString()
+                            });
+                        }
+                    }
+                    con.Close();
+                }
+            }
+            return items;
+        }
+        private List<SelectListItem> getauditby()
+        {
+            List<SelectListItem> items = new List<SelectListItem>();
+            string constr = _configuration.GetConnectionString("SQLCon");
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                string query = "SELECT DISTINCT audit_by FROM [dbo].[rfid_audit_status] WHERE audit_by <> '' AND audit_by IS NOT NULL;";
+                using (SqlCommand CMD = new SqlCommand(query))
+                {
+                    CMD.Connection = con;
+                    con.Open();
+                    using (SqlDataReader sdr = CMD.ExecuteReader())
+                    {
+                        while (sdr.Read())
+                        {
+                            items.Add(new SelectListItem
+                            {
+                                Text = sdr["audit_by"].ToString(),
+                                Value = sdr["audit_by"].ToString()
+                            });
+                        }
+                    }
+                    con.Close();
+                }
+            }
+            return items;
+        }
+        private List<SelectListItem> getadSite()
+        {
+            List<SelectListItem> items = new List<SelectListItem>();
+            string constr = _configuration.GetConnectionString("SQLCon");
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                string query = "SELECT DISTINCT col6 FROM [dbo].[rfid_audit_data] WHERE col6 <> '' AND col6 IS NOT NULL;";
+                using (SqlCommand CMD = new SqlCommand(query))
+                {
+                    CMD.Connection = con;
+                    con.Open();
+                    using (SqlDataReader sdr = CMD.ExecuteReader())
+                    {
+                        while (sdr.Read())
+                        {
+                            items.Add(new SelectListItem
+                            {
+                                Text = sdr["col6"].ToString(),
+                                Value = sdr["col6"].ToString()
+                            });
+                        }
+                    }
+                    con.Close();
+                }
+            }
+            return items;
+        }
+        private List<SelectListItem> getadDept()
+        {
+            List<SelectListItem> items = new List<SelectListItem>();
+            string constr = _configuration.GetConnectionString("SQLCon");
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                string query = "SELECT DISTINCT col5 FROM [dbo].[rfid_audit_data] WHERE col5 <> '' AND col5 IS NOT NULL;";
+                using (SqlCommand CMD = new SqlCommand(query))
+                {
+                    CMD.Connection = con;
+                    con.Open();
+                    using (SqlDataReader sdr = CMD.ExecuteReader())
+                    {
+                        while (sdr.Read())
+                        {
+                            items.Add(new SelectListItem
+                            {
+                                Text = sdr["col5"].ToString(),
+                                Value = sdr["col5"].ToString()
+                            });
+                        }
+                    }
+                    con.Close();
+                }
+            }
+            return items;
+        }
+        private List<SelectListItem> getadLoc()
+        {
+            List<SelectListItem> items = new List<SelectListItem>();
+            string constr = _configuration.GetConnectionString("SQLCon");
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                string query = "SELECT DISTINCT col7 FROM [dbo].[rfid_audit_data] WHERE col7 <> '' AND col7 IS NOT NULL;";
+                using (SqlCommand CMD = new SqlCommand(query))
+                {
+                    CMD.Connection = con;
+                    con.Open();
+                    using (SqlDataReader sdr = CMD.ExecuteReader())
+                    {
+                        while (sdr.Read())
+                        {
+                            items.Add(new SelectListItem
+                            {
+                                Text = sdr["col7"].ToString(),
+                                Value = sdr["col7"].ToString()
+                            });
+                        }
+                    }
+                    con.Close();
+                }
+            }
+            return items;
+        }
+        private List<SelectListItem> getadStt()
+        {
+            List<SelectListItem> items = new List<SelectListItem>();
+            string constr = _configuration.GetConnectionString("SQLCon");
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                string query = "SELECT DISTINCT status FROM [dbo].[rfid_audit_data] WHERE status <> '' AND status IS NOT NULL;";
+                using (SqlCommand CMD = new SqlCommand(query))
+                {
+                    CMD.Connection = con;
+                    con.Open();
+                    using (SqlDataReader sdr = CMD.ExecuteReader())
+                    {
+                        while (sdr.Read())
+                        {
+                            items.Add(new SelectListItem
+                            {
+                                Text = sdr["status"].ToString(),
+                                Value = sdr["status"].ToString()
+                            });
+                        }
+                    }
+                    con.Close();
+                }
+            }
+            return items;
+        }
+        #endregion
+        #region StockTake summary report
+        [HttpGet]
+        public JsonResult GETStockTakeLocDDL(string pID)
+        {
+            DB1 db = new DB1();
+            return Json(db.getStockTakeLocDropDown(pID));
+        }
+        public ActionResult StockTakeSummaryReport(DateTime? auditdate, string site, string loc)
+        {
+
+            string constr = _configuration.GetConnectionString("SQLCon");
+            AuditModel AuditModel = new AuditModel();
+            DataSet ds = new DataSet();
+            DataTable dt = new DataTable();
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                using (SqlCommand cmd = new SqlCommand("Calc_StockTake", con))
+                {
+                    con.Open();
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@site", site);
+                    cmd.Parameters.AddWithValue("@loc", loc);
+                    cmd.Parameters.AddWithValue("@date", auditdate);
+
+                    SqlDataAdapter da = new SqlDataAdapter(cmd);
+                    da.Fill(ds);
+                    List<AuditModel> auditlist = new List<AuditModel>();
+                    DB1 dB = new DB1();
+                    ViewBag.Site = getadSite();
+                    ViewBag.Loc = getadLoc();
+
+                    for (int i = 0; i < ds.Tables[0].Rows.Count; i++)
+                    {
+                        AuditModel audit = new AuditModel();
+                        audit.SITE = ds.Tables[0].Rows[i]["SITE"].ToString();
+                        audit.LOCATION1 = ds.Tables[0].Rows[i]["LOCATION"].ToString();
+                        audit.TTL_VALID = Convert.ToInt32(ds.Tables[0].Rows[i]["TTL_VALID"]);
+                        audit.TTL_ITEM = Convert.ToInt32(ds.Tables[0].Rows[i]["TTL_ITEM"]);
+                        auditlist.Add(audit);
+                    }
+                    AuditModel.auditinfo = auditlist;
+                    HttpContext.Session.SetObject("auditlist", auditlist.ToList<AuditModel>());
+                }
+                con.Close();
+            }
+            return View(AuditModel);
+        }
+        //generate excel report
+        public IActionResult StockTakeSummaryDataToExcel()
+        {
+            //set the column
+            var auditlist = HttpContext.Session.GetObject<List<AuditModel>>("auditlist");
+            DataTable dt = new DataTable("Grid");
+            dt.Columns.AddRange(new DataColumn[4] {
+                new DataColumn("Site"),
+                new DataColumn("Location"),
+                new DataColumn("Total Valid Scan"),
+                new DataColumn("Total Item")
+            });
+            //pass value to column
+            foreach (var aud in auditlist)
+            {
+                dt.Rows.Add(
+                    aud.SITE, aud.LOCATION1, aud.TTL_VALID, aud.TTL_ITEM
+                    );
+            }
+            //generate excel
+            using (ClosedXML.Excel.XLWorkbook wb = new ClosedXML.Excel.XLWorkbook())
+            {
+                ClosedXML.Excel.IXLWorksheet workSheet = wb.Worksheets.Add();
+                ClosedXML.Excel.IXLCell title = workSheet.Cell(1, 1);
+                ClosedXML.Excel.IXLCell content = workSheet.Cell(3, 1);
+                title.Value = "Stock Take Summary Report at " + DateTime.Now.ToString("dd/MM/yyyy HH:mm");
+                title.Style.Font.Bold = true;
+                title.Style.Font.FontSize = 18;
+
+                workSheet.Range(title, workSheet.Cell(2, dt.Columns.Count + 1)).Merge();
+                content.InsertTable(dt);
+                workSheet.Columns("A", "AZ").AdjustToContents();
+
+                using (MemoryStream stream = new MemoryStream())
+                {
+                    wb.SaveAs(stream);
+                    stream.Position = 0;
+                    return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "StockTakeSummaryReport.xlsx");
+                }
+            }
+
+        }
+        #endregion
+        #endregion
+        //-------------------------------------------------------------------------
+        //                       Asset Inventory Report
+        //-------------------------------------------------------------------------
+        #region Asset Inventory Report
+        //pass value and filter view list
+        public ActionResult AssetInvReport(string Search, DateTime? From, DateTime? To, DateTime? warranty,
+            string site, string item, string loc, string dept, string stt, string type, String Site, string description)
+        {
+            if (From > To)
+            {
+                TempData["SelectOption"] = 1;
+            }
+
+            string constr = _configuration.GetConnectionString("SQLCon");
+            RegistrationModel Reg = new RegistrationModel();
+            DataSet ds = new DataSet();
+            DataTable dt = new DataTable();
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                using (SqlCommand cmd = new SqlCommand("PSP_FilterReg", con))
+                {
+                    con.Open();
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@Status", "GET");
+                    cmd.Parameters.AddWithValue("@Site", site);
+                    cmd.Parameters.AddWithValue("@Item", item);
+                    cmd.Parameters.AddWithValue("@Loc", loc);
+                    cmd.Parameters.AddWithValue("@Dept", dept);
+                    cmd.Parameters.AddWithValue("@Stt", stt);
+                    cmd.Parameters.AddWithValue("@Type", type);
+                    cmd.Parameters.AddWithValue("@Warranty", warranty);
+                    cmd.Parameters.AddWithValue("@EOL_Start", From);
+                    cmd.Parameters.AddWithValue("@EOL_End", To);
+                    cmd.Parameters.AddWithValue("@Descp", description);
+                    cmd.Parameters.AddWithValue("@search", Search);
+
+                    SqlDataAdapter da = new SqlDataAdapter(cmd);
+                    da.Fill(ds);
+                    List<RegistrationModel> reglist = new List<RegistrationModel>();
+                    DB1 dB = new DB1();
+                    ViewBag.Site = getData();
+                    ViewBag.Item = getData2();
+                    ViewBag.Dept = getData3();
+                    ViewBag.Loc = getData4();
+                    ViewBag.Status = getData5();
+                    ViewBag.Type = getData6();
+
+                    for (int i = 0; i < ds.Tables[0].Rows.Count; i++)
+                    {
+                        RegistrationModel RegModel = new RegistrationModel();
+                        RegModel.SITE_TXT = ds.Tables[0].Rows[i]["SITE_TXT"].ToString();
+                        RegModel.ITEM_TXT = ds.Tables[0].Rows[i]["ITEM_TXT"].ToString();
+                        RegModel.LOC = ds.Tables[0].Rows[i]["LOC"].ToString();
+                        RegModel.DEPT = ds.Tables[0].Rows[i]["DEPT"].ToString();
+                        RegModel.STATUS_TXT = ds.Tables[0].Rows[i]["STATUS_TXT"].ToString();
+                        RegModel.Waranty_Expiry = ds.Tables[0].Rows[i]["Waranty_Expiry"] == DBNull.Value ? (DateTime?)null : (DateTime)ds.Tables[0].Rows[i]["Waranty_Expiry"];
+                        RegModel.EOL_Support = ds.Tables[0].Rows[i]["EOL_Support"] == DBNull.Value ? (DateTime?)null : (DateTime)ds.Tables[0].Rows[i]["EOL_Support"];
+                        RegModel.CEL_Number = ds.Tables[0].Rows[i]["CEL_Number"].ToString();
+                        RegModel.Owner = ds.Tables[0].Rows[i]["Owner"].ToString();
+                        RegModel.Fixed_Asset = ds.Tables[0].Rows[i]["Fixed_Asset"].ToString();
+                        RegModel.RFID = ds.Tables[0].Rows[i]["RFID"].ToString();
+                        RegModel.Model = ds.Tables[0].Rows[i]["Model"].ToString();
+                        RegModel.Purchase_Date = ds.Tables[0].Rows[i]["Purchase_Date"] == DBNull.Value ? (DateTime?)null : (DateTime)ds.Tables[0].Rows[i]["Purchase_Date"];
+                        RegModel.Manufacturer = ds.Tables[0].Rows[i]["Manufacturer"].ToString();
+                        RegModel.OS_version = ds.Tables[0].Rows[i]["OS_version"].ToString();
+                        RegModel.Serial_Number = ds.Tables[0].Rows[i]["Serial_Number"].ToString();
+                        RegModel.IP_Address = ds.Tables[0].Rows[i]["IP_Address"].ToString();
+                        RegModel.MAC_Address = ds.Tables[0].Rows[i]["MAC_Address"].ToString();
+                        RegModel.Host_Name = ds.Tables[0].Rows[i]["Host_Name"].ToString();
+                        RegModel.Sys_App = ds.Tables[0].Rows[i]["System_Application"].ToString();
+                        RegModel.Description = ds.Tables[0].Rows[i]["Description"].ToString();
+                        RegModel.Asset_Type = ds.Tables[0].Rows[i]["Asset_Type"].ToString();
+                        reglist.Add(RegModel);
+                    }
+                    Reg.reginfo = reglist;
+                    HttpContext.Session.SetObject("reglist", reglist.ToList<RegistrationModel>());
+                }
+                con.Close();
+            }
+            return View(Reg);
+        }
+        //----------------------------------Export to excel----------------------------------------------------------//
+        //generate excel report
+        public IActionResult AssetInvDataToExcel()
+        {
+            //set the column
+            var reglist = HttpContext.Session.GetObject<List<RegistrationModel>>("reglist");
+            DataTable dt = new DataTable("Grid");
+            dt.Columns.AddRange(new DataColumn[22] {
+                new DataColumn("Cel Number"),
+                new DataColumn("Site"),
+                new DataColumn("Item"),
+                new DataColumn("Status"),
+                new DataColumn("Owner"),
+                new DataColumn("Fixed Asset No."),
+                new DataColumn("Location"),
+                new DataColumn("RFID"),
+                new DataColumn("Department"),
+                new DataColumn("Model"),
+                new DataColumn("Purchase date"),
+                new DataColumn("Manufacturer"),
+                new DataColumn("Warranty Expiry"),
+                new DataColumn("OS Version"),
+                new DataColumn("EOL support"),
+                new DataColumn("Serial no."),
+                new DataColumn("IP Address"),
+                new DataColumn("MAC Address"),
+                new DataColumn("Host Name"),
+                new DataColumn("System/Application"),
+                new DataColumn("Description"),
+                new DataColumn("Asset Type")
+            });
+            //pass value to column
+            foreach (var reg in reglist)
+            {
+                dt.Rows.Add(
+                    reg.CEL_Number, reg.SITE_TXT, reg.ITEM_TXT, reg.STATUS_TXT,
+                    reg.Owner, reg.Fixed_Asset, reg.LOC, reg.RFID, reg.DEPT, reg.Model,
+                    reg.Purchase_Date, reg.Manufacturer, reg.Waranty_Expiry, reg.OS_version,
+                    reg.EOL_Support, reg.Serial_Number, reg.IP_Address, reg.MAC_Address, reg.Host_Name,
+                    reg.Sys_App, reg.Description, reg.Asset_Type
+                    );
+            }
+            //generate excel
+            using (ClosedXML.Excel.XLWorkbook wb = new ClosedXML.Excel.XLWorkbook())
+            {
+                ClosedXML.Excel.IXLWorksheet workSheet = wb.Worksheets.Add();
+                ClosedXML.Excel.IXLCell title = workSheet.Cell(1, 1);
+                ClosedXML.Excel.IXLCell content = workSheet.Cell(3, 1);
+                title.Value = "Asset Inventory Report at " + DateTime.Now.ToString("dd/MM/yyyy HH:mm");
+                title.Style.Font.Bold = true;
+                title.Style.Font.FontSize = 18;
+
+                workSheet.Range(title, workSheet.Cell(2, dt.Columns.Count + 1)).Merge();
+                content.InsertTable(dt);
+                workSheet.Columns("A", "AZ").AdjustToContents();
+
+                using (MemoryStream stream = new MemoryStream())
+                {
+                    wb.SaveAs(stream);
+                    stream.Position = 0;
+                    return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "AssetInvReport.xlsx");
+                }
+            }
+
+        }
+        //------------------------------------------------------------------------------
+        //                  Dropdown list for Asset Inventory Report
+        //------------------------------------------------------------------------------
+        #region filter Asset Inventory Report dropdown
+        private List<SelectListItem> getData()
+        {
+            List<SelectListItem> items = new List<SelectListItem>();
+            string constr = _configuration.GetConnectionString("SQLCon");
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                string query = "SELECT DISTINCT SITE_TXT FROM [dbo].[PVIEW_REGISTER_LST] WHERE Record_Type <> '5' AND SITE_TXT <> '' AND SITE_TXT IS NOT NULL;";
+                using (SqlCommand CMD = new SqlCommand(query))
+                {
+                    CMD.Connection = con;
+                    con.Open();
+                    using (SqlDataReader sdr = CMD.ExecuteReader())
+                    {
+                        while (sdr.Read())
+                        {
+                            items.Add(new SelectListItem
+                            {
+                                Text = sdr["SITE_TXT"].ToString(),
+                                Value = sdr["SITE_TXT"].ToString()
+                            });
+                        }
+                    }
+                    con.Close();
+                }
+            }
+            return items;
+        }
+        private List<SelectListItem> getData2()
+        {
+            List<SelectListItem> items = new List<SelectListItem>();
+            string constr = _configuration.GetConnectionString("SQLCon");
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                string query = "SELECT DISTINCT ITEM_TXT FROM [dbo].[PVIEW_REGISTER_LST] WHERE Record_Type <> '5' AND ITEM_TXT <> '' AND ITEM_TXT IS NOT NULL;";
+                using (SqlCommand CMD = new SqlCommand(query))
+                {
+                    CMD.Connection = con;
+                    con.Open();
+                    using (SqlDataReader sdr = CMD.ExecuteReader())
+                    {
+                        while (sdr.Read())
+                        {
+                            items.Add(new SelectListItem
+                            {
+                                Text = sdr["ITEM_TXT"].ToString(),
+                                Value = sdr["ITEM_TXT"].ToString()
+                            });
+                        }
+                    }
+                    con.Close();
+                }
+            }
+            return items;
+        }
+        private List<SelectListItem> getData3()
+        {
+            List<SelectListItem> items = new List<SelectListItem>();
+            string constr = _configuration.GetConnectionString("SQLCon");
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                string query = "SELECT DISTINCT DEPT FROM [dbo].[PVIEW_REGISTER_LST] WHERE Record_Type <> '5' AND DEPT <> '' AND DEPT IS NOT NULL;";
+                using (SqlCommand CMD = new SqlCommand(query))
+                {
+                    CMD.Connection = con;
+                    con.Open();
+                    using (SqlDataReader sdr = CMD.ExecuteReader())
+                    {
+                        while (sdr.Read())
+                        {
+                            items.Add(new SelectListItem
+                            {
+                                Text = sdr["DEPT"].ToString(),
+                                Value = sdr["DEPT"].ToString()
+                            });
+                        }
+                    }
+                    con.Close();
+                }
+            }
+            return items;
+        }
+        private List<SelectListItem> getData4()
+        {
+            List<SelectListItem> items = new List<SelectListItem>();
+            string constr = _configuration.GetConnectionString("SQLCon");
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                string query = "SELECT DISTINCT LOC FROM [dbo].[PVIEW_REGISTER_LST] WHERE Record_Type <> '5' AND LOC <> '' AND LOC IS NOT NULL;";
+                using (SqlCommand CMD = new SqlCommand(query))
+                {
+                    CMD.Connection = con;
+                    con.Open();
+                    using (SqlDataReader sdr = CMD.ExecuteReader())
+                    {
+                        while (sdr.Read())
+                        {
+                            items.Add(new SelectListItem
+                            {
+                                Text = sdr["LOC"].ToString(),
+                                Value = sdr["LOC"].ToString()
+                            });
+                        }
+                    }
+                    con.Close();
+                }
+            }
+            return items;
+        }
+        private List<SelectListItem> getData5()
+        {
+            List<SelectListItem> items = new List<SelectListItem>();
+            string constr = _configuration.GetConnectionString("SQLCon");
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                string query = "SELECT DISTINCT STATUS_TXT FROM [dbo].[PVIEW_REGISTER_LST] WHERE Record_Type <> '5' AND STATUS_TXT <> '' AND STATUS_TXT IS NOT NULL;";
+                using (SqlCommand CMD = new SqlCommand(query))
+                {
+                    CMD.Connection = con;
+                    con.Open();
+                    using (SqlDataReader sdr = CMD.ExecuteReader())
+                    {
+                        while (sdr.Read())
+                        {
+                            items.Add(new SelectListItem
+                            {
+                                Text = sdr["STATUS_TXT"].ToString(),
+                                Value = sdr["STATUS_TXT"].ToString()
+                            });
+                        }
+                    }
+                    con.Close();
+                }
+            }
+            return items;
+        }
+        private List<SelectListItem> getData6()
+        {
+            List<SelectListItem> items = new List<SelectListItem>();
+            string constr = _configuration.GetConnectionString("SQLCon");
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                string query = "SELECT DISTINCT Asset_Type FROM [dbo].[PVIEW_REGISTER_LST] WHERE Record_Type <> '5' AND Asset_Type <> '' AND Asset_Type IS NOT NULL;";
+                using (SqlCommand CMD = new SqlCommand(query))
+                {
+                    CMD.Connection = con;
+                    con.Open();
+                    using (SqlDataReader sdr = CMD.ExecuteReader())
+                    {
+                        while (sdr.Read())
+                        {
+                            items.Add(new SelectListItem
+                            {
+                                Text = sdr["Asset_Type"].ToString(),
+                                Value = sdr["Asset_Type"].ToString()
+                            });
+                        }
+                    }
+                    con.Close();
+                }
+            }
+            return items;
+        }
+        private List<SelectListItem> getData7()
+        {
+            List<SelectListItem> items = new List<SelectListItem>();
+            string constr = _configuration.GetConnectionString("SQLCon");
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                string query = "SELECT DISTINCT AgeByYear FROM [dbo].[PVIEW_AGE_OF_IT];";
+                using (SqlCommand CMD = new SqlCommand(query))
+                {
+                    CMD.Connection = con;
+                    con.Open();
+                    using (SqlDataReader sdr = CMD.ExecuteReader())
+                    {
+                        while (sdr.Read())
+                        {
+                            items.Add(new SelectListItem
+                            {
+                                Text = sdr["AgeByYear"].ToString(),
+                                Value = sdr["AgeByYear"].ToString()
+                            });
+                        }
+                    }
+                    con.Close();
+                }
+            }
+            return items;
+        }
+        #endregion
+        #region Asset Inventory Summary Report
+        [HttpGet]
+        public JsonResult GETAssetSummaryItemDDL(string pID)
+        {
+            DB1 db = new DB1();
+            return Json(db.getAssetSummaryItemDropDown(pID));
+        }
+        public ActionResult AssetInvSummaryReport(DateTime? warranty, string item, string type)
+        {
+
+            string constr = _configuration.GetConnectionString("SQLCon");
+            RegistrationModel Reg = new RegistrationModel();
+            DataSet ds = new DataSet();
+            DataTable dt = new DataTable();
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                using (SqlCommand cmd = new SqlCommand("Calc_IT_Equipment", con))
+                {
+                    con.Open();
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    if (item == null)
+                    {
+                        cmd.Parameters.AddWithValue("@pItem", "");
+                    }
+                    else
+                    {
+                        cmd.Parameters.AddWithValue("@pItem", item);
+                    }
+                    cmd.Parameters.AddWithValue("@pType", type);
+                    //cmd.Parameters.AddWithValue("@Warranty", warranty);
+
+                    SqlDataAdapter da = new SqlDataAdapter(cmd);
+                    da.Fill(ds);
+                    List<RegistrationModel> reglist = new List<RegistrationModel>();
+                    DB1 dB = new DB1();
+                    ViewBag.Item = getData2();
+                    ViewBag.Type = getData6();
+
+                    for (int i = 0; i < ds.Tables[0].Rows.Count; i++)
+                    {
+                        RegistrationModel RegModel = new RegistrationModel();
+                        RegModel.Total = Convert.ToDecimal(ds.Tables[i].Rows[0]["Total"]);
+                        RegModel.Total_Exp = Convert.ToDecimal(ds.Tables[i].Rows[0]["Total_Exp"]);
+                        RegModel.Total_NtExp = Convert.ToDecimal(ds.Tables[i].Rows[0]["Total_NtExp"]);
+                        RegModel.Percentage_Exp = Convert.ToDecimal(ds.Tables[i].Rows[0]["Percentage_Exp"]);
+                        RegModel.Percentage_NtExp = Convert.ToDecimal(ds.Tables[i].Rows[0]["Percentage_NtExp"]);
+                        reglist.Add(RegModel);
+                    }
+                    Reg.reginfo = reglist;
+                    HttpContext.Session.SetObject("reglist", reglist.ToList<RegistrationModel>());
+                }
+                con.Close();
+            }
+            return View(Reg);
+        }
+        //generate excel report
+        public IActionResult AssetInvSummaryDataToExcel()
+        {
+            //set the column
+            var reglist = HttpContext.Session.GetObject<List<RegistrationModel>>("reglist");
+            DataTable dt = new DataTable("Grid");
+            dt.Columns.AddRange(new DataColumn[5] {
+                new DataColumn("Total"),
+                new DataColumn("Total Expiry"),
+                new DataColumn("Total Not Expiry"),
+                new DataColumn("Percentage Expiry"),
+                new DataColumn("Percentage Not Expiry")
+            });
+            //pass value to column
+            foreach (var reg in reglist)
+            {
+                dt.Rows.Add(
+                    reg.Total, reg.Total_Exp, reg.Total_NtExp, reg.Percentage_Exp,
+                    reg.Percentage_NtExp
+                    );
+            }
+            //generate excel
+            using (ClosedXML.Excel.XLWorkbook wb = new ClosedXML.Excel.XLWorkbook())
+            {
+                ClosedXML.Excel.IXLWorksheet workSheet = wb.Worksheets.Add();
+                ClosedXML.Excel.IXLCell title = workSheet.Cell(1, 1);
+                ClosedXML.Excel.IXLCell content = workSheet.Cell(3, 1);
+                title.Value = "Asset Inventory Summary Report at " + DateTime.Now.ToString("dd/MM/yyyy HH:mm");
+                title.Style.Font.Bold = true;
+                title.Style.Font.FontSize = 18;
+
+                workSheet.Range(title, workSheet.Cell(2, dt.Columns.Count + 1)).Merge();
+                content.InsertTable(dt);
+                workSheet.Columns("A", "AZ").AdjustToContents();
+
+                using (MemoryStream stream = new MemoryStream())
+                {
+                    wb.SaveAs(stream);
+                    stream.Position = 0;
+                    return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "AssetInvSummaryReport.xlsx");
+                }
+            }
+
+        }
+        #endregion
+        #endregion
+        //------------------------------------------------------------------------------
+        //                       Age of IT Report
+        //------------------------------------------------------------------------------
+        #region Age of IT Report
+        public ActionResult AgeOfITReport(string item, string site, string search, string typ, string ageIT)
+        {
+
+            string constr = _configuration.GetConnectionString("SQLCon");
+            RegistrationModel Reg = new RegistrationModel();
+            DataSet ds = new DataSet();
+            DataTable dt = new DataTable();
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                using (SqlCommand cmd = new SqlCommand("PSP_AgeOfIT_Filter", con))
+                {
+                    con.Open();
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@Item", item);
+                    cmd.Parameters.AddWithValue("@Site", site);
+                    cmd.Parameters.AddWithValue("@search", search);
+
+                    SqlDataAdapter da = new SqlDataAdapter(cmd);
+                    da.Fill(ds);
+                    List<RegistrationModel> reglist = new List<RegistrationModel>();
+                    DB1 dB = new DB1();
+                    ViewBag.typ = typ;
+                    ViewBag.Item = getData2();
+                    ViewBag.Site = getData();
+                    for (int i = 0; i < ds.Tables[0].Rows.Count; i++)
+                    {
+                        RegistrationModel RegModel = new RegistrationModel();
+                        RegModel.SITE_TXT = ds.Tables[0].Rows[i]["SITE_TXT"].ToString();
+                        RegModel.ITEM_TXT = ds.Tables[0].Rows[i]["ITEM_TXT"].ToString();
+                        RegModel.CEL_Number = ds.Tables[0].Rows[i]["CEL_Number"].ToString();
+                        RegModel.AgeByYear = ds.Tables[0].Rows[i]["AgeByYear"].ToString();
+                        RegModel.Purchase_Date = ds.Tables[0].Rows[i]["Purchase_Date"] == DBNull.Value ? (DateTime?)null : (DateTime)ds.Tables[0].Rows[i]["Purchase_Date"];
+                        RegModel.Waranty_Expiry = ds.Tables[0].Rows[i]["Waranty_Expiry"] == DBNull.Value ? (DateTime?)null : (DateTime)ds.Tables[0].Rows[i]["Waranty_Expiry"];
+                        //RegModel.Total = Convert.ToDecimal(ds.Tables[0].Rows[i]["Total"]);
+                        reglist.Add(RegModel);
+                    }
+                    Reg.reginfo = reglist;
+                    HttpContext.Session.SetObject("reglist", reglist.ToList<RegistrationModel>());
+                }
+                con.Close();
+            }
+            return View(Reg);
+        }
+        //----------------------------generate excel------------------------------------------
+        public IActionResult AgeOfITDataToExcel()
+        {
+            //set the column
+            var reglist = HttpContext.Session.GetObject<List<RegistrationModel>>("reglist");
+            DataTable dt = new DataTable("Grid");
+            dt.Columns.AddRange(new DataColumn[6] {
+                new DataColumn("Site"),
+                new DataColumn("Item"),
+                new DataColumn("Cel Number"),
+                new DataColumn("Age of IT by year"),
+                new DataColumn("Purchase Date"),
+                new DataColumn("Waranty Expiry")
+            });
+            //pass value to column
+            foreach (var reg in reglist)
+            {
+                dt.Rows.Add(
+                    reg.SITE_TXT, reg.ITEM_TXT, reg.CEL_Number, reg.AgeByYear,
+                    reg.Purchase_Date, reg.Waranty_Expiry
+                    );
+            }
+            //generate excel
+            using (ClosedXML.Excel.XLWorkbook wb = new ClosedXML.Excel.XLWorkbook())
+            {
+                ClosedXML.Excel.IXLWorksheet workSheet = wb.Worksheets.Add();
+                ClosedXML.Excel.IXLCell title = workSheet.Cell(1, 1);
+                ClosedXML.Excel.IXLCell content = workSheet.Cell(3, 1);
+                title.Value = "Age of IT Report at " + DateTime.Now.ToString("dd/MM/yyyy HH:mm");
+                title.Style.Font.Bold = true;
+                title.Style.Font.FontSize = 18;
+
+                workSheet.Range(title, workSheet.Cell(2, dt.Columns.Count + 1)).Merge();
+                content.InsertTable(dt);
+                workSheet.Columns("A", "AZ").AdjustToContents();
+
+                using (MemoryStream stream = new MemoryStream())
+                {
+                    wb.SaveAs(stream);
+                    stream.Position = 0;
+                    return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "AgeOfITReport.xlsx");
+                }
+            }
+
+        }
+        #region Age Of IT Summary Report
+        [HttpGet]
+        public JsonResult GETYearDDL(string pID)
+        {
+            DB1 db = new DB1();
+            return Json(db.getYearDropDown(pID));
+        }
+
+        public ActionResult AgeOfITSummaryReport(string item, string ageIT)//, string site)
+        {
+
+            string constr = _configuration.GetConnectionString("SQLCon");
+            RegistrationModel Reg = new RegistrationModel();
+            DataSet ds = new DataSet();
+            DataTable dt = new DataTable();
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                using (SqlCommand cmd = new SqlCommand("Calc_IT_Equipment_Age", con))
+                {
+                    con.Open();
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@item", item);
+                    //cmd.Parameters.AddWithValue("@site", site);
+                    cmd.Parameters.AddWithValue("@ageIT", ageIT);
+
+                    SqlDataAdapter da = new SqlDataAdapter(cmd);
+                    da.Fill(ds);
+                    List<RegistrationModel> reglist = new List<RegistrationModel>();
+                    DB1 dB = new DB1();
+                    ViewBag.Item = getData2();
+                    ViewBag.Site = getData();
+                    ViewBag.AgeIT = getData7();
+                    for (int i = 0; i < ds.Tables[0].Rows.Count; i++)
+                    {
+                        RegistrationModel RegModel = new RegistrationModel();
+                        RegModel.SITE_TXT = ds.Tables[0].Rows[i]["SITE_TXT"].ToString();
+                        RegModel.Total = Convert.ToDecimal(ds.Tables[0].Rows[i]["Total"]);
+                        reglist.Add(RegModel);
+                    }
+
+                    Reg.reginfo = reglist;
+                    HttpContext.Session.SetObject("reglist", reglist.ToList<RegistrationModel>());
+                }
+                con.Close();
+            }
+            return View(Reg);
+        }
+        public IActionResult AgeOfITSummaryDataToExcel()
+        {
+            //set the column
+            var reglist = HttpContext.Session.GetObject<List<RegistrationModel>>("reglist");
+            DataTable dt = new DataTable("Grid");
+            dt.Columns.AddRange(new DataColumn[2] {
+                new DataColumn("Site"),
+                new DataColumn("Total")
+            });
+            //pass value to column
+            foreach (var reg in reglist)
+            {
+                dt.Rows.Add(
+                    reg.SITE_TXT, reg.Total
+                    );
+            }
+            //generate excel
+            using (ClosedXML.Excel.XLWorkbook wb = new ClosedXML.Excel.XLWorkbook())
+            {
+                ClosedXML.Excel.IXLWorksheet workSheet = wb.Worksheets.Add();
+                ClosedXML.Excel.IXLCell title = workSheet.Cell(1, 1);
+                ClosedXML.Excel.IXLCell content = workSheet.Cell(3, 1);
+                title.Value = "Age of IT Summary Report at " + DateTime.Now.ToString("dd/MM/yyyy HH:mm");
+                title.Style.Font.Bold = true;
+                title.Style.Font.FontSize = 18;
+
+                workSheet.Range(title, workSheet.Cell(2, dt.Columns.Count + 1)).Merge();
+                content.InsertTable(dt);
+                workSheet.Columns("A", "AZ").AdjustToContents();
+
+                using (MemoryStream stream = new MemoryStream())
+                {
+                    wb.SaveAs(stream);
+                    stream.Position = 0;
+                    return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "AgeOfITSummaryReport.xlsx");
+                }
+            }
+
+        }
+        #endregion
+        #endregion
+        //------------------------------------------------------------------------------
+        //                       Renewal List Summary Report
+        //------------------------------------------------------------------------------
+        #region Renewal List Summary Report
+        public ActionResult RenewalListSummaryReport(DateTime? warranty)
+        {
+
+            string constr = _configuration.GetConnectionString("SQLCon");
+            RenewalModel Rnw = new RenewalModel();
+            DataSet ds = new DataSet();
+            DataTable dt = new DataTable();
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                using (SqlCommand cmd = new SqlCommand("Calc_Renewal", con))
+                {
+                    con.Open();
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@AuditWrty", warranty);
+
+                    SqlDataAdapter da = new SqlDataAdapter(cmd);
+                    da.Fill(ds);
+                    List<RenewalModel> rnwlist = new List<RenewalModel>();
+                    DB1 dB = new DB1();
+
+                    for (int i = 0; i < ds.Tables[0].Rows.Count; i++)
+                    {
+                        RenewalModel RnwModel = new RenewalModel();
+                        RnwModel.Total = Convert.ToDecimal(ds.Tables[i].Rows[0]["Total"]);
+                        RnwModel.Total_Exp = Convert.ToDecimal(ds.Tables[i].Rows[0]["Total_Exp"]);
+                        RnwModel.Total_NtExp = Convert.ToDecimal(ds.Tables[i].Rows[0]["Total_NtExp"]);
+                        RnwModel.Percentage_Exp = Convert.ToDecimal(ds.Tables[i].Rows[0]["Percentage_Exp"]);
+                        RnwModel.Percentage_NtExp = Convert.ToDecimal(ds.Tables[i].Rows[0]["Percentage_NtExp"]);
+                        rnwlist.Add(RnwModel);
+                    }
+                    Rnw.rnwinfo = rnwlist;
+                    HttpContext.Session.SetObject("rnwlist", rnwlist.ToList<RenewalModel>());
+                }
+                con.Close();
+            }
+            return View(Rnw);
+        }
+        //----------------------------------Export to excel----------------------------------------------------------//
+        //generate excel report
+        public IActionResult RenewalListSummaryDataToExcel()
+        {
+            //set the column
+            var rnwlist = HttpContext.Session.GetObject<List<RenewalModel>>("rnwlist");
+            DataTable dt = new DataTable("Grid");
+            dt.Columns.AddRange(new DataColumn[5] {
+                new DataColumn("Total"),
+                new DataColumn("Total Expiry"),
+                new DataColumn("Total Not Expiry"),
+                new DataColumn("Percentage Expiry"),
+                new DataColumn("Percentage Not Expiry")
+            });
+            //pass value to column
+            foreach (var rnw in rnwlist)
+            {
+                dt.Rows.Add(
+                    rnw.Total, rnw.Total_Exp, rnw.Total_NtExp, rnw.Percentage_Exp,
+                    rnw.Percentage_NtExp
+                    );
+            }
+            //generate excel
+            using (ClosedXML.Excel.XLWorkbook wb = new ClosedXML.Excel.XLWorkbook())
+            {
+                ClosedXML.Excel.IXLWorksheet workSheet = wb.Worksheets.Add();
+                ClosedXML.Excel.IXLCell title = workSheet.Cell(1, 1);
+                ClosedXML.Excel.IXLCell content = workSheet.Cell(3, 1);
+                title.Value = "Renewal List Summary Report at " + DateTime.Now.ToString("dd/MM/yyyy HH:mm");
+                title.Style.Font.Bold = true;
+                title.Style.Font.FontSize = 18;
+
+                workSheet.Range(title, workSheet.Cell(2, dt.Columns.Count + 1)).Merge();
+                content.InsertTable(dt);
+                workSheet.Columns("A", "AZ").AdjustToContents();
+
+                using (MemoryStream stream = new MemoryStream())
+                {
+                    wb.SaveAs(stream);
+                    stream.Position = 0;
+                    return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "RenewalSummaryReport.xlsx");
+                }
+            }
+
+        }
+        #endregion
+        #region Record Movement Summary Report
+        #region Record Movement Summary Dropdown
+        private List<SelectListItem> PICDropDown()
+        {
+            List<SelectListItem> items = new List<SelectListItem>();
+            string constr = _configuration.GetConnectionString("SQLCon");
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                string query = "SELECT DISTINCT PIC_NAME FROM PVIEW_RECORD_MOVEMENT_LST; ";
+                using (SqlCommand CMD = new SqlCommand(query))
+                {
+                    CMD.Connection = con;
+                    con.Open();
+                    using (SqlDataReader sdr = CMD.ExecuteReader())
+                    {
+                        while (sdr.Read())
+                        {
+                            items.Add(new SelectListItem
+                            {
+                                Text = sdr["PIC_NAME"].ToString(),
+                                Value = sdr["PIC_NAME"].ToString()
+                            });
+                        }
+                    }
+                    con.Close();
+                }
+            }
+            return items;
+        }
+        private List<SelectListItem> LOCDropDown()
+        {
+            List<SelectListItem> items = new List<SelectListItem>();
+            string constr = _configuration.GetConnectionString("SQLCon");
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                string query = "SELECT DISTINCT LOCATION FROM PVIEW_RECORD_MOVEMENT_LST; ";
+                using (SqlCommand CMD = new SqlCommand(query))
+                {
+                    CMD.Connection = con;
+                    con.Open();
+                    using (SqlDataReader sdr = CMD.ExecuteReader())
+                    {
+                        while (sdr.Read())
+                        {
+                            items.Add(new SelectListItem
+                            {
+                                Text = sdr["LOCATION"].ToString(),
+                                Value = sdr["LOCATION"].ToString()
+                            });
+                        }
+                    }
+                    con.Close();
+                }
+            }
+            return items;
+        }
+        private List<SelectListItem> MovSttDropDown()
+        {
+            List<SelectListItem> items = new List<SelectListItem>();
+            string constr = _configuration.GetConnectionString("SQLCon");
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                string query = "SELECT DISTINCT MOV_STT FROM PVIEW_RECORD_MOVEMENT_LST; ";
+                using (SqlCommand CMD = new SqlCommand(query))
+                {
+                    CMD.Connection = con;
+                    con.Open();
+                    using (SqlDataReader sdr = CMD.ExecuteReader())
+                    {
+                        while (sdr.Read())
+                        {
+                            items.Add(new SelectListItem
+                            {
+                                Text = sdr["MOV_STT"].ToString(),
+                                Value = sdr["MOV_STT"].ToString()
+                            });
+                        }
+                    }
+                    con.Close();
+                }
+            }
+            return items;
+        }
+        [HttpGet]
+        public JsonResult GETRecMovSttDDL(string pID)
+        {
+            DB1 db = new DB1();
+            return Json(db.getRecMovSttDropDown(pID));
+        }
+
+        #endregion
+        public ActionResult RecMovSummaryReport(string loc, string pic, string stt)
+        {
+
+            string constr = _configuration.GetConnectionString("SQLCon");
+            RecordMovement Rec = new RecordMovement();
+            DataSet ds = new DataSet();
+            DataTable dt = new DataTable();
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                using (SqlCommand cmd = new SqlCommand("Calc_RecMov", con))
+                {
+                    con.Open();
+                    cmd.CommandType = CommandType.StoredProcedure;
+
+                    cmd.Parameters.AddWithValue("@LOC", loc);
+                    cmd.Parameters.AddWithValue("@PIC", pic);
+                    cmd.Parameters.AddWithValue("@MOV", stt);
+
+                    SqlDataAdapter da = new SqlDataAdapter(cmd);
+                    da.Fill(ds);
+                    List<RecordMovement> reclist = new List<RecordMovement>();
+                    DB1 dB = new DB1();
+                    ViewBag.Loc = LOCDropDown();
+                    ViewBag.PIC = PICDropDown();
+                    ViewBag.MovStt = MovSttDropDown();
+
+                    for (int i = 0; i < ds.Tables[0].Rows.Count; i++)
+                    {
+                        RecordMovement RecModel = new RecordMovement();
+                        RecModel.LOCATION = ds.Tables[0].Rows[i]["LOCATION"].ToString();
+                        RecModel.STATUS = ds.Tables[0].Rows[i]["STATUS"].ToString();
+                        RecModel.TOTAL = Convert.ToInt32(ds.Tables[i].Rows[0]["TOTAL"]);
+                        RecModel.TOTAL_In_Status = Convert.ToInt32(ds.Tables[i].Rows[0]["TOTAL_In_Status"]);
+                        reclist.Add(RecModel);
+                    }
+                    Rec.recinfo = reclist;
+                    HttpContext.Session.SetObject("reclist", reclist.ToList<RecordMovement>());
+                }
+                con.Close();
+            }
+            return View(Rec);
+        }
+        //generate excel report
+        public IActionResult RecMovSummaryDataToExcel()
+        {
+            //set the column
+            var reclist = HttpContext.Session.GetObject<List<RecordMovement>>("reclist");
+            DataTable dt = new DataTable("Grid");
+            dt.Columns.AddRange(new DataColumn[4] {
+                new DataColumn("Location"),
+                new DataColumn("Movement Status"),
+                new DataColumn("Total"),
+                new DataColumn("Total in Status")
+            });
+            //pass value to column
+            foreach (var rec in reclist)
+            {
+                dt.Rows.Add(
+                    rec.LOCATION, rec.STATUS, rec.TOTAL, rec.TOTAL_In_Status
+                    );
+            }
+            //generate excel
+            using (ClosedXML.Excel.XLWorkbook wb = new ClosedXML.Excel.XLWorkbook())
+            {
+                ClosedXML.Excel.IXLWorksheet workSheet = wb.Worksheets.Add();
+                ClosedXML.Excel.IXLCell title = workSheet.Cell(1, 1);
+                ClosedXML.Excel.IXLCell content = workSheet.Cell(3, 1);
+                title.Value = "Record Movement Summary Report at " + DateTime.Now.ToString("dd/MM/yyyy HH:mm");
+                title.Style.Font.Bold = true;
+                title.Style.Font.FontSize = 18;
+
+                workSheet.Range(title, workSheet.Cell(2, dt.Columns.Count + 1)).Merge();
+                content.InsertTable(dt);
+                workSheet.Columns("A", "AZ").AdjustToContents();
+
+                using (MemoryStream stream = new MemoryStream())
+                {
+                    wb.SaveAs(stream);
+                    stream.Position = 0;
+                    return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "RecMovSummaryReport.xlsx");
+                }
+            }
+
+        }
+        #endregion
+        //------------------------------------------------------------------------------
+        //                       Asset Movement Report
+        //------------------------------------------------------------------------------
+        #region Asset Movement Report
+        //pass value and filter view list
+        public ActionResult AssetMovReport(string Search, DateTime? From, DateTime? To, string site,
+            string dept, string loc, string stt, string updt_by, string scanstt, string item)
+        {
+            if (From > To)
+            {
+                TempData["SelectOption"] = 1;
+            }
+
+
+            string constr = _configuration.GetConnectionString("SQLCon");
+            RevRegModel Rev = new RevRegModel();
+            DataSet ds = new DataSet();
+            DataTable dt = new DataTable();
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                using (SqlCommand cmd = new SqlCommand("PSP_AssetMovementFilter", con))
+                {
+                    con.Open();
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@Status", "GET");
+                    cmd.Parameters.AddWithValue("@pSite", site);
+                    cmd.Parameters.AddWithValue("@pItem_type", item);
+                    cmd.Parameters.AddWithValue("@pLoc", loc);
+                    cmd.Parameters.AddWithValue("@pDept", dept);
+                    cmd.Parameters.AddWithValue("@pStt", stt);
+                    cmd.Parameters.AddWithValue("@pUpdateBy", updt_by);
+                    cmd.Parameters.AddWithValue("@pScanStt", scanstt);
+                    cmd.Parameters.AddWithValue("@pScanDate_From", From);
+                    cmd.Parameters.AddWithValue("@pScanDate_To", To);
+                    cmd.Parameters.AddWithValue("@search", Search);
+
+                    SqlDataAdapter da = new SqlDataAdapter(cmd);
+                    da.Fill(ds);
+                    List<RevRegModel> revlist = new List<RevRegModel>();
+                    DB1 dB = new DB1();
+                    ViewBag.Site = getRevFilterdd();
+                    ViewBag.Item = getRevFilterdd2();
+                    ViewBag.Dept = getRevFilterdd3();
+                    ViewBag.Loc = getRevFilterdd4();
+                    ViewBag.Status = getRevFilterdd5();
+                    ViewBag.ScanStt = getRevFilterdd6();
+                    ViewBag.UpdateBy = getRevFilterdd7();
+                    for (int i = 0; i < ds.Tables[0].Rows.Count; i++)
+                    {
+                        RevRegModel RevModel = new RevRegModel();
+                        RevModel.Site = ds.Tables[0].Rows[i]["SITE"].ToString();
+                        RevModel.Department = ds.Tables[0].Rows[i]["DEPARTMENT"].ToString();
+                        RevModel.SUB_DROPDOWN_TEXT = ds.Tables[0].Rows[i]["SUB_DROPDOWN_TEXT"].ToString();
+                        RevModel.CEL_Number = ds.Tables[0].Rows[i]["CEL_NUM"].ToString();
+                        RevModel.Model = ds.Tables[0].Rows[i]["MODEL"].ToString();
+                        RevModel.Owner = ds.Tables[0].Rows[i]["OWNER"].ToString();
+                        RevModel.MAIN_DROPDOWN_TEXT = ds.Tables[0].Rows[i]["MAIN_DROPDOWN_TEXT"].ToString();
+                        RevModel.UPDATEBY_TEXT = ds.Tables[0].Rows[i]["UPDATEBY_TEXT"].ToString();
+                        RevModel.RFID = ds.Tables[0].Rows[i]["RFID"].ToString();
+                        RevModel.SCANNED_DATE = Convert.ToDateTime(ds.Tables[0].Rows[i]["SCANNED_DATE"]);
+                        RevModel.REMARK = ds.Tables[0].Rows[i]["REMARK"].ToString();
+                        RevModel.SCAN_STATUS = ds.Tables[0].Rows[i]["SCAN_STATUS"].ToString();
+                        RevModel.Item_Type = ds.Tables[0].Rows[i]["ITEM_TYP"].ToString();
+                        revlist.Add(RevModel);
+                    }
+                    Rev.revinfo = revlist;
+                    HttpContext.Session.SetObject("revlist", revlist.ToList<RevRegModel>());
+                }
+                con.Close();
+            }
+            return View(Rev);
+        }
+
+        //----------------------------------Asset Movement Export to excel----------------------------------------------------------//
+
+        public IActionResult AssetMovDataToExcel()
+        {
+            //set column
+            var revlist = HttpContext.Session.GetObject<List<RevRegModel>>("revlist");
+            DataTable dt = new DataTable("Grid");
+            dt.Columns.AddRange(new DataColumn[13] {
+                new DataColumn("Scanned Date"),
+                new DataColumn("CEL Number"),
+                new DataColumn("RFID"),
+                new DataColumn("Site"),
+                new DataColumn("Department"),
+                new DataColumn("Location"),
+                new DataColumn("Model"),
+                new DataColumn("Owner"),
+                new DataColumn("Item Type"),
+                new DataColumn("Item Status"),
+                new DataColumn("Scan Status"),
+                new DataColumn("Helpdesk Name"),
+                new DataColumn("Remark")
+            });
+            //pass value to column
+            foreach (var rev in revlist)
+            {
+                dt.Rows.Add(
+                    rev.SCANNED_DATE, rev.CEL_Number, rev.RFID, rev.Site, rev.Department,
+                    rev.SUB_DROPDOWN_TEXT, rev.Model, rev.Owner, rev.Item_Type, rev.MAIN_DROPDOWN_TEXT, rev.SCAN_STATUS,
+                    rev.UPDATEBY_TEXT, rev.REMARK
+                    );
+            }
+            //generate excel
+            using (ClosedXML.Excel.XLWorkbook wb = new ClosedXML.Excel.XLWorkbook())
+            {
+                ClosedXML.Excel.IXLWorksheet workSheet = wb.Worksheets.Add();
+                ClosedXML.Excel.IXLCell title = workSheet.Cell(1, 1);
+                ClosedXML.Excel.IXLCell content = workSheet.Cell(3, 1);
+                title.Value = "Asset Movement Report at " + DateTime.Now.ToString("dd/MM/yyyy HH:mm");
+                title.Style.Font.Bold = true;
+                title.Style.Font.FontSize = 18;
+
+                workSheet.Range(title, workSheet.Cell(2, dt.Columns.Count + 1)).Merge();
+                content.InsertTable(dt);
+                workSheet.Columns("A", "AZ").AdjustToContents();
+
+                using (MemoryStream stream = new MemoryStream())
+                {
+                    wb.SaveAs(stream);
+                    stream.Position = 0;
+                    return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "AssetMovReport.xlsx");
+                }
+            }
+
+        }
+        //------------------------------------------------------------------------------
+        //                  Dropdown list for Asset Movement Report
+        //------------------------------------------------------------------------------
+        #region filter Asset Movement Report dropdown
+        private List<SelectListItem> getRevFilterdd()
+        {
+            List<SelectListItem> items = new List<SelectListItem>();
+            string constr = _configuration.GetConnectionString("SQLCon");
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                string query = "SELECT DISTINCT SITE FROM [dbo].[PVIEW_REVLAB_LST] WHERE RECORD_TYP <> '5' AND SITE <> '' AND SITE IS NOT NULL;";
+                using (SqlCommand CMD = new SqlCommand(query))
+                {
+                    CMD.Connection = con;
+                    con.Open();
+                    using (SqlDataReader sdr = CMD.ExecuteReader())
+                    {
+                        while (sdr.Read())
+                        {
+                            items.Add(new SelectListItem
+                            {
+                                Text = sdr["SITE"].ToString(),
+                                Value = sdr["SITE"].ToString()
+                            });
+                        }
+                    }
+                    con.Close();
+                }
+            }
+            return items;
+        }
+        private List<SelectListItem> getRevFilterdd2()
+        {
+            List<SelectListItem> items = new List<SelectListItem>();
+            string constr = _configuration.GetConnectionString("SQLCon");
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                string query = "SELECT DISTINCT ITEM_TYP FROM [dbo].[PVIEW_REVLAB_LST] WHERE RECORD_TYP <> '5' AND ITEM_TYP <> '' AND ITEM_TYP IS NOT NULL;";
+                using (SqlCommand CMD = new SqlCommand(query))
+                {
+                    CMD.Connection = con;
+                    con.Open();
+                    using (SqlDataReader sdr = CMD.ExecuteReader())
+                    {
+                        while (sdr.Read())
+                        {
+                            items.Add(new SelectListItem
+                            {
+                                Text = sdr["ITEM_TYP"].ToString(),
+                                Value = sdr["ITEM_TYP"].ToString()
+                            });
+                        }
+                    }
+                    con.Close();
+                }
+            }
+            return items;
+        }
+        private List<SelectListItem> getRevFilterdd3()
+        {
+            List<SelectListItem> items = new List<SelectListItem>();
+            string constr = _configuration.GetConnectionString("SQLCon");
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                string query = "SELECT DISTINCT DEPARTMENT FROM [dbo].[PVIEW_REVLAB_LST] WHERE RECORD_TYP <> '5' AND DEPARTMENT <> '' AND DEPARTMENT IS NOT NULL;";
+                using (SqlCommand CMD = new SqlCommand(query))
+                {
+                    CMD.Connection = con;
+                    con.Open();
+                    using (SqlDataReader sdr = CMD.ExecuteReader())
+                    {
+                        while (sdr.Read())
+                        {
+                            items.Add(new SelectListItem
+                            {
+                                Text = sdr["DEPARTMENT"].ToString(),
+                                Value = sdr["DEPARTMENT"].ToString()
+                            });
+                        }
+                    }
+                    con.Close();
+                }
+            }
+            return items;
+        }
+        private List<SelectListItem> getRevFilterdd4()
+        {
+            List<SelectListItem> items = new List<SelectListItem>();
+            string constr = _configuration.GetConnectionString("SQLCon");
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                string query = "SELECT DISTINCT SUB_DROPDOWN_TEXT FROM [dbo].[PVIEW_REVLAB_LST] WHERE RECORD_TYP <> '5' AND SUB_DROPDOWN_TEXT <> '' AND SUB_DROPDOWN_TEXT IS NOT NULL;";
+                using (SqlCommand CMD = new SqlCommand(query))
+                {
+                    CMD.Connection = con;
+                    con.Open();
+                    using (SqlDataReader sdr = CMD.ExecuteReader())
+                    {
+                        while (sdr.Read())
+                        {
+                            items.Add(new SelectListItem
+                            {
+                                Text = sdr["SUB_DROPDOWN_TEXT"].ToString(),
+                                Value = sdr["SUB_DROPDOWN_TEXT"].ToString()
+                            });
+                        }
+                    }
+                    con.Close();
+                }
+            }
+            return items;
+        }
+        private List<SelectListItem> getRevFilterdd5()
+        {
+            List<SelectListItem> items = new List<SelectListItem>();
+            string constr = _configuration.GetConnectionString("SQLCon");
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                string query = "SELECT DISTINCT MAIN_DROPDOWN_TEXT FROM [dbo].[PVIEW_REVLAB_LST] WHERE RECORD_TYP <> '5' AND MAIN_DROPDOWN_TEXT <> '' AND MAIN_DROPDOWN_TEXT IS NOT NULL;";
+                using (SqlCommand CMD = new SqlCommand(query))
+                {
+                    CMD.Connection = con;
+                    con.Open();
+                    using (SqlDataReader sdr = CMD.ExecuteReader())
+                    {
+                        while (sdr.Read())
+                        {
+                            items.Add(new SelectListItem
+                            {
+                                Text = sdr["MAIN_DROPDOWN_TEXT"].ToString(),
+                                Value = sdr["MAIN_DROPDOWN_TEXT"].ToString()
+                            });
+                        }
+                    }
+                    con.Close();
+                }
+            }
+            return items;
+        }
+        private List<SelectListItem> getRevFilterdd6()
+        {
+            List<SelectListItem> items = new List<SelectListItem>();
+            string constr = _configuration.GetConnectionString("SQLCon");
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                string query = "SELECT DISTINCT SCAN_STATUS FROM [dbo].[PVIEW_REVLAB_LST] WHERE RECORD_TYP <> '5' AND SCAN_STATUS <> '' AND SCAN_STATUS IS NOT NULL;";
+                using (SqlCommand CMD = new SqlCommand(query))
+                {
+                    CMD.Connection = con;
+                    con.Open();
+                    using (SqlDataReader sdr = CMD.ExecuteReader())
+                    {
+                        while (sdr.Read())
+                        {
+                            items.Add(new SelectListItem
+                            {
+                                Text = sdr["SCAN_STATUS"].ToString(),
+                                Value = sdr["SCAN_STATUS"].ToString()
+                            });
+                        }
+                    }
+                    con.Close();
+                }
+            }
+            return items;
+        }
+        private List<SelectListItem> getRevFilterdd7()
+        {
+            List<SelectListItem> items = new List<SelectListItem>();
+            string constr = _configuration.GetConnectionString("SQLCon");
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                string query = "SELECT DISTINCT UPDATEBY_TEXT FROM [dbo].[PVIEW_REVLAB_LST] WHERE RECORD_TYP <> '5' AND UPDATEBY_TEXT <> '' AND UPDATEBY_TEXT IS NOT NULL;";
+                using (SqlCommand CMD = new SqlCommand(query))
+                {
+                    CMD.Connection = con;
+                    con.Open();
+                    using (SqlDataReader sdr = CMD.ExecuteReader())
+                    {
+                        while (sdr.Read())
+                        {
+                            items.Add(new SelectListItem
+                            {
+                                Text = sdr["UPDATEBY_TEXT"].ToString(),
+                                Value = sdr["UPDATEBY_TEXT"].ToString()
+                            });
+                        }
+                    }
+                    con.Close();
+                }
+            }
+            return items;
+        }
+        #endregion
+        #endregion
+        #endregion
+
+        #region Sync Altiris data
+        //------------------------------------------------------------------------------
+        //               Sync Altiris data to Registration by button
+        //------------------------------------------------------------------------------
+
+        public ActionResult getRegData(string SEARCH_VALUE)
+        {
+            //string result = "";
+            //string return_value = "0";
+
+            string constr = _configuration.GetConnectionString("SQLCon2");
+            string constr2 = _configuration.GetConnectionString("SQLCon");
+            //get data from altiris database
+            string query = "SELECT a.[CEL_NO], a.[TYPE], a.[PURCHASE_DATE], a.[WARRANTY_EXP], a.[EOL_SUPPORT], a.[OWNERNAME], a.[TORAY_COMPANY], a.[TORAY_DEPARTMENT], a.[TORAY_LOCATION], a.[FIXED_ASSET_TAG], a.[RFID]," +
+                    "b.[OS Version], c.[Manufacturer], c.[Model], c.[Serial Number], c.[Status] " +
+                    "FROM Inv_Toray_Custom_Data_Class AS a LEFT OUTER JOIN Inv_AeX_AC_Identification AS b ON a._ResourceGuid = b._ResourceGuid " +
+                    "LEFT OUTER JOIN vAsset AS c ON a._ResourceGuid = c._ResourceGuid " +
+                    "WHERE (a.TYPE = 'PC' OR a.TYPE = 'NB' OR a.TYPE = 'NOTEBOOK' OR a.TYPE = 'Macbook' OR a.TYPE = 'Microsoft Surface' OR a.TYPE = 'VMC' OR a.TYPE = 'IPC' OR a.TYPE = 'MPC');";
+            SqlConnection conn = new SqlConnection(constr);
+            SqlConnection con = new SqlConnection(constr2);
+
+            RegistrationModel Reg = new RegistrationModel();
+            DataTable dt = new DataTable();
+            //pass the altiris data in datatable
+            SqlCommand cmd = new SqlCommand(query, conn);
+            SqlCommand command = new SqlCommand();
+            SqlDataAdapter da = new SqlDataAdapter(cmd);
+            conn.Open();
+            da.Fill(dt);
+            List<RegistrationModel> regITlist = new List<RegistrationModel>();
+            DB1 db = new DB1();
+            command.Connection = con;
+            con.Open();
+            //add data in the view
+            try
+            {
+                var aclUserJson = HttpContext.Session.GetString("AclUser");
+                ACL_UserObj userobj = JsonSerializer.Deserialize<ACL_UserObj>(aclUserJson);
+                //string userID = userobj.EMP_NO.ToString();
+                string userID = userobj.USER_ID.ToString();
+                string createdby = userID;
+                string loc = HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty;
+
+                foreach (DataRow dr in dt.Rows)
+                {
+
+                    command.CommandText = "Get_Reg_From_Altiris";
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandTimeout = 0;
+                    command.Parameters.Clear();
+                    command.Parameters.Add(new SqlParameter("@pSite", dr["TORAY_COMPANY"].ToString())).Direction = System.Data.ParameterDirection.Input;
+                    command.Parameters.Add(new SqlParameter("@pItem_Type", dr["TYPE"].ToString())).Direction = System.Data.ParameterDirection.Input;
+                    command.Parameters.Add(new SqlParameter("@pCEL_Number", dr["CEL_NO"].ToString())).Direction = System.Data.ParameterDirection.Input;
+                    command.Parameters.Add(new SqlParameter("@pStatus", dr["Status"].ToString())).Direction = System.Data.ParameterDirection.Input;
+                    command.Parameters.Add(new SqlParameter("@pOwner", dr["OWNERNAME"].ToString())).Direction = System.Data.ParameterDirection.Input;
+                    command.Parameters.Add(new SqlParameter("@pFixed_Asset", dr["FIXED_ASSET_TAG"].ToString())).Direction = System.Data.ParameterDirection.Input;
+                    command.Parameters.Add(new SqlParameter("@pLocation", dr["TORAY_LOCATION"].ToString())).Direction = System.Data.ParameterDirection.Input;
+                    command.Parameters.Add(new SqlParameter("@pRFID", dr["RFID"].ToString())).Direction = System.Data.ParameterDirection.Input;
+                    command.Parameters.Add(new SqlParameter("@pDepartment", dr["TORAY_DEPARTMENT"].ToString())).Direction = System.Data.ParameterDirection.Input;
+                    command.Parameters.Add(new SqlParameter("@pModel", dr["Model"].ToString())).Direction = System.Data.ParameterDirection.Input;
+                    command.Parameters.Add(new SqlParameter("@pPurchase_Date", dr["PURCHASE_DATE"])).Direction = System.Data.ParameterDirection.Input;
+                    command.Parameters.Add(new SqlParameter("@pManufacturer", dr["Manufacturer"].ToString())).Direction = System.Data.ParameterDirection.Input;
+                    command.Parameters.Add(new SqlParameter("@pWaranty_expiry", dr["WARRANTY_EXP"])).Direction = System.Data.ParameterDirection.Input;
+                    command.Parameters.Add(new SqlParameter("@pOS_version", dr["OS Version"].ToString())).Direction = System.Data.ParameterDirection.Input;
+                    command.Parameters.Add(new SqlParameter("@pEOL_Support", dr["EOL_SUPPORT"])).Direction = System.Data.ParameterDirection.Input;
+                    command.Parameters.Add(new SqlParameter("@pSerial_Number", dr["Serial Number"].ToString())).Direction = System.Data.ParameterDirection.Input;
+                    command.Parameters.Add(new SqlParameter("@pDescription", "data from Altiris")).Direction = System.Data.ParameterDirection.Input;
+                    command.Parameters.Add(new SqlParameter("@pAsset_Type", "IT Asset")).Direction = System.Data.ParameterDirection.Input;
+                    command.Parameters.Add(new SqlParameter("@pRec_type", "1")).Direction = System.Data.ParameterDirection.Input;
+                    command.Parameters.Add(new SqlParameter("@pCreated_By", createdby)).Direction = System.Data.ParameterDirection.Input;
+                    command.Parameters.Add(new SqlParameter("@ploc", loc)).Direction = System.Data.ParameterDirection.Input;
+                    command.ExecuteScalar();
+
+                }
+
+            }
+            catch (Exception ex)
+            {
+                Console.Write(ex);
+            }
+            con.Close();
+            conn.Close();
+
+            return View();
+        }
+        #endregion
+
+        #endregion
+
+        public JsonResult KeepSession() // Calling when we first hit controller
+        {
+            DB1 db = new DB1();
+            string keepSession = db.KeepSession();
+
+            return Json(new { success = true, message = keepSession });
+        }
+
+
+
+        private string _user = null;
+        private string _loc = null;
+
+        [HttpPost]
+        public ActionResult CreateEntry([FromBody] RfidEntryRequestModel model)
+        {
+            Console.WriteLine($"=== CreateEntry called ===");
+            
+            // Log what we received
+            if (model == null)
+            {
+                Console.WriteLine("ERROR: Model is NULL!");
+                return Json(new { success = false, error = "Model is null" });
+            }
+            
+            Console.WriteLine($"Model.rfid: [{model.rfid ?? "NULL"}]");
+            Console.WriteLine($"Model.location: [{model.location ?? "NULL"}]");
+            Console.WriteLine($"Model.username: [{model.username ?? "NULL"}]");
+            
+            var rfid = model.rfid;
+            var location = model.location;
+            
+            Console.WriteLine($"Received RFID: [{rfid ?? "NULL"}]");
+            Console.WriteLine($"Received Location: [{location ?? "NULL"}]");
+            
+            getUserData();
+            
+            // Validate RFID is not null or empty
+            if (string.IsNullOrEmpty(rfid))
+            {
+                Console.WriteLine("ERROR: RFID is null or empty!");
+                return Json(new { success = false, error = "RFID cannot be empty" });
+            }
+            
+            var rfidExist = _rfidAuditRepo.checkWhetherRfidAlreadyExists(rfid);
+            var sameLocation = _rfidAuditRepo.checkWhetherItemInSameLocation(rfid, location);
+            MM_SP_RFID_Audit MM_SP_RFID_Audit = new MM_SP_RFID_Audit();
+            var locationId = _rfidAuditRepo.getLocationIdByReader(location);
+            
+            Console.WriteLine($"RFID Exists: {rfidExist}, Same Location: {sameLocation}, Location ID: {locationId}");
+            
+            if (rfidExist && sameLocation)
+            {
+                MM_SP_RFID_Audit = setMM_SP_RFID_Audit(rfid, (char)RFID_FLAG.YES, locationId);
+            }
+            else
+            {
+                MM_SP_RFID_Audit = setMM_SP_RFID_Audit(rfid, (char)RFID_FLAG.INVALID, locationId);
+            }
+            
+            Console.WriteLine($"About to save RFID_TAG_CODE: [{MM_SP_RFID_Audit.RFID_TAG_CODE}]");
+            
+            int savedRecords = _rfidAuditRepo.saveRfid(MM_SP_RFID_Audit);
+            
+            Console.WriteLine($"Saved {savedRecords} records");
+            
+            return Json(new { success = true });
+        }
+        public ActionResult Inquiry()
+        {
+            getUserData();
+            //SparePart req = new SparePart();
+            //List<InquirySparePart> SpareParts = MM_SPART_LST(req);
+            return View(true);
+        }
+        //public ActionResult Inquiries(SparePart req)
+        //{
+        //    getUserData();
+        //    List<InquirySparePart> SpareParts = MM_SPART_LST(req);
+        //    return View("Inquiry", SpareParts);
+        //}
+        //public ActionResult InquiryDetail(int id)
+        //{
+
+        //    getUserData();
+        //    return View(_rfidAuditRepo.getInquiryDetail(id));
+        //}
+        private MM_SP_RFID_Audit setMM_SP_RFID_Audit(string rfid, char rfidFlag, int locationId)
+        {
+            MM_SP_RFID_Audit MM_SP_RFID_Audit = new MM_SP_RFID_Audit();
+            // Handle null or empty RFID - database column does not allow NULL
+            // Use empty string as default when RFID is not yet scanned
+            MM_SP_RFID_Audit.RFID_TAG_CODE = string.IsNullOrEmpty(rfid) ? string.Empty : rfid;
+            MM_SP_RFID_Audit.RFID_FLAG = rfidFlag.ToString();
+            MM_SP_RFID_Audit.RECORD_TYPE = "1";
+            MM_SP_RFID_Audit.CREATED_BY = _user;
+            MM_SP_RFID_Audit.CREATED_DATE = DateTime.Now;
+            MM_SP_RFID_Audit.CREATED_LOC = _loc;
+            MM_SP_RFID_Audit.UPDATED_BY = _user;
+            MM_SP_RFID_Audit.UPDATED_DATE = DateTime.Now;
+            MM_SP_RFID_Audit.UPDATED_LOC = _loc;
+            MM_SP_RFID_Audit.ID_LOCATION = locationId;
+            return MM_SP_RFID_Audit;
+        }
+        public ActionResult Report()
+        {
+            getUserData();
+            RfidResponseModel rfidResponseModel = new RfidResponseModel();
+            rfidResponseModel.locations = _rfidAuditRepo.getLocations().locations;
+            rfidResponseModel.reports = new Dictionary<int, string>();
+            rfidResponseModel.reports.Add(1, "Rfid Report");
+            return View(rfidResponseModel);
+        }
+
+        public ActionResult Reports(RfidReportRequestModel report)
+        {
+            getUserData();
+            try
+            {
+                var data = _rfidAuditRepo.getReportTable(report).rfidReportTables;
+                return Json(data);
+            }
+            catch (Exception ex) {
+                return Json(ex.ToString());
+            }
+        }
+        private void getUserData()
+        {
+            var aclUserJson = HttpContext.Session.GetString("AclUser");
+            var aclUser = JsonSerializer.Deserialize<ACL_UserObj>(aclUserJson);
+            _user = aclUser.EMP_NAME;
+            _loc = HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty;
+        }
+        public ActionResult ModalDialog()
+        {
+
+            getUserData();
+            return PartialView();
+        }
+        public ActionResult ReportExcel(String reportId, DateTime? dateFrom, DateTime? dateTo, string location, string rfid, string status, string dateFilter)
+        {
+            getUserData();
+            RfidReportRequestModel report = new RfidReportRequestModel();
+            if (dateFrom != null)
+            {
+                report.dateFrom = dateFrom.Value;
+            }
+            else
+            {
+                report.dateFrom = SqlDateTime.MinValue.Value;
+            }
+            if (dateTo != null)
+            {
+                report.dateTo = SqlDateTime.MaxValue.Value;
+            }
+            if (!String.IsNullOrEmpty(dateFilter))
+            {
+                report.dateFilter = true;
+            }
+            else
+            {
+                report.dateFilter = false;
+            }
+
+            report.location = location;
+            report.rfid = rfid;
+            report.status = status;
+            byte[] content = _rfidAuditRepo.RFIDReportDataToExcel(report);
+            string reportName = @"RfidReport" + DateTime.Now.ToString() + ".xlsx";
+            return File(content,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", reportName
+                );
+        }
+        //public List<InquirySparePart> MM_SPART_LST(SparePart model)
+        //{
+        //    //string[] Scol = { "Model No/Spare_Part_Model_ID", "Serial No/Series_No", "Part No/Part_No", "Machine No/Spare_Part_Machine_ID", "Storage/Storage_ID", "Manufacturer/Manufacturer_ID" };
+        //    //ViewBag.SearchSource = Scol;
+        //    //string[] Scol = (string[])(Session["SearchSrc"]);
+        //    string[] Scol = Models.SearchSource.MM_SPART_LST;   //get column from SearchSourceModel
+        //    var searchval = ConvertSearchValue(Scol, model.SEARCH_VALUE);
+        //    TempData["SrcValSPR"] = searchval;
+
+        //    DB db = new DB();
+        //    List<InquirySparePart> dt = _rfidAuditRepo.getInquiryList("PVIEW_MM_SPARE_PART", "", "", searchval, "SPARE_PART_ID", "0", "1", "10", "0");
+
+        //    return dt;
+        //}
+        public static string ConvertSearchValue(string[] Scol, string str)
+        {
+            //if general search have value, trim the search value
+            if (str != "" && str != null)
+            {
+                str = str.Trim();
+            }
+
+            var val = "'%" + str + "%'";
+            str = "";
+            var additonal = "";
+            foreach (var col in Scol)
+            {
+                string[] c = col.Split(new Char[] { ',' }); //split the column name
+                str += (additonal + " UPPER(" + c[1] + ") " + "LIKE" + " UPPER(" + val + ") "); //c[1]=column name, val=search value
+                additonal = " OR";
+            }
+            return str;
+        }
+        public ActionResult InquiryDetail(string rfid)
+        {
+            MMDB db = new MMDB();
+
+            SparePart SparePart = _rfidAuditRepo.getSparePartData(rfid);
+            if (SparePart != null)
+            {
+                return View(SparePart);
+            }
+            else
+            {
+                return View("Inquiry", false);
+            }
+
+
+
+        }
+
+    }
+}
+
+
+
+

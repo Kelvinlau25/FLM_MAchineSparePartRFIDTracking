@@ -1,0 +1,538 @@
+﻿using System;
+using System.Text;
+using System.Collections.Generic;
+using System.Data;
+using System.Data.SqlClient;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.Extensions.Configuration;
+using MSPTransReg;
+using FILM_Sparepart_MVC.Helper_Code.Objects;
+using FILM_Sparepart_MVC.Helpers;
+using FILM_Sparepart_MVC.Extensions;
+using System.Data.OleDb;
+using System.Security.Principal;
+using System.DirectoryServices;
+using System.Text.Json;
+
+namespace FILM_Sparepart_MVC.Controllers
+{
+    public class MSPTransRegController : Controller
+    {
+        private readonly IConfiguration _configuration;
+        private readonly ILogger<MSPTransRegController> _logger;
+
+        public MSPTransRegController(IConfiguration configuration, ILogger<MSPTransRegController> logger)
+        {
+            _configuration = configuration;
+            _logger = logger;
+        }
+        public static class CommonMethod
+        {
+            public static List<T> ConvertToList<T>(DataTable dt)
+            {
+                var columnNames = dt.Columns.Cast<DataColumn>().Select(c => c.ColumnName.ToLower()).ToList();
+                var properties = typeof(T).GetProperties();
+                return dt.AsEnumerable().Select(row => {
+                    var objT = Activator.CreateInstance<T>();
+                    foreach (var pro in properties)
+                    {
+                        if (columnNames.Contains(pro.Name.ToLower()))
+                        {
+                            try
+                            {
+                                if (pro.PropertyType.Name.Equals("Boolean"))
+                                {
+                                    if (row[pro.Name].ToString().ToUpper().Equals("TRUE")) { pro.SetValue(objT, true); }
+                                    else { pro.SetValue(objT, false); }
+                                }
+                                else { pro.SetValue(objT, row[pro.Name]); }
+                            }
+                            catch (Exception ex) { }
+                        }
+                    }
+                    return objT;
+                }).ToList();
+            }
+
+            public static string ConvertSearchValue(string[] Scol, string str)
+             {
+                //if general search have value, trim the search value
+                if (str != "" && str != null)
+                {
+                    str = str.Trim();
+                }
+
+                var val = "'%" + str + "%'";
+                str = "";
+                var additonal = "";
+                foreach (var col in Scol)
+                {
+                    string[] c = col.Split(new Char[] { ',' }); // / to ,
+                    str += (additonal + " UPPER(" + c[1] + ") " + "LIKE" + " UPPER(" + val + ") ");
+                    additonal = " OR";
+                }
+                return str;
+            }
+
+        }
+        public IActionResult AddNew(string act, string ctrl)
+        {
+            return RedirectToAction(act, ctrl);
+        }
+        public IActionResult SearchDetail(string[] search)
+        {
+            foreach (var col in search)
+            {
+                string[] c = col.Split(new Char[] { '/' });
+            }
+            return View();
+        }
+        public IActionResult MM_TRANS_REG_LST(string searchValue, string SrcValTRANSREG, int? page)
+        {
+            if (TempData.ContainsKey("SrcValTRANSREG"))
+            {
+                SrcValTRANSREG = TempData["SrcValTRANSREG"].ToString();
+                TempData.Keep();
+            }
+            else
+            {
+                TempData.Clear();
+            }
+
+            DB db = new DB();
+            DataTable dt;
+            //var dt = db.List("PVIEW_TRANS_REG", "", "", "", "TRANSACTION_ID", "0", "1", "10", "0");
+
+            if (searchValue == "" || searchValue == null)
+            {
+                if (SrcValTRANSREG == "" || SrcValTRANSREG == null)
+                {
+                    dt = db.List("PVIEW_TRANS_REG", "", "", "", "TRANSACTION_ID", "0", "1", "10", "0");
+                }
+                else
+                {
+                    SrcValTRANSREG = SrcValTRANSREG.Replace(",", "");
+                    dt = db.List("PVIEW_TRANS_REG", "", "", SrcValTRANSREG, "TRANSACTION_ID", "0", "1", "10", "0");
+                }
+            }
+            else
+            {
+                searchValue = searchValue.Replace(",", "");
+                dt = db.List("PVIEW_TRANS_REG", "", "", searchValue, "TRANSACTION_ID", "0", "1", "10", "0");
+            }
+
+            List<Transaction> transactions = CommonMethod.ConvertToList<Transaction>(dt);
+            
+            int pageSize = 10;
+            int pageNumber = page ?? 1;
+            var paginatedList = PaginatedList<Transaction>.Create(transactions, pageNumber, pageSize);
+            
+            return View(paginatedList);
+        }
+        [HttpPost]
+        public IActionResult MM_TRANS_REG_LST(Transaction model)
+        {
+            //string[] Scol = { "Model No/Model_No", "Series No/Series_No", "Part No/Part_No", "RFID Tag ID/RFID_Tag_ID", "Transaction Name/Trans_Name", "Reason/Trans_Reason", "Status/Status" };
+            string[] Scol = Models.SearchSource.MM_TRANS_REG_LST;
+            //ViewBag.SearchSource = Scol;
+            var searchval = CommonMethod.ConvertSearchValue(Scol, model.SEARCH_VALUE);
+            TempData["SrcValTRANSREG"] = searchval;
+
+            DB db = new DB();
+            var dt = db.List("PVIEW_TRANS_REG", "", "", searchval, "TRANSACTION_ID", "0", "1", "10", "0");
+
+            List<Transaction> Transaction = new List<Transaction>();
+            Transaction = CommonMethod.ConvertToList<Transaction>(dt);
+            return View(Transaction);
+        }
+        public IActionResult MM_TRANS_REG_VIEW(string id)
+        {
+            DB db = new DB();
+            return View(db.getTransactionData(id));
+        }
+
+        public IActionResult MM_TRANS_REG_EDIT(string id)
+        {
+            DB db = new DB();
+            Transaction trans = new Transaction();
+            trans = db.getTransactionData(id);
+            trans.DropdownTransType = getTransTypeDll();
+
+            return View(trans);
+        }
+        [HttpPost]
+        public IActionResult MM_TRANS_REG_EDIT(Transaction model)
+        {
+            try
+            {
+                if (ModelState.IsValid)  //checking model is valid or not
+                {
+                    model.DropdownTransType = getTransTypeDll();
+                                        
+                    DB db = new DB();
+                    string loc = HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty;
+                    //string pc = Environment.MachineName;
+                    var aclUserJson = HttpContext.Session.GetString("AclUser");
+                    var aclUser = JsonSerializer.Deserialize<ACL_UserObj>(aclUserJson);
+                    string pc = aclUser.EMP_NO;
+
+                    string result = db.TransactionRegMaint(model, "3", loc, pc);
+                    ViewBag.ID = model.TRANSACTION_ID;
+                    ViewBag.Result = result;
+                    
+                    _logger.LogInformation("Transaction {TransactionId} updated successfully by user {EmpNo}", 
+                        model.TRANSACTION_ID, pc);
+
+                    ModelState.Clear(); //clearing model 
+                }
+                else
+                {
+                    _logger.LogWarning("Transaction edit validation failed");
+                    ModelState.AddModelError("", "Error in saving data");
+                    ViewBag.Error = "Error in saving data";
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error editing transaction {TransactionId}", model.TRANSACTION_ID);
+                Console.Write(ex);
+                ViewBag.Error = ex.Message;
+            }
+
+            //return RedirectToAction("MM_Spart_LST", "Mstmain");
+            return View(model);
+        }
+        public IActionResult MM_TRANS_REG_ADD(string model, string ID) // Calling when we first hit controller
+        {
+            Transaction trans = new Transaction();
+            trans.DropdownTransType = getTransTypeDll();
+            //string emp_no = (Session["AclUser"] as ACL_UserObj).EMP_NO;
+            ViewBag.ID = ID;
+            ViewBag.model = model;
+            //TempData["Message3"] = "MM_TRANS_REG_ADD get";
+            return View(trans);            
+        }
+        [HttpPost]
+        public IActionResult MM_TRANS_REG_ADD(Transaction model)
+        {
+            try
+            {
+                model.DropdownTransType = getTransTypeDll();      
+                
+                if (model.QTY_TRANS == "")
+                {
+                    _logger.LogWarning("Transaction add failed: Transaction quantity not provided");
+                    ViewBag.Error = "Please Enter Transaction Quantity.";
+                }
+                else
+                {
+                    if (Convert.ToInt32(model.QTY_TRANS) + Convert.ToInt32(model.QTY_ON_REQUEST) > Convert.ToInt32(model.QTY_ON_HAND))
+                    {
+                        _logger.LogWarning("Transaction add failed: Insufficient on-hand quantity. Requested: {QtyTrans}, OnRequest: {QtyOnRequest}, OnHand: {QtyOnHand}", 
+                            model.QTY_TRANS, model.QTY_ON_REQUEST, model.QTY_ON_HAND);
+                        ViewBag.Error = "On hand quantity cannot fullfill request quantity.";
+                    }
+                    else
+                    {
+                        for (int i = 1; i <= Convert.ToInt32(model.QTY_TRANS); i++)
+                        {
+                            DB db = new DB();
+
+                            string loc = HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty;
+                            //string pc = Environment.MachineName;
+                            var aclUserJson = HttpContext.Session.GetString("AclUser");
+                            var aclUser = JsonSerializer.Deserialize<ACL_UserObj>(aclUserJson);
+                            string pc = aclUser.EMP_NO;
+
+                            //string loc = "10.80.100.10";
+                            //string pc = "9328";
+
+                            string result = db.TransactionRegMaint(model, "1", loc, pc);
+                            ViewBag.Result = result;
+                            _logger.LogInformation("Transaction added successfully by user {EmpNo}, iteration {Iteration} of {Total}", 
+                                pc, i, model.QTY_TRANS);
+                            //TempData["Message4"] = "MM_TRANS_REG_ADD post";
+                            //ViewData["result"] = result; // for dislaying message after saving storing output.
+                        }
+                    }
+                }                             
+                ModelState.Clear(); //clearing model            
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error adding transaction");
+                Console.Write(ex);
+                ViewBag.Error = ex.Message;
+            }
+            //return RedirectToAction("MM_Spart_LST", "Mstmain");
+            return View(model);
+        }
+
+        public IActionResult MM_TRANS_REG_DELETE(string id, int? page)
+        {
+
+            try
+            {
+                DB db = new DB();
+                //get the details 
+                Transaction model = db.getTransactionData(id);
+
+                string loc = HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty;
+                //string pc = Environment.MachineName;
+                string pc = (HttpContext.Session.GetObject<ACL_UserObj>("AclUser")).EMP_NO;
+
+                string result = db.TransactionRegMaint(model, "5", loc, pc);
+                TempData["result"] = result;
+
+                //ViewBag.Result = "Data is successfully deleted.";
+                //ViewBag.Result = result;
+                //ViewData["result"] = result; // for dislaying message after saving storing output.
+                ModelState.Clear(); //clearing model
+
+            }
+            catch (Exception ex)
+            {
+                // Info
+                Console.Write(ex);
+            }
+            return RedirectToAction("MM_TRANS_REG_LST", "MSPTransReg");
+        }      
+        public IActionResult ExportExcelTrans()
+        {
+            //Fill dataset with records
+            DataSet dataSet = GetTransRecords();
+
+            StringBuilder sb = new StringBuilder();
+
+            sb.Append("<table>");
+            sb.Append("<tr><td colspan='14' style='background-color:#E0F8F7; color:black; font-weight:bold;'><b><u>Transaction Registration Report</u></b></td></tr>");
+            sb.Append("<tr><td colspan='14'></td></tr>");
+
+            //LINQ to get Column names
+            var columnName = dataSet.Tables[0].Columns.Cast<DataColumn>()
+                                 .Select(x => x.ColumnName)
+                                 .ToArray();
+            sb.Append("<tr>");
+            //Looping through the column names
+            foreach (var col in columnName)
+                sb.Append("<td style='background-color:#36CBE6; color:black; font-weight:bold;'>" + col + "</td>");
+            sb.Append("</tr>");
+
+            //Looping through the records
+            foreach (DataRow dr in dataSet.Tables[0].Rows)
+            {
+                sb.Append("<tr>");
+                foreach (DataColumn dc in dataSet.Tables[0].Columns)
+                {
+                    sb.Append("<td>" + dr[dc] + "</td>");
+                }
+                sb.Append("</tr>");
+            }
+
+            sb.Append("</table>");
+
+            //Return Excel file as FileContentResult
+            var bytes = Encoding.UTF8.GetBytes(sb.ToString());
+            var fileName = $"Transaction Registration Report_{DateTime.Now:ddMMyyyy}.xls";
+            return File(bytes, "application/vnd.ms-excel", fileName);
+        }
+        DataSet GetTransRecords()
+        {
+            DataSet dataSet = new DataSet();
+
+            SqlConnection conn = new SqlConnection();
+            conn.ConnectionString = _configuration.GetConnectionString("SQLCon");
+            SqlCommand cmd = new SqlCommand();
+            cmd.CommandType = CommandType.Text;
+            cmd.CommandText = "SELECT D.MODEL_NO AS 'Model No', C.SERIES_NO AS 'Series No', A.TRANS_REASON AS 'Transaction Reason', " +
+                              "A.TRANS_FLOW AS 'Transaction Flow', A.STATUS AS 'Status',  " +
+                              "B.TRANS_NAME AS 'Transaction Name', C.PART_NO AS 'Part No', E.MACHINE_MODEL AS 'Spare Part Machine', " +
+                              "F.RFID_TYPE AS 'RFID Tag', I.STORAGE_CODE AS 'Storage Code', G.STORAGE_DESC_1 AS 'Storage Description 1', " +
+                              "G.STORAGE_DESC_2 AS 'Storage Description 2', " +
+                              "H.MANUFACTURER_CODE AS 'Manufacturer', A.REMARKS AS 'Remark' FROM dbo.RFID_TRANS_REG AS A LEFT OUTER JOIN " +
+                              "dbo.MM_TRANSACTION_TYPE AS B ON A.TRANS_TYPE_ID = B.TRANS_TYPE_ID LEFT OUTER JOIN " +
+                              "dbo.MM_SPARE_PART AS C ON A.RFID_TAG_ID = C.RFID_TAG_ID LEFT OUTER JOIN " +
+                              "dbo.MM_SPARE_PART_MODEL AS D ON A.SPARE_PART_MODEL_ID = D.SPARE_PART_MODEL_ID LEFT OUTER JOIN " +
+                              "dbo.MM_SPARE_PART_MACHINE AS E ON C.SPARE_PART_MACHINE_ID = E.SPARE_PART_MACHINE_ID LEFT OUTER JOIN " +
+                              "dbo.MM_RFID_TYPE AS F ON C.RFID_TYPE_ID = F.RFID_TYPE_ID LEFT OUTER JOIN " +
+                              "dbo.MM_SP_STORAGE AS G ON C.STORAGE_ID = G.STORAGE_ID LEFT OUTER JOIN " +
+                              "dbo.MM_SP_MANUFACTURER AS H ON C.MANUFACTURER_ID = H.MANUFACTURER_ID LEFT OUTER JOIN " +
+                              "dbo.MM_SPARE_PART_READER AS I ON I.READER_ID = G.READER_ID " +
+                              "Where A.RECORD_TYPE <> 5 ORDER BY A.CREATED_DATE DESC";
+            cmd.Connection = conn;
+
+            SqlDataAdapter sqlDataAdapter = new SqlDataAdapter();
+            sqlDataAdapter.SelectCommand = cmd;
+            sqlDataAdapter.Fill(dataSet);
+
+            return dataSet;
+        }
+
+        private static List<SelectListItem> getTransTypeDll()
+        {
+            DB db = new DB();
+            var dt = db.getTransTypeLst(); //get all Transaction Type
+            List<SelectListItem> items = new List<SelectListItem>();
+            if (dt.Rows.Count > 0)
+            {
+                for (int i = 0; i < dt.Rows.Count; i++)
+                {
+                    items.Add(new SelectListItem
+                    {
+                        Text = dt.Rows[i]["TRANS_NAME"].ToString(),
+                        Value = dt.Rows[i]["TRANS_TYPE_ID"].ToString()
+                    });
+                }
+            }
+            return items;
+        }
+
+        //Action result for ajax call
+        //[HttpPost]
+        //public ActionResult GetModel() //get ALL model 
+        //{
+        //    DB db = new DB();
+        //    var dt =  getReaderNameLst(Convert.ToInt64(readerid)); //get all user
+        //    var result = "";
+        //    if (dt.Rows.Count > 0)
+        //    {
+        //        result = dt.Rows[0]["READER_NAME"].ToString();
+        //    }
+        //    return Json(new { myResult = result });
+        //}
+
+        //Spare Part Model (pop up)------------------------------------------------------------------------------------------        
+        public IActionResult MM_TRANS_REG_PPMODEL(string searchValue, string SrcValTRAREGPP)
+        {
+            //Advanced Search (keep and clear tempdata)
+            if (TempData.ContainsKey("SrcValTRAREGPP"))
+            {
+                SrcValTRAREGPP = TempData["SrcValTRAREGPP"].ToString();
+                TempData.Keep();
+            }
+            else
+            {
+                TempData.Clear();
+            }
+
+            DB db = new DB();
+            DataTable dt;
+            //var dt = db.List("PVIEW_MM_SP_MODEL", "", "", "", "SPARE_PART_MODEL_ID", "0", "1", "10", "0");
+
+            //Advanced Search
+            if (searchValue == "" || searchValue == null)
+            {
+                if (SrcValTRAREGPP == "" || SrcValTRAREGPP == null)
+                {
+                    //default table show in view page
+                    dt = db.List("PVIEW_MM_SP_MODEL", "", "", "", "SPARE_PART_MODEL_ID", "0", "1", "10", "0");
+                }
+                else
+                {
+                    SrcValTRAREGPP = SrcValTRAREGPP.Replace(",", "");
+                    dt = db.List("PVIEW_MM_SP_MODEL", "", "", SrcValTRAREGPP, "SPARE_PART_MODEL_ID", "0", "1", "10", "0");
+                }
+            }
+            else
+            {
+                // pass advanced search value to model
+                searchValue = searchValue.Replace(",", "");
+                dt = db.List("PVIEW_MM_SP_MODEL", "", "", searchValue, "SPARE_PART_MODEL_ID", "0", "1", "10", "0");
+            }
+
+            List<SparePartModel> SparePartModel = new List<SparePartModel>();
+            SparePartModel = CommonMethod.ConvertToList<SparePartModel>(dt);            
+            //TempData["Message1"] = "MM_TRANS_REG_PPMODEL get";            
+            return PartialView("MM_TRANS_REG_PPMODEL", SparePartModel);
+        }
+
+        [HttpPost]
+        public IActionResult MM_TRANS_REG_PPMODEL(SparePartModel model)
+        {
+            //string[] Scol = { "Model No/Model_No", "Remarks/Remarks" };
+            string[] Scol = Models.SearchSource.MM_TRANS_REG_PPMODEL;   //refer to SearchSourceModel to get column
+            //ViewBag.SearchSource = Scol;
+            var searchval = CommonMethod.ConvertSearchValue(Scol, model.SEARCH_VALUE);
+            TempData["SrcValTRAREGPP"] = searchval;
+
+            DB db = new DB();
+            var dt = db.List("PVIEW_MM_SP_MODEL", "", "", searchval, "SPARE_PART_MODEL_ID", "0", "1", "10", "0");            
+
+            List<SparePartModel> SparePartModel = new List<SparePartModel>();
+            SparePartModel = CommonMethod.ConvertToList<SparePartModel>(dt);            
+            //TempData["Message2"] = "MM_TRANS_REG_PPMODEL post";            
+            return PartialView("MM_TRANS_REG_PPMODEL", SparePartModel);
+        }
+
+        [HttpPost]
+        public IActionResult MM_TRANS_REG_PPMODEL_Search(string searchvalue)
+        {
+            //string[] Scol = { "Model No/Model_No", "Remarks/Remarks" };
+            string[] Scol = Models.SearchSource.MM_TRANS_REG_PPMODEL;   //refer to SearchSourceModel to get column
+            //ViewBag.SearchSource = Scol;
+            var searchval = CommonMethod.ConvertSearchValue(Scol, searchvalue);
+
+            DB db = new DB();
+            var dt = db.List("PVIEW_MM_SP_MODEL", "", "", searchval, "SPARE_PART_MODEL_ID", "0", "1", "10", "0");
+           
+            List<SparePartModel> SparePartModel = new List<SparePartModel>();
+            SparePartModel = CommonMethod.ConvertToList<SparePartModel>(dt);
+            
+            var ModelList = SparePartModel.Where(x => x.Model_No.ToString().ToLower().StartsWith(searchvalue.ToLower())).ToList();
+            //var listL = SparePartModel.Where(x => x.Model_No.Contains(searchvalue)).Select(x => x.Model_No).ToList();
+            //SparePartModel = SparePartModel.Where(x => x.Model_No.Contains(searchvalue)).Select(x => x.Model_No).ToList();
+            //var ModelList = (from N in SparePartModel where N.Model_No.StartsWith(searchvalue) select new { N.Model_No });
+            //var listL = from s in dt select s.Model_No, s.SPARE_PART_MODEL_ID;
+            //return PartialView("MM_TRANS_REG_PPMODEL", SparePartModel);
+            //TempData["ajax"] = "ajax";
+            return Json(ModelList);
+            //return PartialView("MM_TRANS_REG_PPMODEL", SparePartModel);
+        }
+
+        [HttpPost]
+        public IActionResult MM_TRANS_REG_MODELNO_Search(string searchvalue)
+        {
+            //string[] Scol = { "Model No/Model_No", "Remarks/Remarks" };
+            string[] Scol = Models.SearchSource.MM_TRANS_REG_MODELNO_Search;
+            //ViewBag.SearchSource = Scol;
+            var searchval = CommonMethod.ConvertSearchValue(Scol, searchvalue);
+
+            DB db = new DB();
+            var dt = db.ListModelNo(searchval);
+
+            List<SparePartModel> SparePartModel = new List<SparePartModel>();
+            SparePartModel = CommonMethod.ConvertToList<SparePartModel>(dt);
+
+            var ModelList = SparePartModel.Where(x => x.Model_No.ToString().ToLower().StartsWith(searchvalue.ToLower())).ToList();
+            //var listL = SparePartModel.Where(x => x.Model_No.Contains(searchvalue)).Select(x => x.Model_No).ToList();
+            //SparePartModel = SparePartModel.Where(x => x.Model_No.Contains(searchvalue)).Select(x => x.Model_No).ToList();
+            //var ModelList = (from N in SparePartModel where N.Model_No.StartsWith(searchvalue) select new { N.Model_No });
+            //var listL = from s in dt select s.Model_No, s.SPARE_PART_MODEL_ID;
+            //return PartialView("MM_TRANS_REG_PPMODEL", SparePartModel);
+            //TempData["ajax"] = "ajax";
+            return Json(ModelList);
+            //return PartialView("MM_TRANS_REG_PPMODEL", SparePartModel);
+        }
+
+        //Action result for ajax call
+        [HttpPost]
+        public IActionResult GetOnHandQty(string modelID, string transtypeID)
+        {
+            DB db = new DB();
+            Qty model = new Qty();
+            var qty = db.GetQty(modelID, transtypeID, model); //get Qty
+            var result1 = "";
+            var result2 = "";
+
+            result1 = model.OnHand;
+            result2 = model.OnRequest;            
+
+            return Json(new { myResult1 = result1, myResult2 = result2 });
+        }
+    }
+}

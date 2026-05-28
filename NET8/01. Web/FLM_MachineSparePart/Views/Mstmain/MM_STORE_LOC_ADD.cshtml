@@ -1,0 +1,136 @@
+﻿@model UserMMModel.StoreLocation
+@{
+    var url = @Url.Action("MM_STORE_LOC_LST", "Mstmain").ToString();
+    ViewBag.Title = "MM Storage Location - Add";
+    Layout = "~/Views/Shared/_Layout_iFrame.cshtml";
+}
+
+@if (!string.IsNullOrEmpty(ViewBag.Result))
+{
+    <script type="text/javascript">
+        var chkmsg = "@ViewBag.Result";
+        var url = "";
+        //alert("viewbag");
+        alert(chkmsg);
+        url= '@Url.Action("MM_STORE_LOC_LST", "Mstmain")';
+        window.location.href = url;
+    </script>
+}
+
+@if (TempData["Message"] != null)
+{
+    <script type="text/javascript">
+            $(function () {
+                alert("@TempData["Message"]");
+            });
+    </script>
+}
+
+<script type="text/javascript">
+    var popup;
+    function SelectParentID() {
+        var url = '@Url.Action("ResourceParentPopUp", "Mstmain")';
+        popup = window.open(url, "Popup", "scrollbars=yes,resizable=yes,location=no,toolbar=no,width=500,height=500");
+        popup.focus();
+    }
+
+    $("body").on("change", "#ddlFruits", function () {
+        document.forms[0].submit();
+    });
+
+    function StorageCode_SelectedIndexChange() {
+        //Form post
+        //alert("selected index change");
+        document.forms[0].submit();
+    }
+
+    $(function (){
+        $(document).on('change', '#ddlreaderid', (function ()
+        {
+            var valueofDropDown = $(this).val();
+            //alert($(this).val());
+            $.ajax({
+                url: '@Url.Action("GetReaderName")',
+                type: 'POST',
+                data: { readerid: $(this).val() },
+                success: function (result) {
+                    //alert(result.myResult);
+                    var readername = result.myResult;
+                    $('#txtreadername').val(readername);
+                },
+                error: function (result) {
+                    //alert(result.myResult);
+                    $('#txtreadername').val(result.myResult);
+                }
+            });
+        }));
+    });
+</script>
+
+<h2>Storage Location Master Maintenance - Add</h2>
+
+<hr />
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    <div class="col-100">
+        <div class="col-md-8">
+            @Html.HiddenFor(a => a.STORAGE_ID)
+        </div>
+
+        <div class="col-md-8">
+            <label>Storage Code</label>
+        </div>
+
+        <div class="col-md-8">
+            <div class="form-group">
+                @Html.DropDownListFor(a => a.Reader_ID, Model.DropdownStorageCode, "Select Storage Code", new { @class = "form-control txtbox", id = "ddlreaderid" })
+                @Html.ValidationMessageFor(a => a.Reader_ID, "", new { @style = "color:red" })
+                @*@Html.DropDownListFor(a => a.Reader_ID, Model.DropdownStorageCode, "--Select--", new { @class = "form-control txtbox", onchange = "StorageCode_SelectedIndexChange()" })*@
+                @*@Html.DropDownListFor(a => a.Reader_ID, Model.DropdownStorageCode, "--Select--", new { @class = "form-control txtbox", id = "ddlFruits" })*@
+                @*Html.Hidden("FruitName", null, new { @id = "hfFruitName" })*@
+                @*@Html.TextBoxFor(a => a.Storage_Code, null, new { @class = "form-control txtbox" })*@
+            </div>
+        </div>
+        <div class="col-md-8">
+            <label>Storage Description 1</label>
+        </div>
+        <div class="col-md-8">
+            <div class="form-group">
+                @Html.TextBoxFor(a => a.Storage_Desc_1, null, new { @class = "form-control txtbox" })
+                @Html.ValidationMessageFor(a => a.Storage_Desc_1)
+            </div>
+        </div>
+        <div class="col-md-8">
+            <label>Storage Description 2</label>
+        </div>
+        <div class="col-md-8">
+            <div class="form-group">
+                @Html.TextBoxFor(a => a.Storage_Desc_2, null, new { @class = "form-control txtbox" })
+                @Html.ValidationMessageFor(a => a.Storage_Desc_2)
+            </div>
+        </div>
+        <div class="col-md-8">
+            <label>Reader ID</label>
+        </div>
+        <div class="col-md-8">
+            <div class="form-group">
+                @Html.TextBoxFor(a => a.Reader_Name, null, new { @class = "form-control txtbox", @readonly = "true", id = "txtreadername" })
+                @Html.ValidationMessageFor(a => a.Reader_Name)
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            @Html.LabelFor(a => a.Remarks)
+        </div>
+        <div class="col-md-8">
+            <div class="form-group">
+                @Html.TextBoxFor(a => a.Remarks, null, new { @class = "form-control txtbox" })
+            </div>
+        </div>
+        <div class="col-md-8">
+            <input id="Submit" type="submit" class="btn btn-primary" value="Submit" />
+            @Html.BackButton(url)
+        </div>
+    </div>
+}

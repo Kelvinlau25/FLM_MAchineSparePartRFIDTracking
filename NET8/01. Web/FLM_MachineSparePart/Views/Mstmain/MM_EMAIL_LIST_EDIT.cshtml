@@ -1,0 +1,140 @@
+﻿@model UserMMModel.EmailList
+
+@{
+    var url = @Url.Action("MM_EMAIL_LIST_LST", "Mstmain").ToString();
+    ViewBag.Title = "MM Email List - Edit";
+    Layout = "~/Views/Shared/_Layout_iFrame.cshtml";
+}
+
+
+@section scripts
+{
+
+    @*To update Email Group Category dropdownlist from model data.*@
+    <script type="text/javascript">
+        $("document").ready(function () {          
+            $('#ddlEmailCat').val('@Model.Email_Group_Cat_1');            
+        });
+     
+    </script>
+}
+
+@if (!string.IsNullOrEmpty(ViewBag.Result))
+{
+    <script type="text/javascript">
+        var chkmsg = "@ViewBag.Result";
+        var url = "";
+        //alert("viewbag");
+        alert(chkmsg);
+        if (chkmsg == "Data is successfully saved.") {
+            url= '@Url.Action("MM_EMAIL_LIST_LST", "Mstmain")';
+        } else {
+            url = '@Url.Action("MM_EMAIL_LIST_EDIT", "Mstmain" , new { id = ViewBag.ID })';
+        }
+        window.location.href = url;
+    </script>
+}
+
+@{
+    if (ViewBag.Error != "" && ViewBag.Error != null)
+    {
+        <script type="text/javascript" language="javascript">
+            alert("@ViewBag.Error");
+        </script>
+    }
+}
+
+@*@{
+    if (ViewBag.Result != "" && ViewBag.Result != null)
+    {
+        <script type="text/javascript" language="javascript">
+        alert("@ViewBag.Result");
+        var url = '@Url.Action("MM_EMAIL_LIST_LST", "Mstmain")';
+        window.location.href = url;
+        </script>
+    }
+}*@
+
+
+<h2>Email List Master Maintenance - Edit</h2>
+<hr />
+<table style="width:100%;">
+    <tr>
+        <td>
+            @using (Html.BeginForm())
+            {
+
+                @Html.AntiForgeryToken()
+                <div class="form-horizontal">
+                    <div class="form-group">
+                        @Html.HiddenFor(a => a.EMAIL_LIST_ID)
+                    </div>
+                    <div class="form-group">
+                        @Html.HiddenFor(a => a.Email_Group_Cat_1)
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2">Email Group Name</label>
+                        <label class="labelW10">:</label>
+                        <div class="col-md-4">
+                            @Html.TextBoxFor(a => a.Email_Group_Id, null, new { @class = "form-control", @readonly = "true" })
+                            @Html.ValidationMessageFor(a => a.Email_Group_Id, "", new { @style = "color:red" })
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2">Email Group Category</label>
+                        <label class="labelW10">:</label>
+                        <div class="col-md-4">
+                            @Html.DropDownListFor(a => a.Email_Group_Cat_1, Model.DropdownEmailGroupCat, "Select Email Category", new { @class = "form-control txtbox", id = "ddlEmailCat", disabled = "disabled" })
+                            @Html.ValidationMessageFor(a => a.Email_Group_Cat_1, "", new { @style = "color:red" })
+                            @*@Html.TextBoxFor(a => a.Email_Group_Cat, null, new { @class = "form-control", @readonly = "true" })*@
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2">Email List</label>
+                        <label class="labelW10">:</label>
+                        <div class="col-md-4">
+                            @Html.TextAreaFor(model => model.Email_List, 4, 3, new { @class = "form-control required", style = "max-width:65% !important;", @maxlength = "500" })
+                            @Html.ValidationMessageFor(a => a.Email_List, "", new { @style = "color:red" })
+                        </div>
+                        <img src="~/images/info.ico" height="30" width="30" alt="" title="Please place a comma (,) after every email input.
+For example:
+alvin_wong_rumin@tms.toray.my ,
+charlene_chong@tms.toray.my " />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="col-sm-2">Remarks</label>
+                        <label class="labelW10">:</label>
+                        <div class="col-md-4">
+                            @Html.TextBoxFor(a => a.Remarks, null, new { @class = "form-control txtbox" })
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <input id="Submit" type="submit" class="btn btn-primary" value="Submit" />
+                    @Html.BackButton(url)
+                </div>
+            }
+        </td>
+    </tr>
+</table>
+<table style="border:1px solid; border-radius:20px; width:50%;">
+    <tr>
+        <td style="padding-left:0.5em; width:15%;"><label>Created By:</label></td>
+        <td style="width:35%;">@Html.TextBoxFor(a => a.Created_By, null, new { @class = "form-control", @readonly = "true" })</td>
+    </tr>
+    <tr>
+        <td style="padding-left:0.5em; width:15%;"><label>Created Date:</label></td>
+        <td style="width:35%;">@Html.TextBoxFor(a => a.Created_Date, null, new { @class = "form-control", @readonly = "true" })</td>
+    </tr>
+    <tr>
+        <td style="padding-left:0.5em; width:15%;"><label>Updated By:</label></td>
+        <td style="width:35%;">@Html.TextBoxFor(a => a.Updated_By, null, new { @class = "form-control", @readonly = "true" })</td>
+    </tr>
+    <tr>
+        <td style="padding-left:0.5em; width:15%;"><label>Updated Date:</label></td>
+        <td style="width:35%;">@Html.TextBoxFor(a => a.Updated_Date, null, new { @class = "form-control", @readonly = "true" })</td>
+    </tr>
+</table>
+

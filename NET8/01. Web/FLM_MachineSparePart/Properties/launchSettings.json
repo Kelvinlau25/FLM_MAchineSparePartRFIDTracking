@@ -1,0 +1,14 @@
+{
+  "profiles": {
+    "FILM_Sparepart_MVC": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "launchUrl": "https://localhost:7001",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "DOTNET_EnableWriteXorExecute": "0"
+      },
+      "applicationUrl": "https://localhost:7001;http://localhost:5001"
+    }
+  }
+}

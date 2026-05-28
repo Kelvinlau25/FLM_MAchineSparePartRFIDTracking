@@ -1,0 +1,72 @@
+@model dynamic
+
+@{
+    var pageIndex = (int)ViewData["PageIndex"];
+    var totalPages = (int)ViewData["TotalPages"];
+    var hasNextPage = (bool)ViewData["HasNextPage"];
+    var hasPreviousPage = (bool)ViewData["HasPreviousPage"];
+    var actionName = ViewContext.RouteData.Values["action"]?.ToString();
+    var controllerName = ViewContext.RouteData.Values["controller"]?.ToString();
+}
+
+<div class="pagination-container" style="margin-top: 10px;">
+    <div class="pagination">
+        @if (hasPreviousPage)
+        {
+            <a href="?page=1" class="btn btn-sm btn-default">First</a>
+            <a href="?page=@(pageIndex - 1)" class="btn btn-sm btn-default">Previous</a>
+        }
+        else
+        {
+            <span class="btn btn-sm btn-default disabled">First</span>
+            <span class="btn btn-sm btn-default disabled">Previous</span>
+        }
+
+        @{
+            var startPage = Math.Max(1, pageIndex - 2);
+            var endPage = Math.Min(totalPages, pageIndex + 2);
+        }
+
+        @for (int i = startPage; i <= endPage; i++)
+        {
+            if (i == pageIndex)
+            {
+                <span class="btn btn-sm btn-primary">@i</span>
+            }
+            else
+            {
+                <a href="?page=@i" class="btn btn-sm btn-default">@i</a>
+            }
+        }
+
+        @if (hasNextPage)
+        {
+            <a href="?page=@(pageIndex + 1)" class="btn btn-sm btn-default">Next</a>
+            <a href="?page=@totalPages" class="btn btn-sm btn-default">Last</a>
+        }
+        else
+        {
+            <span class="btn btn-sm btn-default disabled">Next</span>
+            <span class="btn btn-sm btn-default disabled">Last</span>
+        }
+    </div>
+    <div style="margin-top: 5px;">
+        <small>Page @pageIndex of @totalPages</small>
+    </div>
+</div>
+
+<style>
+    .pagination-container {
+        text-align: center;
+    }
+    .pagination {
+        display: inline-block;
+    }
+    .pagination a, .pagination span {
+        margin: 0 2px;
+    }
+    .pagination .disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+</style>

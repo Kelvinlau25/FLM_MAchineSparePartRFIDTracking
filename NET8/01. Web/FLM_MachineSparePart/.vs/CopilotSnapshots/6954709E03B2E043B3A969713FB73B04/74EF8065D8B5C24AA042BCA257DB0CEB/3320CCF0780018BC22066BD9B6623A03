@@ -1,0 +1,201 @@
+﻿@using UserMMModel
+@using FILM_Sparepart_MVC.Helpers
+@model PaginatedList<StoreLocReader>
+@{
+    ViewBag.Title = "MM Storage Reader";
+    Layout = "~/Views/Shared/_Layout_iFrame.cshtml";
+    var items = Model?.ToList() ?? new List<StoreLocReader>();
+}
+
+@if (TempData["result"] != null)
+{
+    <script type="text/javascript">
+        alert("@TempData["result"]");
+    </script>
+}
+
+<script type="text/javascript">
+    //$(document).ready(function () {
+    //    //$('.webgrid-table thead td:nth-child(0), thead th:nth-child(0').hide();
+    //    //$('.webgrid-table tbody td:nth-child(0), tbody th:nth-child(0').hide();
+    //    $('td:nth-child(1), th:nth-child(1)').hide();
+    //});
+    function popUpDelete(rowid)
+    {
+        //var row = rowid.parentNode.parentNode;
+        //var tranid = row.getElementsByTagName("TD")[0].innerHTML;
+        var readerid = rowid.toString();
+        //alert(readerid);
+        var agree = confirm("Are you sure to delete?");
+        if (agree) {
+            //alert("deleted.");
+            var url = '@Url.Action("MM_STORE_RDR_DELETE", "Mstmain")?id=' + readerid;
+            window.location.href = url;
+        }
+    }
+</script>
+
+<h2>Storage Reader Master Maintenance</h2>
+<hr />
+@{
+    @Html.Partial("_Header",
+    new ViewDataDictionary(this.ViewData) {
+        { "Act", "MM_STORE_RDR_ADD" },
+        { "Ctrl", "Mstmain" },
+        { "SrcAct", "MM_STORE_RDR_LST" },
+        { "SrcVal", "SEARCH_VALUE" }
+    })
+}
+@{
+<div id="grid">
+    <table class="table table-bordered">
+        <thead class="head">
+            <tr>
+                <th></th>
+                <th>Storage Code</th>
+                <th>Reader Name</th>
+                <th>Remarks</th>
+                <th>View</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (items != null && items.Any())
+            {
+                foreach (var item in items)
+                {
+                    <tr>
+                        <td><a href="#" onclick="popUpDelete('@item.READER_ID');"><i class="fa fa-trash"></i></a></td>
+                        <td>@item.Storage_Code</td>
+                        <td>@item.Reader_Name</td>
+                        <td>@item.Remarks</td>
+                        <td><a href="@Url.Action("MM_STORE_RDR_EDIT", "Mstmain", new { id = item.READER_ID })"><i class="fa fa-pencil"></i></a></td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="5" class="text-center">No records found</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+} 
+
+@* Pagination Controls *@
+@if (Model != null && Model.TotalPages > 1)
+{
+    <div class="pagination-container" style="margin: 20px 0; text-align: center;">
+        <ul class="pagination" style="display: inline-flex; list-style: none; padding: 0;">
+            @* Previous Button *@
+            @if (Model.HasPreviousPage)
+            {
+                <li style="margin: 0 2px;">
+                    <a href="@Url.Action("MM_STORE_RDR_LST", new { page = Model.PageIndex - 1 })" 
+                       style="padding: 5px 10px; border: 1px solid #ddd; text-decoration: none; color: #337ab7;">
+                        Previous
+                    </a>
+                </li>
+            }
+            else
+            {
+                <li style="margin: 0 2px;">
+                    <span style="padding: 5px 10px; border: 1px solid #ddd; color: #999;">Previous</span>
+                </li>
+            }
+
+            @* Page Numbers *@
+            @{
+                int startPage = Math.Max(1, Model.PageIndex - 2);
+                int endPage = Math.Min(Model.TotalPages, Model.PageIndex + 2);
+                
+                // Show first page if not in range
+                if (startPage > 1)
+                {
+                    <li style="margin: 0 2px;">
+                        <a href="@Url.Action("MM_STORE_RDR_LST", new { page = 1 })" 
+                           style="padding: 5px 10px; border: 1px solid #ddd; text-decoration: none; color: #337ab7;">
+                            1
+                        </a>
+                    </li>
+                    if (startPage > 2)
+                    {
+                        <li style="margin: 0 2px;"><span style="padding: 5px 10px;">...</span></li>
+                    }
+                }
+
+                // Show page numbers
+                for (int i = startPage; i <= endPage; i++)
+                {
+                    if (i == Model.PageIndex)
+                    {
+                        <li style="margin: 0 2px;">
+                            <span style="padding: 5px 10px; border: 1px solid #337ab7; background-color: #337ab7; color: white; font-weight: bold;">
+                                @i
+                            </span>
+                        </li>
+                    }
+                    else
+                    {
+                        <li style="margin: 0 2px;">
+                            <a href="@Url.Action("MM_STORE_RDR_LST", new { page = i })" 
+                               style="padding: 5px 10px; border: 1px solid #ddd; text-decoration: none; color: #337ab7;">
+                                @i
+                            </a>
+                        </li>
+                    }
+                }
+
+                // Show last page if not in range
+                if (endPage < Model.TotalPages)
+                {
+                    if (endPage < Model.TotalPages - 1)
+                    {
+                        <li style="margin: 0 2px;"><span style="padding: 5px 10px;">...</span></li>
+                    }
+                    <li style="margin: 0 2px;">
+                        <a href="@Url.Action("MM_STORE_RDR_LST", new { page = Model.TotalPages })" 
+                           style="padding: 5px 10px; border: 1px solid #ddd; text-decoration: none; color: #337ab7;">
+                            @Model.TotalPages
+                        </a>
+                    </li>
+                }
+            }
+
+            @* Next Button *@
+            @if (Model.HasNextPage)
+            {
+                <li style="margin: 0 2px;">
+                    <a href="@Url.Action("MM_STORE_RDR_LST", new { page = Model.PageIndex + 1 })" 
+                       style="padding: 5px 10px; border: 1px solid #ddd; text-decoration: none; color: #337ab7;">
+                        Next
+                    </a>
+                </li>
+            }
+            else
+            {
+                <li style="margin: 0 2px;">
+                    <span style="padding: 5px 10px; border: 1px solid #ddd; color: #999;">Next</span>
+                </li>
+            }
+
+            @* Last Button *@
+            @if (Model.PageIndex < Model.TotalPages)
+            {
+                <li style="margin: 0 2px;">
+                    <a href="@Url.Action("MM_STORE_RDR_LST", new { page = Model.TotalPages })" 
+                       style="padding: 5px 10px; border: 1px solid #ddd; text-decoration: none; color: #337ab7;">
+                        Last
+                    </a>
+                </li>
+            }
+        </ul>
+        <div style="margin-top: 10px; color: #666;">
+            Page @Model.PageIndex of @Model.TotalPages (Total: @Model.TotalCount records)
+        </div>
+    </div>
+}
+
+ <input type="button" value="Export to Excel" class="btn btn-primary" onclick="location.href='@Url.Action("ExportExcelStoreLocRDR", "Mstmain")'" />
+   
