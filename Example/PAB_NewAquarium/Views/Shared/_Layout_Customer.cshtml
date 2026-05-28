@@ -1,0 +1,482 @@
+﻿<!DOCTYPE html>
+<html class="h-100">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="x-ua-compatible" content="ie=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>@System.Configuration.ConfigurationManager.AppSettings["SystemName"]</title>
+    @Styles.Render("~/Content/css")
+    @Scripts.Render("~/bundles/modernizr")
+    @Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/bundles/jqueryui")
+    @Scripts.Render("~/bundles/jqueryval")
+    @Scripts.Render("~/bundles/bootstrap")
+    @Scripts.Render("~/bundles/datatables")
+    @Scripts.Render("~/bundles/js")
+    @Scripts.Render("~/Scripts/Main.js")
+    @Scripts.Render("~/Scripts/jquery.signalR-2.4.3.js")
+
+    @RenderSection("scripts", required: false)
+    @RenderSection("VendorCSS", required: false)
+</head>
+<body>
+    <div class="sticky-top">
+        <header class="sticky-top navbar navbar-dark flex-md-nowrap p-0 shadow tr-navbar">
+            <div class="row row-cols-auto align-items-center">
+                <a href="/CustomerDashboard/CustomerDashboard" class="col" style="margin-left: 10px; margin-top: -5px">
+                    <img class="p-0 tr-navbar-logo" src="~/Images/Toray Logo.png" />
+                </a>
+                <div class="tr-nav-divider"></div>
+            </div>
+            <div class="me-auto d-none d-md-block">
+                <p class="m-0 px-4 tr-navbar-title">@System.Configuration.ConfigurationManager.AppSettings["SystemName"]</p>
+            </div>
+            <div class="navbar-nav d-none d-md-block">
+                <div class="nav-item text-nowrap">
+                    <form class="d-flex align-items-center">
+                        <div class="mx-2">
+                            <div class="dropdown overlay-dropdown">
+                                <a href="#" class="m-0 px-1 text-reset tr-navbar-logout dropdown-toggle" role="button" id="profileDropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <i class="fa-solid fa-user px-2"></i>&nbsp;
+                                    <text id="customer-name-display">GUEST</text>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="tr-nav-divider"></div>
+                        <div>
+                            <a id="btnLogout" href="#" class="px-1 text-reset tr-navbar-logout"><i class="fa-solid fa-right-from-bracket px-2"></i>&nbsp;LOGOUT</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <button class="navbar-toggler position-absolute d-md-none collapsed" style="top:0.5em; right:4em" type="button" data-bs-toggle="collapse" data-bs-target="#accountMenu" aria-controls="accountMenu" aria-expanded="false" aria-label="Toggle navigation">
+                <span><i class="fa-solid fa-user"></i></span>
+            </button>
+        </header>
+    </div>
+    <div id="navbar_horizontal" class="tr-navbar bg-white shadow">
+        <ul id="navbar_horizontal_left" class="float-start d-none">
+            <li>
+                <a href="/CustomerDashboard/CustomerDashboard" class="nav-link nav-header menu-text">
+                    Home
+                </a>
+                <a href="/AllProducts/AllProducts?user=customer" class="nav-link nav-header menu-text">
+                    All Products
+                </a>
+                <a href="/AllProducts/AllProducts?type=HotSales&user=customer" class="nav-link nav-header menu-text">
+                    Fabric Hot Sales
+                </a>
+            </li>
+        </ul>
+        <ul id="navbar_horizontal_right" class="float-end">
+            <li class="me-3">
+                <div class="input-group">
+                    <input id="inputOverallSearch" class="form-control " type="text" placeholder="Search" spellcheck="false" autocomplete="off" />
+                    <div id="iconOverallSearch" class="input-group-text">
+                        <i class="fa-solid fa-search dark-blue" aria-hidden="true"></i>
+                    </div>
+                </div>
+            </li>
+            <li class="addToCartBtn">
+                <a href="#" onclick="redirectToCart()">
+                    <i class="fa-solid fa-cart-shopping dark-blue nav-icon"></i>
+                    <div id="txtCartCount" class="red-circle mx-1">
+                        <text>0</text>
+                    </div>
+                </a>
+            </li>
+        </ul>
+    </div>
+    <div class="container-fluid d-flex flex-column">
+        <div class="row flex-nowrap">
+            <main class="col ps-md-2 mx-2 detail-frame">
+                @RenderBody()
+                <div class="spanner align-self-center">
+                    <div class=" d-flex justify-content-center align-items-center">
+                        <span class="fa-duotone fa-spinner fa-spin-pulse dark-blue"></span>
+                    </div>
+                    <div class="d-flex justify-content-center align-items-center pt-2 ps-3">
+                        <text class="fw-bold white">Loading...</text>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <div class="tr-footer d-flex flex-row" id="footer">
+        <div class="flex-column px-1 text-black-50 tr-footer-text" style="margin:auto">
+            <span>@System.Configuration.ConfigurationManager.AppSettings["VersionText"]</span>
+        </div>
+        <div class="flex-column flex-grow-1 text-center text-black-50 tr-footer-text" style="margin:auto; margin-left: -80px">
+            @System.Configuration.ConfigurationManager.AppSettings["CopyrightText"].Replace("YEAR", DateTime.Now.Year.ToString())
+        </div>
+    </div>
+
+    <div class="modal fade" id="session-modal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="text-muted m-2 tr-listing-header-title">Session Expired</h5>
+                    <button type="button" class="btnCloseModal" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <hr />
+                <div class="modal-body">
+                    <text class="text-nowrap">Your session is expired. Please login again.</text>
+                </div>
+                <div class="modal-footer">
+                    <a class="btn btn-sm btn-primary" onclick="window.close()">Ok</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Common JavaScript -->
+    <script src="~/ViewsHelpers/CommonComponent/Alert.js"></script>
+
+    <script>
+        var navItemCount = 0;
+        var cooldown = false;
+        var sidebarContent = '@Url.Content("/Home/SideBar3")';
+        var sidebarContent2 = '@Url.Content("/Home/SideBar2")';
+        var ajaxGetAddToCart = '@Url.Action("GetAddToCart", "Dashboard")';
+        var ajaxGetCompany = '@Url.Action("GetCompanyList", "Dashboard")';
+        var ajaxGetCustomer = '@Url.Action("GetCustomerList", "Dashboard")';
+        var ajaxGetOverallData = '@Url.Action("GetOverallSearchData", "Dashboard")';
+        var ajaxUserReg = '@Url.Action("InsertCustomerName", "Dashboard")';
+        var ajaxCheckSession = '@Url.Action("CheckSessionTimeout", "Dashboard")';
+        var overallSearch = '@Url.Action("AllProducts", "AllProducts")';
+        var customerSession = localStorage.getItem('customerName');
+        var customerID = localStorage.getItem('customerID');
+
+        document.addEventListener("DOMContentLoaded", function () {
+            var dropdownToggle = document.querySelector(".overlay-dropdown .dropdown-toggle");
+            var dropdown = document.querySelector(".overlay-dropdown");
+
+            // Add a click event listener to the document
+            document.addEventListener("click", function (event) {
+                // Check if the clicked element is not inside the dropdown
+                if (!dropdown.contains(event.target) && event.target !== dropdownToggle) {
+                    // Close the dropdown by removing the "show" class
+                    dropdown.classList.remove("show");
+                }
+            });
+
+            // Add a click event listener to the dropdown toggle button
+            dropdownToggle.addEventListener("click", function (event) {
+                // Prevent the click event from propagating to the document
+                event.stopPropagation();
+
+                // Toggle the "show" class on the dropdown
+                dropdown.classList.toggle("show");
+            });
+        });
+
+        $(document).ready(function () {
+            customerLogin();
+            setActiveTopNav();
+            getAddToCart();
+
+            $('#txtCartCount').attr('size', $('#txtCartCount').height());
+            $('.multiselect-native-select > .btn-group').addClass("w-100");
+            $('.multiselect-native-select > .btn-group > .multiselect').removeClass("text-center");
+            $('.multiselect-native-select > .btn-group > .multiselect-container').addClass("w-100");
+            loadTopMenu();
+
+            $('.addToCartBtn').mouseenter(function () {
+                $('.fa-cart-shopping').addClass('fa-bounce');
+            });
+
+            $('.addToCartBtn').mouseleave(function () {
+                $('.fa-cart-shopping').removeClass('fa-bounce');
+            });
+
+            $('#session-modal').on('hidden.bs.modal', function () {
+                window.close();
+            });
+
+            $('#inputOverallSearch').on('keyup', function (e) {
+                var selectedValue = $('#inputOverallSearch').val();
+                if (e.keyCode == 13) {
+                    window.location.href = overallSearch + "?user=customer&search=" + selectedValue;
+                }
+            });
+
+            $('#iconOverallSearch').on('click', function (e) {
+                var selectedValue = $('#inputOverallSearch').val();
+                window.location.href = overallSearch + "?user=customer&search=" + selectedValue;
+            });
+
+            $('#inputOverallSearch').on('keydown', function (e) {
+                var hasClass = false;
+                if (e.keyCode === 40) {
+                    $('.ui-autocomplete-search').find('.ui-menu-item').each(function () {
+                        if ($(this).hasClass('bg-grey')) {
+                            if ($(this).is(':last-child')) {
+                                $(this).removeClass('bg-grey');
+                            }
+                            else {
+                                $(this).removeClass('bg-grey');
+                                $(this).next().addClass('bg-grey');
+
+                            }
+                            hasClass = true;
+                            return false;
+                        }
+                    });
+                    if (!hasClass) {
+                        $('.ui-autocomplete-search').find('.ui-menu-item:first-child').addClass('bg-grey');
+                    }
+                }
+
+                if (e.keyCode === 38) {
+                    $('.ui-autocomplete-search').find('.ui-menu-item').each(function () {
+                        if ($(this).hasClass('bg-grey')) {
+                            if ($(this).is(':first-child')) {
+                                $(this).removeClass('bg-grey');
+                            }
+                            else {
+                                $(this).removeClass('bg-grey');
+                                $(this).prev().addClass('bg-grey');
+                            }
+                            hasClass = true;
+                            return false;
+                        }
+                    });
+                    if (!hasClass) {
+                        $('.ui-autocomplete-search').find('.ui-menu-item:last-child').addClass('bg-grey');
+                    }
+                }
+            });
+
+            $('#btnLogout').on('click', function () {
+                localStorage.removeItem('customerID');
+                localStorage.removeItem('customerName');
+                localStorage.removeItem('companyName');
+                window.close();
+            });
+
+            $(document).on('mousemove keypress', function () {
+                checkSessionStatus();
+            });
+
+            getOverallSearchData();
+
+            setInterval(checkSessionStatus, 10000);
+        });
+
+        $(document).ready(function () {
+            var existingDiv = $('.detail-frame');
+            existingDiv.removeClass('ps-md-2 mx-2').addClass('px-0');
+            resizeContainer();
+            $(window).on('resize', resizeContainer);
+        });
+
+        $(window).on('beforeunload', function () {
+            loadings(true);
+        });
+
+        $(window).on('unload', function () {
+            loadings(false);
+        });
+
+        function customerLogin() {
+            if (customerSession == null) {
+                $('#session-modal').modal('show');
+            }
+            else {
+                $('#customer-name-display').text(customerSession);
+            }
+        }
+
+        function loadTopMenu() {
+            var currentURL = window.location.href;
+            if (currentURL.includes('RFIDDashboard/RFIDProductPage')) {
+                $('#inputOverallSearch').parent('.input-group').addClass('d-none');
+            }
+            else {
+                $('#navbar_horizontal_left').removeClass('d-none');
+            }
+        }
+
+        function resizeContainer() {
+            var windowHeight = $(window).height();
+            var windowWidth = $(window).width();
+            var headerHeight = $('header.sticky-top').outerHeight();
+            var titleHeight = $('.tr-listing-header').outerHeight();
+            var footerHeight = $('.tr-footer').outerHeight();
+            var footerHeight1 = $('.tr-btm-btn-margin').outerHeight();
+            var newHeight = windowHeight - (headerHeight + titleHeight + footerHeight);
+            $('.page-container').css('height', newHeight + 'px');
+        }
+
+        function setActivePage(page) {
+            var companyName = $('#CUST_COMPANY_INPUT').val();
+            var customerName = $('#CUST_NAME_INPUT').val().trim();
+            var height = $('.customer-modal-first').height();
+
+            if (page == 1) {
+                $('.btn-slider-first').css({
+                    'background-color': '#004098',
+                    'border': '1px solid #004098'
+                });
+                $('.btn-slider-second').css({
+                    'background-color': '#FFFFFF',
+                    'border': '1px solid #EBEBEB'
+                });
+                $('.customer-modal-first').removeClass('hidden');
+                $('.customer-modal-second').addClass('hidden');
+            }
+            else {
+                if (companyName == "" || customerName == "") {
+                    $('#customer-reg-validation').removeClass('hidden');
+                }
+                else {
+                    $('.btn-slider-first').css({
+                        'background-color': '#FFFFFF',
+                        'border': '1px solid #EBEBEB'
+                    });
+
+                    $('.btn-slider-second').css({
+                        'background-color': '#004098',
+                        'border': '1px solid #004098'
+                    });
+
+                    $('#customer-reg-validation').addClass('hidden');
+                    $('.customer-modal-first').addClass('hidden');
+                    $('.customer-modal-second').removeClass('hidden');
+                    $('.customer-modal-first').next().height(height);
+                }
+            }
+        }
+
+        function getOverallSearchData() {
+            var data = localStorage.getItem('overallData');
+            var dataList = JSON.parse(data);
+
+            $("#inputOverallSearch").autocomplete({
+                source: dataList,
+                select: function (event, ui) {
+                    var selectedValue = ui.item.value;
+                    window.location.href = overallSearch + "?search=" + selectedValue;
+                },
+                create: function (event, ui) {
+                    var autocompleteMenu = $(this).data('ui-autocomplete').menu.element
+                    autocompleteMenu.addClass('ui-autocomplete-search');
+                    autocompleteMenu.css({
+                        'border': '1px solid #EBEBEB',
+                    });
+                },
+                open: function (event, ui) {
+                    var inputVal = $(this).val();
+                    var matcher = new RegExp("(" + $.ui.autocomplete.escapeRegex(inputVal) + ")", "ig");
+
+                    $('.ui-menu-item').each(function () {
+                        var html = '<div class="ui-menu-item-wrapper">';
+                        html += $(this).text().replace(matcher, '<strong>$1</strong>');
+                        html += '</div>';
+                        $(this).html(html);
+                    });
+
+                    $('.ui-menu-item').hover(function () {
+                        $('.ui-menu-item').removeClass('bg-grey');
+                        $(this).addClass('bg-grey');
+                    });
+                }
+            });
+        }
+
+        function getAddToCart() {
+            var iconSize = parseInt($('#txtCartCount').attr('size'));
+
+            $.ajax({
+                type: "post",
+                url: ajaxGetAddToCart,
+                data: { customerID : customerID },
+                datatype: "json",
+                traditional: true,
+                success: function (data) {
+                    if (data < 10) {
+                        $('#txtCartCount > text').html(data);
+                    }
+                    else if (data >= 10 && data < 100) {
+                        iconSize += 2;
+                        $('#txtCartCount').css({
+                            'height': iconSize,
+                            'width': iconSize
+                        });
+
+                        $('#txtCartCount > text').html(data);
+                    }
+                    else if (data >= 100) {
+                        iconSize += 4;
+                        $('#txtCartCount').css({
+                            'height': iconSize,
+                            'width': iconSize
+                        });
+
+                        $('#txtCartCount > text').html("99+");
+                    }
+                    $('#txtCartCount > text').attr('count', data);
+                },
+            });
+        }
+
+        function redirectToCart() {
+            window.location.href = "/ProductDetail/Cart?id=" + customerID;
+        }
+
+        function setActiveTopNav() {
+            var currentURL = window.location.href;
+            var currentNav = "";
+            var nav1 = "/CustomerDashboard/CustomerDashboard";
+            var nav2 = "/AllProducts/AllProducts?user=customer";
+            var nav3 = "/AllProducts/AllProducts?type=HotSales&user=customer";
+
+            if (currentURL.includes(nav3)) {
+                currentNav = nav3;
+            }
+            else if (currentURL.includes(nav2)) {
+                currentNav = nav2;
+            }
+            else if (currentURL.includes(nav1)) {
+                currentNav = nav1;
+            }
+
+            $('.nav-link').each(function () {
+                if ($(this).attr('href') == currentNav) {
+                    $(this).css({
+                        "background-color": "#EBF3FE",
+                        "color": "#004098",
+                        "font-weight": "bold"
+                    });
+                }
+            });
+        }
+
+        function checkSessionStatus() {
+            if (cooldown) {
+                return false;
+            }
+            else {
+                cooldown = true;
+
+                setTimeout(function () {
+                    cooldown = false;
+                }, 5000);
+
+                $.ajax({
+                    url: ajaxCheckSession,
+                    type: 'POST',
+                    success: function (response) {
+                        if (response.sessionExpired) {
+                            $('#session-modal').modal('show');
+                        }
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html>

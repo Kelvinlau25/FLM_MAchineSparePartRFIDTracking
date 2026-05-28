@@ -1,0 +1,13 @@
+USE [pab_ACL]
+GO
+/****** Object:  StoredProcedure [dbo].[PSP_FIRST_SP]    Script Date: 9/5/2023 3:30:50 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER PROCEDURE [dbo].[PSP_FIRST_SP]
+AS
+BEGIN
+	SELECT A.DisplayText, A.Value
+    FROM FirstDrodownList A;
+END

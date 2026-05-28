@@ -1,0 +1,403 @@
+﻿@model PAB_NewAquarium.Models.MM_STOCK_INVENTORY
+
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var UrlActionStockIn = Url.Action("MM_StockInventory_View", "MM_StockInventoryEntry", new { stock = "In" });
+    var UrlActionStockOut = Url.Action("MM_StockInventory_View", "MM_StockInventoryEntry", new { stock = "Out" });
+}
+<style>
+    .nav-tabs {
+        --bs-nav-tabs-border-width: 0px;
+    }
+
+    .tr-tab .nav-link {
+        min-width: 250px;
+        text-align: left;
+        background-color: #F0F0F0 !important;
+        border-top-left-radius: 15px;
+        border-top-right-radius: 15px;
+    }
+
+        .tr-tab .nav-link:not(:first-child) {
+            margin-left: 5px;
+        }
+
+    .nav-tabs .nav-link.active, .nav-tabs .nav-item.show .nav-link {
+        box-shadow: inset 0 0px 0 transparent !important;
+    }
+
+    .tr-tab .nav-link.active {
+        color: #54575A !important;
+        background-color: #EBF3FF !important;
+        font-weight: bold;
+        border-top-left-radius: 15px;
+        border-top-right-radius: 15px;
+    }
+
+    .nav-tabs .nav-link {
+        padding-top: 10px !important;
+        padding-bottom: 10px !important;
+        border-width: 0px !important;
+    }
+
+    /* Override -2px, form some reason the non-bootstrap is -6px */
+    table.dataTable tbody td.select-checkbox::before,
+    table.dataTable tbody th.select-checkbox::before {
+        margin-top: -6px;
+    }
+
+    .page-container {
+        overflow: auto;
+        padding-bottom: 2rem;
+        padding-right: 1rem !important;
+        padding-left: 1rem !important;
+    }
+
+    .dataTables_scrollHeadInner, .table {
+        width: 100% !important;
+        max-width: none;
+    }
+</style>
+
+<div class="row g-0 px-3 tr-listing-header">
+    <div class="col-sm-6 align-self-center">
+        <p class="text-muted m-0 tr-listing-header-title">Stock In / Out Inventory</p>
+    </div>
+</div>
+<div style="border-top:1px solid #F0F0F0; margin-top:-1px" class="tr-btm-line"></div>
+<div class="page-container px-3 overflow-auto">
+    <div class="tr-btm-btn-margin mt-3">
+        <nav class="tr-tab">
+            <div class="nav nav-tabs" id="nav-tab" role="tablist">
+                <button class="nav-link active" id="nav-page1-tab" data-bs-toggle="tab" data-bs-target="#nav-page1" type="button" role="tab" aria-controls="nav-home" aria-selected="true">Stock In</button>
+                <button class="nav-link" id="nav-page2-tab" data-bs-toggle="tab" data-bs-target="#nav-page2" type="button" role="tab" aria-controls="nav-profile" aria-selected="false">Stock Out</button>
+                <div style="flex: 1">
+                    <div class="row" style="margin-top: -5px;">
+                        <div class="text-end">
+                            <a class="btn btn-secondary dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"
+                               style="background-color: #CCE5F9; border: 0px;">
+                                <i class="fa-solid fa-ellipsis-vertical" style="color: #54575A"></i>
+                            </a>
+                            <ul class="tr-ddm dropdown-menu">
+                                <li><a class="dropdown-item" href="@UrlActionStockIn">Stock In</a></li>
+                                <li><a class="dropdown-item" href="@UrlActionStockOut">Stock Out</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+        <div class="tab-content p-2" id="nav-tabContent" style="border: 4px solid #EBF3FF;">
+            <div class="tab-pane fade show active" id="nav-page1" role="tabpanel" tabindex="0">
+                <p class="text-muted m-0"><b>Stock In Listing</b></p>
+                <div class="row">
+                    <table id="tr-datatable1" class="table table-hover table-bordered compact" style="margin-top: 0px !important;">
+                        <thead>
+                            <tr style="background-color: #FCFCFC">
+                                <th>Reference No</th>
+                                <th>Chop No</th>
+                                <th>RFID Tag</th>
+                                <th>Colorway</th>
+                                <th>Location</th>
+                                <th>Sales PIC</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="tab-pane fade" id="nav-page2" role="tabpanel" tabindex="0">
+                <p class="text-muted m-0"><b>Stock Out Listing</b></p>
+                <div class="row">
+                    <table id="tr-datatable2" class="table table-hover table-bordered compact" style="margin-top: 0px !important;">
+                        <thead>
+                            <tr style="background-color: #FCFCFC">
+                                <th>Reference No</th>
+                                <th>Chop No</th>
+                                <th>RFID Tag</th>
+                                <th>Colorway</th>
+                                <th>Location</th>
+                                <th>Customer</th>
+                                <th>Sales PIC</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var table1, table2;
+    var data1 = [], dataAll1 = [], data2 = [], dataAll2 = [];
+    var data1 = @Html.Raw(Json.Encode(Model.STOCK_IN_LISTING));
+    var data2 = @Html.Raw(Json.Encode(Model.STOCK_OUT_LISTING));
+    var stockType = "@Model.STOCK_TYPE";
+    dataAll1 = data1;
+    dataAll2 = data2;
+
+    $(document).ready(function () {
+        loadDataTable();
+        adjustDataTableColumn(1);
+        tabNavigation();
+
+        $('#tr-datatable').on('length.dt', function (e, settings, len) {
+            var customToolbarDiv = $('.custom-toolbar');
+
+            if (len == 10) {
+                customToolbarDiv.removeClass('custom-toolbar-add-margin');
+            } else {
+                customToolbarDiv.addClass('custom-toolbar-add-margin');
+            }
+        });
+
+        $('#nav-page1-tab').click(function () {
+            table1.columns.adjust();
+            adjustDataTableColumn(1);
+        });
+
+        $('#nav-page2-tab').click(function () {
+            table2.columns.adjust();
+            adjustDataTableColumn(2);
+        });
+    });
+
+    function loadDataTable() {
+        table1 = $('#tr-datatable1').DataTable({
+            data: data1,
+            scrollCollapse: true,
+            scrollY: calcDataTableHeight,
+            pagingType: 'simple_numbers',
+            columns: [
+                { data: 'REFERENCE_NO' },
+                { data: 'CHOP_NO' },
+                { data: 'RFID' },
+                { data: 'COLOR_WAY' },
+                { data: 'STORE_LOC' },
+                { data: 'SALES_PIC' },
+                { data: 'STORE_DATE' },
+                { data: 'STORE_STATUS' }
+            ],
+            columnDefs: [],
+            select: {
+                style: 'multi',
+                info: false,
+                selector: 'td:nth-child(1)'
+            },
+            order: [[0, 'asc']],
+            dom: "<'row toolbar-row g-0 custom-toolbar'<'col-sm-12 col-md-6 align-self-center'l><'col-sm-12 col-md-6 d-flex align-items-center justify-content-end '<'toolbar'>>>" +
+                "<'row'<'col-sm-12'tr>>" +
+                "<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'<'d-flex justify-content-end mt-2'p<'go-to align-self-center mx-2'>>>>",
+            initComplete: function () {
+                $("div.toolbar").html('<div class="input-group input-group-sm">' +
+                    '<input type="text" id="txtSearch" class="form-control remove-right-border tr-search-txt tr-list-txtbx-border" style="border-top-right-radius: 0px !important; border-bottom-right-radius: 0px !important;" placeholder="Search" aria-label="Search" aria-describedby="btnAdvanceSearch">' +
+                    '<div class="input-group-text listing-search-icon tr-list-txtbx-border tr-input-grp-right">' +
+                    '<a href="" class="text-reset" id="btnSearch"><i class="fa-solid fa-magnifying-glass"></i></a>' +
+                    '</div>' +
+                    '<button class="btn btn-sm btn-primary d-flex align-items-center" type="button" data-bs-toggle="modal" data-bs-target="#advance-search-modal" id="btnAdvanceSearch" style="min-width: 30px; background-color: #057FE5; border: #057FE5;"><i class="fa-solid fa-sliders" style="transform: rotate(90deg);"></i></button>' +
+                    '</div>');
+
+                $("#btnSearch").on("click", function (e) {
+                    e.preventDefault();
+                });
+
+                $("#txtSearch").on("keyup", function (e) {
+                    table1.search($('#txtSearch').val()).draw();
+                });
+            },
+            drawCallback: function (settings) {
+                var api = this.api();
+                $("#txtGoTo").val(api.page() + 1);
+            },
+            fixedHeader: {
+                header: true,
+                footer: false
+            }
+        });
+
+        $("div.go-to").html('<div class="d-flex align-items-center p-0"><input class="form-control" type="text" id="txtGoTo" style="width:75px" value=1> &nbsp; <div class="page-info">of ' + table1.page.info().pages + '</div></div>');
+        $("#txtGoTo").on('keyup', function (e) {
+            try {
+                var page = e.target.value;
+                if ($.isNumeric(page) && page > 0 && page <= table1.page.info().pages) {
+                    table1.page(page - 1).draw('page');
+                } else if (e.target.value.trim() == '') {
+
+                }
+                else {
+                    e.target.value = table1.page() + 1;
+                }
+
+            } catch (ex) {
+                e.target.value = 1;
+            }
+        });
+        $("#txtGoTo").on('blur', function (e) {
+            try {
+                var page = e.target.value;
+                if (page.trim() == '') {
+                    $("#txtGoTo").val(1);
+                    table1.page(0).draw('page');
+                    $("#txtGoTo").focus();
+                }
+            } catch (ex) {
+                e.target.value = 1;
+            }
+        });
+        $(".dataTables_length .form-select").on('change', function () {
+            $("#txtGoTo").val(table1.page() + 1);
+            $("div.page-info").html('of ' + table1.page.info().pages + '</div>');
+        });
+
+        table2 = $('#tr-datatable2').DataTable({
+            data: data2,
+            scrollCollapse: true,
+            scrollY: calcDataTableHeight,
+            pagingType: 'simple_numbers',
+            columns: [
+                { data: 'REFERENCE_NO' },
+                { data: 'CHOP_NO' },
+                { data: 'RFID' },
+                { data: 'COLOR_WAY' },
+                { data: 'STORE_LOC' },
+                { data: 'CUSTOMER_NAME' },
+                { data: 'SALES_PIC' },
+                { data: 'STORE_DATE' },
+                { data: 'STORE_STATUS' }
+            ],
+            columnDefs: [],
+            select: {
+                style: 'multi',
+                info: false,
+                selector: 'td:nth-child(1)'
+            },
+            order: [[0, 'asc']],
+            dom: "<'row toolbar-row g-0 custom-toolbar'<'col-sm-12 col-md-6 align-self-center'l><'col-sm-12 col-md-6 d-flex align-items-center justify-content-end '<'toolbar'>>>" +
+                "<'row'<'col-sm-12'tr>>" +
+                "<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'<'d-flex justify-content-end mt-2'p<'go-to align-self-center mx-2'>>>>",
+            initComplete: function () {
+                $("div.toolbar").html('<div class="input-group input-group-sm">' +
+                    '<input type="text" id="txtSearch" class="form-control remove-right-border tr-search-txt tr-list-txtbx-border" style="border-top-right-radius: 0px !important; border-bottom-right-radius: 0px !important;" placeholder="Search" aria-label="Search" aria-describedby="btnAdvanceSearch">' +
+                    '<div class="input-group-text listing-search-icon tr-list-txtbx-border tr-input-grp-right">' +
+                    '<a href="" class="text-reset" id="btnSearch"><i class="fa-solid fa-magnifying-glass"></i></a>' +
+                    '</div>' +
+                    '<button class="btn btn-sm btn-primary d-flex align-items-center" type="button" data-bs-toggle="modal" data-bs-target="#advance-search-modal" id="btnAdvanceSearch" style="min-width: 30px; background-color: #057FE5; border: #057FE5;"><i class="fa-solid fa-sliders" style="transform: rotate(90deg);"></i></button>' +
+                    '</div>');
+
+                $("#btnSearch").on("click", function (e) {
+                    e.preventDefault();
+                });
+
+                $("#txtSearch").on("keyup", function (e) {
+                    table2.search($('#txtSearch').val()).draw();
+                });
+            },
+            drawCallback: function (settings) {
+                var api = this.api();
+                $("#txtGoTo").val(api.page() + 1);
+            },
+            fixedHeader: {
+                header: true,
+                footer: false
+            }
+        });
+
+        $("div.go-to").html('<div class="d-flex align-items-center p-0"><input class="form-control" type="text" id="txtGoTo" style="width:75px" value=1> &nbsp; <div class="page-info">of ' + table2.page.info().pages + '</div></div>');
+        $("#txtGoTo").on('keyup', function (e) {
+            try {
+                var page = e.target.value;
+                if ($.isNumeric(page) && page > 0 && page <= table2.page.info().pages) {
+                    table2.page(page - 1).draw('page');
+                } else if (e.target.value.trim() == '') {
+
+                }
+                else {
+                    e.target.value = table2.page() + 1;
+                }
+
+            } catch (ex) {
+                e.target.value = 1;
+            }
+        });
+        $("#txtGoTo").on('blur', function (e) {
+            try {
+                var page = e.target.value;
+                if (page.trim() == '') {
+                    $("#txtGoTo").val(1);
+                    table2.page(0).draw('page');
+                    $("#txtGoTo").focus();
+                }
+            } catch (ex) {
+                e.target.value = 1;
+            }
+        });
+        $(".dataTables_length .form-select").on('change', function () {
+            $("#txtGoTo").val(table2.page() + 1);
+            $("div.page-info").html('of ' + table2.page.info().pages + '</div>');
+        });
+    }
+
+    function calcDataTableHeight() {
+        var winWidth = $(window).width();
+        if (winWidth >= 1280 && winWidth <= 1599) {
+            return $(window).height() * 43 / 100;
+        } else {
+            return $(window).height() * 50 / 100;
+        }
+    };
+
+    function adjustDataTableColumn(e) {
+        if (hasVerticalScrollbar(e)) {
+            console.log("true")
+            if (e == 1) {
+                $('#tr-datatable1_wrapper .dataTables_scrollHead').css('width', 'calc(100% - 3px)');
+                $('#tr-datatable1_wrapper .custom-toolbar').css('width', 'calc(100% - 3px)');
+            }
+            else {
+                $('#tr-datatable2_wrapper .dataTables_scrollHead').css('width', 'calc(100% - 3px)');
+                $('#tr-datatable2_wrapper .custom-toolbar').css('width', 'calc(100% - 3px)');
+            }
+        }
+        else {
+            console.log("false")
+            if (e == 1) {
+                $('#tr-datatable1_wrapper .dataTables_scrollHead').css('width', '100%');
+                $('#tr-datatable1_wrapper .custom-toolbar').css('width', '100%');
+            }
+            else {
+                $('#tr-datatable2_wrapper .dataTables_scrollHead').css('width', '100%');
+                $('#tr-datatable2_wrapper .custom-toolbar').css('width', '100%');
+            }
+        }
+    }
+
+    function hasVerticalScrollbar(e) {
+        var table;
+        if (e == 1) {
+            table = $('#tr-datatable1').DataTable();
+        }
+        else {
+            table = $('#tr-datatable2').DataTable();
+        }
+
+        var tableWrapper = table.table().container();
+        var tableBody = tableWrapper.querySelector('.dataTables_scrollBody');
+        return tableBody.scrollHeight > tableBody.clientHeight;
+    }
+
+    function tabNavigation () {
+        if (stockType == "Out") {
+            $('#nav-page2-tab').click();
+        }
+        else {
+            $('#nav-page1-tab').click();
+        }
+    }
+</script>
+

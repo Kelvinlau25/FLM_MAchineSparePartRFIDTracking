@@ -1,0 +1,1037 @@
+﻿@model PAB_NewAquarium.Models.RequestHistoryList
+@{
+    ViewBag.Title = "Request History";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+
+<style type="text/css">
+    @@media (min-width: 768px) {
+        .multiselect-all {
+            float: left;
+            padding-left: 0.2rem !important;
+        }
+
+        .multiselect-container.dropdown-menu {
+            transform: translate(0px, -33px) !important;
+        }
+    }
+
+    @@media (min-width: 1400px) {
+        .multiselect-all {
+            float: left;
+            text-align: left;
+        }
+
+        .multiselect-container.dropdown-menu {
+            transform: translate(0px, 41px) !important;
+        }
+    }
+
+    .backBtn {
+        cursor: pointer;
+        font-size: 20px;
+    }
+
+    #viewMoreButton, .viewMoreCustomer {
+        background-color: transparent;
+        border: none;
+        cursor: pointer;
+        padding-right: 0px;
+        text-decoration: underline;
+        padding-left: 0px;
+        color: #004098;
+    }
+
+    .checkboxCustom {
+        border: none;
+        outline: none;
+        --bs-btn-box-shadow: none;
+        cursor: default;
+    }
+
+    .multiselect-reset .multiselect-all:hover {
+        background-color: transparent !important;
+    }
+
+    .multiselectDdlCustom {
+        font-weight: bold;
+        border: none;
+        outline: none;
+        --bs-btn-box-shadow: none;
+    }
+
+    .btn-reset {
+        float: right;
+    }
+
+        .btn-reset:hover {
+            background-color: transparent;
+        }
+
+    #productTypeMulti, #materialTypeMulti, #categoryMulti {
+        margin-right: 9px;
+        display: none;
+    }
+
+    .bold {
+        font-weight: bold;
+    }
+
+    td {
+        border-bottom-width: 0px !important;
+    }
+
+    .monthText {
+        font-size: 25px;
+        padding-left: 0px !important;
+    }
+
+    .textControl {
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
+        color: #929292;
+    }
+
+    .detail {
+        position: relative;
+    }
+
+    .viewsPosition {
+        bottom: 0;
+        position: absolute;
+    }
+
+    .customerListPosition {
+        right: 0;
+        position: absolute;
+        top: -50px;
+        padding: 10px;
+        width: 300px;
+        max-height: 250px;
+        background-color: white;
+        overflow-y: scroll;
+    }
+
+    .customerListTable th {
+        border-bottom: 1px solid #C5C5C5;
+    }
+
+    .customerListTable .companyTd {
+        padding-top: 10px;
+    }
+
+    .customerListTable .customerTd {
+        color: #929292;
+    }
+
+    #sortByDdl {
+        background-color: #ebf3ff;
+        border: none;
+        height: 40px;
+    }
+
+    .companyNameTitle{
+        margin-bottom: 10px;
+        font-size: 18px;
+    }
+
+    .hiddenRow {
+        margin-bottom: 10px;
+        font-size: 18px;
+        color: white;
+    }
+
+    .request-img {
+        cursor: pointer;
+        border-radius: 0.5rem;
+    }
+
+    .companyDivider{
+        width: 200%;
+        max-width: 200%;
+    }
+
+    .hideCompanyDivider{
+        color: white;
+    }
+
+    .url-link:hover {
+        text-decoration: underline;
+    }
+
+    .table td{
+        padding-top: 0px;
+    }
+    #btnExport {
+        height:40px;
+    }
+
+    @@media only screen and (max-device-height: 799px) {
+        .form-header {
+            font-size: 16px;
+        }
+
+        .form-text {
+            font-size: 14px;
+        }
+
+        .sortByDdl {
+            width: 30%;
+        }
+
+        .browsing-img-div {
+            height: 163px;
+        }
+    }
+
+    @@media only screen and (max-device-width: 1280px) and (min-device-height: 800px) {
+        .form-header {
+            font-size: 16px;
+        }
+
+        .form-text {
+            font-size: 14px;
+        }
+
+        .sortByDdl {
+            width: 30%;
+        }
+
+        .request-img-div {
+            height: 163px;
+        }
+    }
+
+    @@media only screen and (min-device-width: 1281px) and (max-device-width: 1919px) and (min-device-height: 800px) {
+        .form-header {
+            font-size: 18px;
+        }
+
+        .form-text {
+            font-size: 14px;
+        }
+
+        .sortByDdl {
+            width: 25%;
+        }
+
+        .request-img-div {
+            height: 204px;
+        }
+    }
+
+    @@media only screen and (min-device-width: 1920px) and (min-device-height: 800px) {
+        .form-header {
+            font-size: 20px;
+        }
+
+        .form-text {
+            font-size: 16px;
+        }
+
+        .sortByDdl {
+            width: 25%;
+        }
+
+        .request-img-div {
+            height: 264px;
+        }
+    }
+</style>
+
+@using (Html.BeginForm())
+{
+
+    @Html.AntiForgeryToken()
+    <div style="border-top:1px solid #F0F0F0; margin-top:-1px" class="tr-btm-line"></div>
+    <div class="page-container px-3 overflow-y-auto">
+        <div class="tr-btm-btn-margin">
+            <div class="row align-items-baseline mt-3">
+                <div class="col"><h6 class="text-muted card-title"><a href="@Url.Action("Account", "Account")"><span class="fas fa-chevron-left dark-blue me-sm-3 backBtn"></span></a>Request History</h6></div>
+            </div>
+            <div class="row align-items-baseline mt-3">
+                <div class="col">
+                    <a class="text-decoration-none" href="@Url.Action("Index", "Dashboard")"><span class="fa fa-house dark-blue"></span></a>
+                    <text class="mx-1">/</text>
+                    <a class="url-link" href="@Url.Action("Account", "Account")">My Account</a>
+                    <text class="mx-1">/</text>
+                    <text>Request History</text>
+                </div>
+            </div>
+            <div class="card mt-3 mb-2 card-height">
+                <div class="card-body">
+                    <div class="row mt-2 align-items-baseline">
+                        <div class="col-sm-2">
+                            <p class="text-muted">History Category <span style="float:right">:</span></p>
+                        </div>
+                        <div class="col-sm-3">
+                            @Html.DropDownListFor(m => m.RequestHistoryDdl, Model.RequestHistoryDdl, null, new { @class = "tr-select2 form-control", id = "select-id1" })
+                        </div>
+                        <div class="col-sm-1">
+
+                        </div>
+                        <div class="col-sm-2">
+                            <p class="text-muted">Customer <span style="float:right">:</span></p>
+                        </div>
+                        <div class="col-sm-3">
+                            @Html.DropDownListFor(m => m.CompanyDdl, Model.CompanyDdl, null, new { @class = "multiselectpicker form-control", multiple = "multiple", id = "multiselect-id1" })
+                        </div>
+                        <div class="col-sm-1">
+
+                        </div>
+                    </div>
+                    <div class="additional-content" style="display:none;">
+                        <div class="row mt-2 align-items-baseline">
+                            <div class="col-sm-2">
+                                <p class="text-muted">Fabric Category <span style="float:right">:</span></p>
+                            </div>
+                            <div class="col-sm-3">
+                                @Html.DropDownListFor(m => m.FabricCategoryDdl, Model.FabricCategoryDdl, null, new { @class = "multiselectpicker2 form-control", multiple = "multiple", id = "multiselect-id2" })
+                            </div>
+                            <div class="col-sm-1">
+
+                            </div>
+                            <div class="col-sm-2">
+                                <p class="text-muted">Product Types <span style="float:right">:</span></p>
+                            </div>
+                            <div class="col-sm-3">
+                                @Html.DropDownListFor(m => m.ProductTypeDdl, Model.ProductTypeDdl, null, new { @class = "multiselectpicker3 form-control", multiple = "multiple", id = "multiselect-id3" })
+                            </div>
+                            <div class="col-sm-1">
+
+                            </div>
+                        </div>
+                        <div class="row mt-2 align-items-baseline">
+                            <div class="col-sm-2">
+                                <p class="text-muted">From Date <span style="float:right">:</span></p>
+                            </div>
+                            <div class="col-sm-3">
+                                <div class="input-group">
+                                    @*@Html.TextBox("fromDate", null, new { @class = "form-control" })*@
+                                    <input type="text" placeholder="Please pick a date..." class="form-control tr-date" id="fromDate" style="border-right:none; box-shadow: none; border-top-right-radius: 0 !important; border-bottom-right-radius: 0 !important;">
+                                    <div class="input-group-text" style="background-color: transparent; border-left: none">
+                                        <a href="" class="text-reset dp" id="dp1"><i class="fa-solid fa-calendar-days tr-icon-blue" aria-hidden="true"></i></a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-sm-1">
+
+                            </div>
+                            <div class="col-sm-2">
+                                <p class="text-muted">To Date <span style="float:right">:</span></p>
+                            </div>
+                            <div class="col-sm-3">
+                                <div class="input-group">
+                                    @*@Html.TextBox("toDate", null, new { @class = "form-control" })*@
+                                    <input type="text" placeholder="Please pick a date..." class="form-control tr-date" id="toDate" style="border-right:none; box-shadow: none; border-top-right-radius: 0 !important; border-bottom-right-radius: 0 !important;">
+                                    <div class="input-group-text" style="background-color: transparent; border-left: none">
+                                        <a href="" class="text-reset dp" id="dp2"><i class="fa-solid fa-calendar-days tr-icon-blue" aria-hidden="true"></i></a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-sm-1">
+
+                            </div>
+                        </div>
+
+                        <div class="row mt-2 align-items-baseline">
+                            <div class="col-sm-2">
+                                <p class="text-muted">Sample Request No. <span style="float:right">:</span></p>
+                            </div>
+                            <div class="col-sm-3">
+                                @Html.DropDownListFor(m => m.SampleRequestNo, Model.SampleRequestNo, null, new { @class = "multiselectpicker4 form-control", multiple = "multiple", id = "multiselect-id4" })
+                            </div>
+                            <div class="col-sm-1">
+
+                            </div>
+
+                        </div>
+                    </div>
+                    <div class="row mt-2 align-items-baseline">
+                        <div class="col-sm-2">
+                            <button type="button" class="float-start" id="viewMoreButton">View More</button>
+                        </div>
+                        <div class="col-sm-4">
+
+                        </div>
+                        <div class="col-sm-2">
+
+                        </div>
+                        <div class="col-sm-4">
+
+                        </div>
+                    </div>
+                    <hr />
+                    <div class="row">
+                        <div class="p-3 pt-0">
+                            <table class="table">
+                                <thead class="d-none">
+                                    <tr>
+                                        <th class="w-50"></th>
+                                        <th class="w-50"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="bold monthText" id="firstMonthTitle"></td>
+                                        <td class="text-end">
+                                        <button type="button" class="btn buttons-excel buttons-html5 btn-sm btn-primary tr-btn-primary" id="btnExport">Export to Excel</button>
+                                        @Html.DropDownListFor(m => m.SortBy, Model.SortBy, null, new { @class = "tr-select2 form-control", id = "select-id2" })
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <button id="scrollTopBtn" title="Go to top"><span class="fas fa-chevron-up dark-blue"></span></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="submit-confirmation-modal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirmation</h5>
+                </div>
+                <hr />
+                <div class="modal-body">
+                    <h6>Are you sure to submit this record?</h6>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-primary" value="submit" name="btn" id="btnConfirm">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast-container position-fixed toast-alert">
+        <div id="liveToast" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true" style="border: 1px solid #B1003C">
+            <div class="toast-header" style="background-color: #FFF0EE">
+                <strong class="me-auto text-danger">Warning!</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body text-muted" style="background-color: #FFF0EE; border-top: 1px solid #FFF0EE; border-bottom-left-radius: inherit; border-bottom-right-radius: inherit">
+                Failed to submit, Duplicated Company Name.
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container position-fixed toast-success">
+        <div id="liveToast2" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true" style="border: 1px solid #00A251">
+            <div class="toast-header" style="background-color: #E9FFF8">
+                <strong class="me-auto" style="color: #00A251">Successful!</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body text-muted" style="background-color: #E9FFF8; border-top: 1px solid #E9FFF8; border-bottom-left-radius: inherit; border-bottom-right-radius: inherit">
+                Submit Successfully.
+            </div>
+        </div>
+    </div>
+}
+
+<script>
+    var filterData;
+    var dateToday = new Date();
+    var fromdate = (dateToday.getDate() < 10 ? '0' + dateToday.getDate() : dateToday.getDate()) + '/' + ((dateToday.getMonth() + 1) < 10 ? '0' + (dateToday.getMonth() + 1) : (dateToday.getMonth() + 1)) + '/' + dateToday.getFullYear();
+    var todate = (dateToday.getDate() < 10 ? '0' + dateToday.getDate() : dateToday.getDate()) + '/' + ((dateToday.getMonth() + 1) < 10 ? '0' + (dateToday.getMonth() + 1) : (dateToday.getMonth() + 1)) + '/' + dateToday.getFullYear();
+
+    var nextMonthDate = new Date(dateToday.getFullYear(), dateToday.getMonth() + 1, 0)
+    $(document).ready(function () {
+        var today = new Date();
+        var day = today.getDate();
+        var pastDate = new Date(today);
+        pastDate.setMonth(pastDate.getMonth() - 2);
+        var pastDay = pastDate.getDate();
+        fromdate = (pastDate.getDate() < 10 ? '0' + pastDate.getDate() : pastDate.getDate()) + '/' + ((pastDate.getMonth() + 1) < 10 ? '0' + (pastDate.getMonth() + 1) : (pastDate.getMonth() + 1)) + '/' + pastDate.getFullYear();
+        $('#fromDate').val(((pastDay < 10) ? '0' + pastDay : pastDay) + '/' + ((pastDate.getMonth() + 1) < 10 ? '0' + (pastDate.getMonth() + 1) : (pastDate.getMonth() + 1)) + '/' + pastDate.getFullYear());
+        //$('#fromDate').val(((day < 10) ? '0' + day : day) + '/' + today.getMonth() + 1 + '/' + today.getFullYear());
+        $('#toDate').val(((day < 10) ? '0' + day : day) + '/' + ((today.getMonth() + 1) < 10 ? '0' + (today.getMonth() + 1) : (today.getMonth() + 1)) + '/' + today.getFullYear());
+        $("#viewMoreButton").click(function () {
+            $(".additional-content").slideToggle();
+            var buttonText = "";
+            if ($(this).text() === "View More") {
+                buttonText = "View Less";
+                $(this).css('color', '#FF3366');
+            }
+            else {
+                buttonText = "View More";
+                $(this).css('color', '#004098');
+            }
+            $(this).text(buttonText);
+        });
+
+        $('#fromDate').datetimepicker({
+            timepicker: false,
+            format: 'd/m/Y',
+            onSelectDate: function () {
+                fromdate = $('#fromDate').val();
+                $('#fromDate').blur();
+            },
+            maxDate: new Date(todate.substring(6) + '/' + todate.substring(3, 5) + '/' + todate.substring(0, 2)),
+            onChangeDateTime: function (dp, $input) {
+                var date = fromdate;
+                $('#fromDate').val(date);
+                var minDate = new Date(fromdate.substring(6) + '/' + fromdate.substring(3, 5) + '/' + fromdate.substring(0, 2));
+                $("#toDate").datetimepicker('setOptions', {
+                    minDate: minDate
+                });
+                loadTableData();
+            },
+        });
+        $('#dp1').on('click', function (e) {
+            e.preventDefault();
+            $('#fromDate').focus();
+        });
+
+        $('#toDate').datetimepicker({
+            timepicker: false,
+            format: 'd/m/Y',
+            onSelectDate: function () {
+                todate = $('#toDate').val();
+                $('#toDate').blur();
+            },
+            minDate: new Date(fromdate.substring(6) + '/' + fromdate.substring(3, 5) + '/' + fromdate.substring(0, 2)),
+            onChangeDateTime: function (dp, $input) {
+                var date = todate;
+                $('#toDate').val(date);
+                var maxDate = new Date(todate.substring(6) + '/' + todate.substring(3, 5) + '/' + todate.substring(0, 2));
+                maxDate.setDate(maxDate.getDate() - 1);
+                maxDate.setMonth(maxDate.getMonth());
+                $("#fromDate").datetimepicker('setOptions', {
+                    maxDate: maxDate
+                });
+                loadTableData();
+            },
+        });
+        $('#dp2').on('click', function (e) {
+            e.preventDefault();
+            $('#toDate').focus();
+        });
+
+        $('#select-id1').multiselect({
+            buttonClass: 'form-select form-control text-start',
+            templates: {
+                button: '<button type="button" class="multiselect dropdown-toggle" id="historyCategoryDdl" data-bs-toggle="dropdown"><span class="multiselect-selected-text"></span></button>',
+            },
+            onChange: function (option, checked) {
+                loadTableData();
+            }
+        });
+
+        $('#select-id2').multiselect({
+            buttonClass: 'form-select form-control text-start',
+            templates: {
+                button: '<button type="button" class="multiselect dropdown-toggle" id="sortByDdl" data-bs-toggle="dropdown"><label>Sort By:&nbsp;&nbsp; </label><span class="multiselect-selected-text"></span></button>',
+            },
+            onChange: function (option, checked) {
+                loadTableData();
+            }
+        });
+
+        $('.multiselectpicker').multiselect({
+            buttonClass: 'form-select form-control text-start',
+            includeResetOption: true,
+            includeResetDivider: true,
+            resetText: "CLEAR",
+            selectAllText: ' Select all',
+            includeSelectAllOption: true,
+            onSelectAll: function () {
+                checkSelectionLimit();
+                loadTableData();
+            },
+            onDeselectAll: function () {
+                checkSelectionLimit();
+                loadTableData();
+            },
+            enableCaseInsensitiveFiltering: true,
+            enableFiltering: true,
+            templates: {
+                button: '<button type="button" class="multiselect dropdown-toggle" data-bs-toggle="dropdown"><span class="multiselect-selected-text"></span></button>',
+                resetButton: '<div class="multiselect-reset text-end p-2"> <label class="multiselect-all dark-blue btn btn-sm btn-block multiselectDdlCustom" for="productTypeMulti" ><input type="checkbox" class="form-check-input" id="productTypeMulti" value="multiselect-all"> SELECT ALL</label> <button class="btn btn-sm btn-block btn-outline-secondary btn-reset dark-blue multiselectDdlCustom" type="button" id="resetBtn"></button></div></br><div class="text-start" id="selectLimit" style="padding:5px 11px;">0 out of @ViewBag.CompanyNum</div>',
+                filter: '<div class="multiselect-filter"><div class="input-group input-group-sm p-1"><div class="input-group-prepend"></div><input class="form-control multiselect-search" type="text" /></div></div>',
+            },
+
+            onChange: function (option, checked) {
+                checkSelectionLimit();
+                loadTableData();
+            }
+        });
+        $('.multiselectpicker').multiselect('selectAll');
+        $('#selectLimit').text(@ViewBag.CompanyNum + " out of @ViewBag.CompanyNum")
+
+        $("#resetBtn").click(function () {
+            checkSelectionLimit();
+            loadTableData();
+        });
+
+        function checkSelectionLimit() {
+            // Get selected options.
+            var selectedOptions = $('.multiselectpicker option:selected');
+            var selectLimit = $("#selectLimit");
+
+                // Enable all checkboxes.
+                $('.multiselectpicker option').each(function () {
+                    var input = $('input[value="' + $(this).val() + '"]').parents('.multiselect-option');
+                    input.prop('disabled', false);
+                    input.parent('li').addClass('disabled');
+            });
+
+            selectLimit.text(selectedOptions.length + " out of @ViewBag.CompanyNum")
+        }
+
+        $('.multiselectpicker2').multiselect({
+            buttonClass: 'form-select form-control text-start',
+            includeResetOption: true,
+            includeResetDivider: true,
+            resetText: "CLEAR",
+            selectAllText: ' Select all',
+            includeSelectAllOption: true,
+            onSelectAll: function () {
+                checkSelectionLimit2();
+                loadTableData();
+            },
+            onDeselectAll: function () {
+                checkSelectionLimit2();
+                loadTableData();
+            },
+            enableCaseInsensitiveFiltering: true,
+            enableFiltering: true,
+            templates: {
+                button: '<button type="button" class="multiselect dropdown-toggle" data-bs-toggle="dropdown"><span class="multiselect-selected-text"></span></button>',
+                resetButton: '<div class="multiselect-reset text-end p-2"> <label class="multiselect-all dark-blue btn btn-sm btn-block multiselectDdlCustom" for="materialTypeMulti" ><input type="checkbox" class="form-check-input" id="materialTypeMulti" value="multiselect-all"> SELECT ALL</label> <button class="btn btn-sm btn-block btn-outline-secondary btn-reset dark-blue multiselectDdlCustom" type="button" id="resetBtn2"></button></div></br><div class="text-start" id="selectLimit2" style="padding:5px 11px;">0 out of @ViewBag.FabricCategoryNum</div>',
+                filter: '<div class="multiselect-filter"><div class="input-group input-group-sm p-1"><div class="input-group-prepend"></div><input class="form-control multiselect-search" type="text" /></div></div>',
+            },
+
+            onChange: function (option, checked) {
+                checkSelectionLimit2();
+                loadTableData();
+            }
+        });
+        $('.multiselectpicker2').multiselect('selectAll');
+        $('#selectLimit2').text(@ViewBag.FabricCategoryNum + " out of @ViewBag.FabricCategoryNum")
+
+        $("#resetBtn2").click(function () {
+            checkSelectionLimit2();
+            loadTableData();
+        });
+
+        function checkSelectionLimit2() {
+            // Get selected options.
+            var selectedOptions = $('.multiselectpicker2 option:selected');
+            var selectLimit = $("#selectLimit2");
+
+            $('.multiselectpicker2 option').each(function () {
+                var input = $('input[value="' + $(this).val() + '"]').parents('.multiselect-option');
+                input.prop('disabled', false);
+                input.parent('li').addClass('disabled');
+            });
+            selectLimit.text(selectedOptions.length + " out of @ViewBag.FabricCategoryNum")
+        }
+
+        $('.multiselectpicker3').multiselect({
+            buttonClass: 'form-select form-control text-start',
+            includeResetOption: true,
+            includeResetDivider: true,
+            resetText: "CLEAR",
+            selectAllText: ' Select all',
+            includeSelectAllOption: true,
+            onSelectAll: function () {
+                checkSelectionLimit3();
+                loadTableData();
+            },
+            onDeselectAll: function () {
+                checkSelectionLimit3();
+                loadTableData();
+            },
+            enableCaseInsensitiveFiltering: true,
+            enableFiltering: true,
+            templates: {
+                button: '<button type="button" class="multiselect dropdown-toggle" data-bs-toggle="dropdown"><span class="multiselect-selected-text"></span></button>',
+                resetButton: '<div class="multiselect-reset text-end p-2"> <label class="multiselect-all dark-blue btn btn-sm btn-block multiselectDdlCustom" for="materialTypeMulti" ><input type="checkbox" class="form-check-input" id="materialTypeMulti" value="multiselect-all"> SELECT ALL</label> <button class="btn btn-sm btn-block btn-outline-secondary btn-reset dark-blue multiselectDdlCustom" type="button" id="resetBtn3"></button></div></br><div class="text-start" id="selectLimit3" style="padding:5px 11px;">0 out of @ViewBag.ProductTypeNum</div>',
+                filter: '<div class="multiselect-filter"><div class="input-group input-group-sm p-1"><div class="input-group-prepend"></div><input class="form-control multiselect-search" type="text" /></div></div>',
+            },
+
+            onChange: function (option, checked) {
+                checkSelectionLimit3();
+                loadTableData();
+            }
+        });
+        $('.multiselectpicker3').multiselect('selectAll');
+        $('#selectLimit3').text(@ViewBag.ProductTypeNum + " out of @ViewBag.ProductTypeNum")
+
+        $("#resetBtn3").click(function () {
+            checkSelectionLimit3();
+            loadTableData();
+        });
+
+        function checkSelectionLimit3() {
+            // Get selected options.
+            var selectedOptions = $('.multiselectpicker3 option:selected');
+            var selectLimit = $("#selectLimit3");
+
+            $('.multiselectpicker3 option').each(function () {
+                var input = $('input[value="' + $(this).val() + '"]').parents('.multiselect-option');
+                input.prop('disabled', false);
+                input.parent('li').addClass('disabled');
+            });
+            selectLimit.text(selectedOptions.length + " out of @ViewBag.ProductTypeNum")
+        }
+
+        $('.multiselectpicker4').multiselect({
+        buttonClass: 'form-select form-control text-start',
+        includeResetOption: true,
+        includeResetDivider: true,
+        resetText: "CLEAR",
+        selectAllText: ' Select all',
+        includeSelectAllOption: true,
+        onSelectAll: function () {
+            checkSelectionLimit4();
+            loadTableData();
+        },
+        onDeselectAll: function () {
+            checkSelectionLimit4();
+            loadTableData();
+        },
+        enableCaseInsensitiveFiltering: true,
+        enableFiltering: true,
+        templates: {
+            button: '<button type="button" class="multiselect dropdown-toggle" data-bs-toggle="dropdown"><span class="multiselect-selected-text"></span></button>',
+            resetButton: '<div class="multiselect-reset text-end p-2"> <label class="multiselect-all dark-blue btn btn-sm btn-block multiselectDdlCustom" for="SampleReqNoTypeMulti" ><input type="checkbox" class="form-check-input" id="SampleReqNoMulti" value="multiselect-all"> SELECT ALL</label> <button class="btn btn-sm btn-block btn-outline-secondary btn-reset dark-blue multiselectDdlCustom" type="button" id="resetBtn4"></button></div></br><div class="text-start" id="selectLimit4" style="padding:5px 11px;">0 out of @ViewBag.SampleRequestNo</div>',
+            filter: '<div class="multiselect-filter"><div class="input-group input-group-sm p-1"><div class="input-group-prepend"></div><input class="form-control multiselect-search" type="text" /></div></div>',
+        },
+
+        onChange: function (option, checked) {
+            checkSelectionLimit4();
+            loadTableData();
+        }
+    });
+    $('.multiselectpicker4').multiselect('selectAll');
+    $('#selectLimit4').text(@ViewBag.SampleRequestNo + " out of @ViewBag.SampleRequestNo")
+
+    $("#resetBtn4").click(function () {
+        checkSelectionLimit4();
+        loadTableData();
+    });
+
+    function checkSelectionLimit4() {
+        // Get selected options.
+        var selectedOptions = $('.multiselectpicker4 option:selected');
+        var selectLimit = $("#selectLimit4");
+
+        $('.multiselectpicker4 option').each(function () {
+            var input = $('input[value="' + $(this).val() + '"]').parents('.multiselect-option');
+            input.prop('disabled', false);
+            input.parent('li').addClass('disabled');
+        });
+        selectLimit.text(selectedOptions.length + " out of @ViewBag.SampleRequestNo")
+    }
+
+
+
+
+        $('.multiselect-native-select > .btn-group').addClass("w-100");
+        $('.multiselect-native-select > .btn-group > .multiselect').removeClass("text-center");
+        $('.multiselect-native-select > .btn-group > .multiselect-container').addClass("w-100");
+        $('#sortByDdl').parent('.btn-group').removeClass("w-100");
+        $('#sortByDdl').parent('.btn-group').addClass("sortByDdl");
+
+        loadTableData();
+
+        $('.card-height').scroll(function () {
+            if ($(this).scrollTop() > 100) {
+                $('#scrollTopBtn').fadeIn();
+            } else {
+                $('#scrollTopBtn').fadeOut();
+            }
+        });
+
+        // Scroll to top when the button is clicked
+        $('#scrollTopBtn').click(function () {
+            $('.card-height').animate({ scrollTop: 0 }, 800);
+            return false;
+        });
+
+        $("#btnExport").click(function ()
+        {
+            var historyCategory = "", customer = "", fabricCategory = "", productType = "", sampleReqNo = "", sortBy = "";
+            var fromDateVal, toDateVal;
+
+            $('div.spanner').addClass("show");
+
+            $('.multiselectpicker option:selected').each(function () {
+                if (customer != "") {
+                    customer += "," + $(this).val()
+                }
+                else {
+                    customer += $(this).val()
+                }
+            });
+
+            $('.multiselectpicker2 option:selected').each(function () {
+                if (fabricCategory != "") {
+                    fabricCategory += "," + $(this).val()
+                }
+                else {
+                    fabricCategory += $(this).val()
+                }
+            });
+
+            $('.multiselectpicker3 option:selected').each(function () {
+                if (productType != "") {
+                    productType += "," + $(this).val()
+                }
+                else {
+                    productType += $(this).val()
+                }
+            });
+
+            $('.multiselectpicker4 option:selected').each(function () {
+                if (sampleReqNo != "") {
+                    sampleReqNo += "," + $(this).val()
+                }
+                else {
+                    sampleReqNo += $(this).val()
+                }
+            });
+
+            historyCategory = $('#select-id1').val();
+            sortBy = $('#select-id2').val();
+            fromDateVal = $('#fromDate').val();
+            toDateVal = $('#toDate').val();
+
+            let name = "TopRequest_" + fromDateVal + "_" + toDateVal +".xlsx"
+
+            const formData = new FormData();
+            formData.append("historyCategory", historyCategory);
+            formData.append("customer", customer);
+            formData.append("fabricCategory", fabricCategory);
+            formData.append("productType", productType);
+            formData.append("fromDate", fromDateVal);
+            formData.append("toDate", toDateVal);
+            formData.append("sortBy", "3");
+            formData.append("sampleReqNo", sampleReqNo)
+
+            $.ajax({
+                url: "/Account/GetRequestHistoryExcel",
+                type: "POST",
+                data: formData,
+                processData: false,
+                contentType: false,
+                xhrFields: {
+                    responseType: 'blob'
+                },
+                success: function (result, status, xhr) {
+                    let link = document.createElement("a");
+                    link.href = window.URL.createObjectURL(result);
+                    link.download = name;
+                    link.click();
+                    $('div.spanner').removeClass("show");
+                }
+            });
+
+
+        })
+    });
+
+    function loadTableData() {
+        var html = '';
+        var historyCategory = "", customer = "", fabricCategory = "", productType = "",sampleReqNo = "", sortBy = "";
+        var fromDateVal, toDateVal;
+        $('div.spanner').addClass("show");
+
+        $('.multiselectpicker option:selected').each(function () {
+            if (customer != "") {
+                customer += "," + $(this).val()
+            }
+            else {
+                customer += $(this).val()
+            }
+        });
+
+        $('.multiselectpicker2 option:selected').each(function () {
+            if (fabricCategory != "") {
+                fabricCategory += "," + $(this).val()
+            }
+            else {
+                fabricCategory += $(this).val()
+            }
+        });
+
+        $('.multiselectpicker3 option:selected').each(function () {
+            if (productType != "") {
+                productType += "," + $(this).val()
+            }
+            else {
+                productType += $(this).val()
+            }
+        });
+
+        $('.multiselectpicker4 option:selected').each(function () {
+            if (sampleReqNo != "") {
+                sampleReqNo += "," + $(this).val()
+            }
+            else {
+                sampleReqNo += $(this).val()
+            }
+        });
+
+        historyCategory = $('#select-id1').val();
+        sortBy = $('#select-id2').val();
+        fromDateVal = $('#fromDate').val();
+        toDateVal = $('#toDate').val();
+
+        const formData = new FormData();
+        formData.append("historyCategory", historyCategory);
+        formData.append("customer", customer);
+        formData.append("fabricCategory", fabricCategory);
+        formData.append("productType", productType);
+        formData.append("fromDate", fromDateVal);
+        formData.append("toDate", toDateVal);
+        formData.append("sortBy", sortBy);
+        formData.append("sampleReqNo", sampleReqNo)
+
+        $.ajax({
+            url: "/Account/GetRequestHistory",
+            type: "POST",
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function (result) {
+                filterData = result.RequestHistory;
+                var month, newMonth = true, requestDate, newRequestDate = true, company, newCompany = true;
+
+                if (filterData.length > 0) {
+                    month = (filterData[0].CREATED_DATE).substring(3);
+                    requestDate = (filterData[0].CREATED_DATE).substring(0, (filterData[0].CREATED_DATE).length - 5);
+                    company = filterData[0].COMPANY_NAME;
+                    $('#firstMonthTitle').text(month);
+                    newMonth = false;
+                }
+
+                for (var i = 0; i < filterData.length; i++) {
+                    var subMonth = (filterData[i].CREATED_DATE).substring(3);
+                    var subRequestDate = (filterData[i].CREATED_DATE).substring(0, (filterData[i].CREATED_DATE).length - 5);
+                    //check if it is the same month
+                    if (subMonth != month) {
+                        month = subMonth;
+                        newMonth = true;
+                        requestDate = subRequestDate;
+                        newRequestDate = true
+                        company = filterData[i].COMPANY_NAME;
+                        newCompany = true;
+                    }
+
+                    //check if the request date is the same
+                    if (subRequestDate != requestDate) {
+                        requestDate = subRequestDate;
+                        newRequestDate = true;
+                    }
+
+                    //check if the company is the same
+                    if (filterData[i].COMPANY_NAME != company) {
+                        company = filterData[i].COMPANY_NAME;
+                        newCompany = true;
+                    }
+
+                    //if it is a new month
+                    if (newMonth == true && i != 0) {
+                        html += '<tr>';
+                        html += '<td class="bold monthText">' + subMonth + '</td>'
+                        html += '</tr>';
+                        newMonth = false;
+                    }
+
+                    //if it is the new request date
+                    if (newRequestDate == true) {
+                        html += '<tr>';
+                        html += '<td class="bold companyNameTitle">' + requestDate + '</td>'
+                        html += '</tr>';
+                        newRequestDate = false;
+                        newCompany = true;
+                    }
+                    var categoryArr = filterData[i].CATEGORY.split(',');
+                    html += '<tr>';
+
+
+                    if (newCompany == true || newRequestDate == true) {
+                        html += '<td class="text-start w-50"><div class="companyNameTitle">' + filterData[i].COMPANY_NAME + '</div><div class="row">';
+                        html += '<hr class="companyDivider"/>';
+                    }
+                    else {
+                        html += '<td class="text-start w-50"><div class="row">';
+                    }
+
+                    html += '<div class="col-sm-4">' +
+                                '<div class="request-img-div">' +
+                                    '<img width="100%" height="100%" class="request-img" ' +
+                                         'src="' + filterData[i].PRODUCT_IMAGE + '" ' +
+                                         'onclick="window.location.href=\'' +
+                                         '@Url.Action("AdHocRequestEdit", "ProductDetail")?requestNo=' + filterData[i].SAMPLE_REQ_NO +
+                                         '\'" />' +
+                                '</div>' +
+                            '</div>';
+                    html += '<div class="col-sm-5 detail"><div><text class="bold form-header">' + categoryArr[0] + '</text></div>';
+                    html += '<div><text class="form-text">Chop No: ' + filterData[i].CHOP_NO + '</text></div><br />';
+                    html += '<div class="textControl"><text class="form-text">Variation: ' + filterData[i].COLOR_WAY + '</text></div>';
+                    html += '<div class="textControl"><text class="form-text">Reference No: ' + filterData[i].REFERENCE_NO + '</text></div>';
+                    html += '<div class="textControl"><text class="form-text">Request No: ' + filterData[i].SAMPLE_REQ_NO + '</text></div>';
+                    html += '<div class="textControl"><text class="form-text">Remark: ' + filterData[i].REMARK + '</text></div>';
+                    html += '</div>';
+                    html += '<div class="col-sm-3 pt-3 form-text">Qty: ' + filterData[i].QUANTITY_REQ;
+                    html += '</div>';
+                    html += '</div></td>';
+
+                    if (i < filterData.length - 1) {
+                        if ((filterData[i + 1].CREATED_DATE).substring(3) == month && (filterData[i + 1].CREATED_DATE).substring(0, (filterData[i + 1].CREATED_DATE).length - 5) == requestDate && filterData[i + 1].COMPANY_NAME == company) {
+                            i++;
+
+                            if (newCompany == true) {
+                                html += '<td class="text-start w-50"><div class="hiddenRow">_</div><div class="row">';
+                                html += '<hr class="hideCompanyDivider"/>';
+                                newCompany = false;
+                            }
+                            else {
+                                html += '<td class="text-start w-50"><div class="row">';
+                            }
+                            var categoryArr2 = filterData[i].CATEGORY.split(',');
+                            html += '<div class="col-sm-4"><div class="request-img-div"><img width="100%" height="100%" class="request-img" src="' + filterData[i].PRODUCT_IMAGE + '"></img></div></div>';
+                            html += '<div class="col-sm-5 detail"><div><text class="bold form-header">' + categoryArr[0] + '</text></div>';
+                            html += '<div><text class="form-text">Chop No: ' + filterData[i].CHOP_NO + '</text></div><br />';
+                            html += '<div class="textControl"><text class="form-text">Variation: ' + filterData[i].COLOR_WAY + '</text></div>';
+                            html += '<div class="textControl"><text class="form-text">Reference No: ' + filterData[i].REFERENCE_NO + '</text></div>';
+                            html += '<div class="textControl"><text class="form-text">Request No: ' + filterData[i].SAMPLE_REQ_NO + '</text></div>';
+                            html += '<div class="textControl"><text class="form-text">Remark: ' + filterData[i].REMARK + '</text></div>';
+                            html += '</div>';
+                            html += '<div class="col-sm-3 pt-3 form-text">Qty: ' + filterData[i].QUANTITY_REQ;
+                            html += '</div>';
+                            html += '</div></td>';
+                        }
+                        else {
+                            html += '<td></td>';
+                        }
+                    }
+                    else {
+                        html += '<td></td>';
+                    }
+                    html += '</tr>';
+                }
+                if (filterData.length == 0) {
+                    html += '<tr><td>No result found.</td></tr>'
+                    $('#firstMonthTitle').text('');
+                }
+
+                $('.table tbody tr:not(:first-child)').remove();
+                $('.table tbody').append(html);
+                $('div.spanner').removeClass("show");
+            }
+        });
+    }
+
+</script>

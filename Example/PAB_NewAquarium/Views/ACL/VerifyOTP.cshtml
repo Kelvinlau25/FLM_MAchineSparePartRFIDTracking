@@ -1,0 +1,242 @@
+﻿@model PAB_NewAquarium.Models.VerifyOTPRequest
+
+@{
+    string emailAddress = TempData["EmailAddress"] as string;
+}
+
+<style>
+    .custom-form-control {
+        border-color: red;
+        border-width: 1.5px;
+        box-shadow: 0 0 0 0.01rem rgba(255, 0, 0, 0.25); /* Adjust opacity and color values */
+    }
+
+    .disabled-link {
+        pointer-events: none; /* Disable click and hover events */
+        color: #495057; /* Optionally change the color to indicate it's disabled */
+        cursor: not-allowed; /* Change the cursor style to indicate it's disabled */
+    }
+</style>
+
+<div class="form-group form-group-margin">
+    <h4 class="text-center mt-4" style="font-weight:bold; color:#54575a;">
+        <b>
+            Verify your identity
+        </b>
+    </h4>
+    @{
+        if (emailAddress == "" || emailAddress == null)
+        {
+            <div class="form-group">
+                <label for="txtEmailAddressOTP" class="w-100 form-label mt-4">Email Address</label>
+                <div class="form-group mt-1">
+                    <div class="input-group">
+                        @Html.TextBoxFor(a => a.EmailAddress, new { id = "txtEmailAddressOTP", placeholder = "user@mail.toray", @class = "form-control login-txt textbox keyboard" })
+                    </div>
+                    <div class="errMsg col-12">@Html.ValidationMessageFor(a => a.EmailAddress, "", new { @id = "errorMessageEmail", @class = "red", @style = "color:red" })</div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <label for="txtEmailAddressOTP" class="text-center w-100 form-label mt-4"><small>Enter the code we've sent to @emailAddress.</small></label>
+            @Html.HiddenFor(a => a.EmailAddress, new { id = "txtEmailAddressOTP" });
+        }
+    }
+</div>
+<fieldset>
+    <form id="myForm2">
+        @Html.AntiForgeryToken()
+        <div class="form-group form-group-margin">
+
+            @Html.HiddenFor(a => a.OTP, new { id = "OTP" })
+            <div class="form-group mt-3">
+                <label for="txtOTP_1">OTP</label>
+                <div class="input-group text-center mt-1">
+                    <input class="me-1 text-center form-control rounded otpBox" id="txtOTP_1" maxlength="1" />
+                    <input class="me-1 text-center form-control rounded otpBox" id="txtOTP_2" maxlength="1" />
+                    <input class="me-1 text-center form-control rounded otpBox" id="txtOTP_3" maxlength="1" />
+                    <input class="me-1 text-center form-control rounded otpBox" id="txtOTP_4" maxlength="1" />
+                    <input class="me-1 text-center form-control rounded otpBox" id="txtOTP_5" maxlength="1" />
+                    <input class="text-center form-control rounded otpBox" id="txtOTP_6" maxlength="1" />
+                </div>
+                <div class="errMsg col-12">@Html.ValidationMessageFor(a => a.OTP, "", new { @id = "errorMessageOTP", @class = "red", @style = "color:red" })</div>
+            </div>
+        </div>
+        @{
+            if (emailAddress != "" && emailAddress != null)
+            {
+                <div class="form-group form-group-margin d-grid gap-2 mt-1">
+                    <span class="text-end w-100">
+                        <small>Didn't receive the email?<a id="resendOTPBtn" href="#" class="forget-password-text" style="text-decoration:none;">&nbsp; Resend OTP</a></small>
+                    </span>
+                </div>
+            }
+            else
+            {
+                <div class="form-group form-group-margin d-grid gap-2 mt-1" style="display:none !important;">
+                    <span class="text-end w-100">
+                        <small>Didn't receive the email?<a id="resendOTPBtn" href="#" class="forget-password-text" style="text-decoration:none;">&nbsp; Resend OTP</a></small>
+                    </span>
+                </div>
+            }
+        }
+        <div class="form-group form-group-margin d-grid gap-2 mt-4">
+            <span class="w-100 text-center">
+                <a href="@Url.Action("Login", "ACL")" class="forget-password-text" style="text-decoration:none;"><i class="fa-solid fa-arrow-left me-2"></i>Back to login</a>
+            </span>
+        </div>
+    </form>
+</fieldset>
+
+<script>
+
+    document.getElementById("resendOTPBtn").addEventListener("click", function() {
+        var emailAddress = '@(TempData["EmailAddress"] as string)';
+
+        if (emailAddress == "" || emailAddress == null) {
+            emailAddress = $("#txtEmailAddressOTP").val();
+        }
+
+        var formData = {
+            EmailAddress: emailAddress,
+        };
+
+        $(this).addClass("disabled-link");
+
+        $.ajax({
+            type: "POST",
+            url: "@Url.Action("TriggerForgetPassword", "ACL")",
+            data: formData,
+            success: function (data) {
+                if (data.success) {
+                } else {
+                }
+            },
+            error: function (xhr, status, error) {
+                // Handle AJAX error here if needed
+            }
+        });
+    });
+
+    $(document).ready(function () {
+        if ($("#OTP").val() != "") {
+            var otp = $("#OTP").val();
+            for (var i = 0; i < otp.length; i++) {
+                $("#txtOTP_" + (i + 1)).val(otp[i]);
+            }
+        }
+
+        if ($("#OTP").val() != "" && $("#txtEmailAddressOTP").val() != "") {
+            $("#form").submit();
+        }
+
+        $("#txtEmailAddressOTP").on('keyup', function (event) {
+            if (this.value != "") {
+                for (var i = 0; i < 6; i++) {
+                    $("#txtOTP_" + (i + 1)).prop("disabled", false);
+                }
+            } else {
+                for (var i = 0; i < 6; i++) {
+                    $("#txtOTP_" + (i + 1)).prop("disabled", true);
+                }
+            }
+        });
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const Message = urlParams.get('AlertMessage');
+        if (Message != null) {
+            alert(Message);
+        }
+
+        $(".otpBox").on('keydown', function (event) {
+            if (
+                event.keyCode === 46 ||
+                event.keyCode === 9 ||
+                event.keyCode === 27 ||
+                event.keyCode === 13 ||
+                // Allow: Ctrl+A
+                (event.keyCode === 65 && event.ctrlKey === true) ||
+                // Allow: home, end, left, right, down, up
+                (event.keyCode >= 35 && event.keyCode <= 40)
+            ) {
+                // Let it happen, don't do anything
+                return;
+            }
+
+            if (event.keyCode == 8) {
+                if (event.target.id != "txtOTP_1") {
+                    event.preventDefault();
+                    event.target.previousElementSibling.focus();
+                }
+            } else if (
+                (event.shiftKey || (event.keyCode < 48 || event.keyCode > 57)) &&
+                (event.keyCode < 96 || event.keyCode > 105)
+            ) {
+                event.preventDefault();
+            } else {
+                if (event.target.id == "txtOTP_6") {
+                   event.currentTarget.value = String.fromCharCode(event.keyCode);
+                   $("#OTP").val($("#txtOTP_1").val() + $("#txtOTP_2").val() + $("#txtOTP_3").val() + $("#txtOTP_4").val() + $("#txtOTP_5").val() + $("#txtOTP_6").val());
+
+                   var emailAddress = '@(TempData["EmailAddress"] as string)';
+
+                   if (emailAddress == "" || emailAddress == null) {
+                       emailAddress = $("#txtEmailAddressOTP").val();
+                   }
+                
+                   var formData = {
+                       EmailAddress: emailAddress,
+                       OTP: $("#OTP").val(),
+                    };
+
+                    console.log(formData);
+
+                   // Submit form using AJAX
+                   $.ajax({
+                       type: "POST",
+                       url: "@Url.Action("VerifyOTP", "ACL")",
+                       data: formData,
+                       success: function (data) {
+                           if (data.success) {
+                               console.log("success");
+                               console.log(data);
+                               $("#errorMessage").text("");
+                                $("#myModal2").modal('hide');
+
+                                // Open myModal2 and load its content
+                                $.get("@Url.Action("OpenPartial", "ACL")", { PageName: "ForgotPassword" }, function (data) {
+                                    $("#modalContent3").html(data);
+                                    $("#myModal3").modal("show"); // Show myModal3
+                                });
+                           } else {
+                               console.log("fail");
+                               console.log(data);
+                               $(".otpBox").addClass("custom-form-control");
+                               $("#errorMessageOTP").text("");
+                               $("#errorMessageEmail").text("");
+
+                               if (data.errorMessageOTP != "" || data.errorMessageOTP != null) {
+                                   $("#errorMessageOTP").text(data.errorMessageOTP);
+                               }
+
+                               if (data.errorMessageEmail != "" || data.errorMessageEmail != null) {
+                                   $("#errorMessageEmail").text(data.errorMessageEmail);
+                               }
+                               // Error logic here
+                           }
+                       },
+                       error: function (xhr, status, error) {
+                           // Handle AJAX error here if needed
+                       }
+                   });
+                } else {
+                    event.preventDefault();
+                    event.currentTarget.value = String.fromCharCode(event.keyCode);
+                    event.target.nextElementSibling.focus();
+                    $("#OTP").val($("#txtOTP_1").val() + $("#txtOTP_2").val() + $("#txtOTP_3").val() + $("#txtOTP_4").val() + $("#txtOTP_5").val() + $("#txtOTP_6").val());
+                }
+            }
+        });
+    });
+</script>

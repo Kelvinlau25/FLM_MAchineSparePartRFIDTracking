@@ -1,0 +1,1172 @@
+﻿@model PAB_NewAquarium.Models.Product_H
+@{
+    ViewBag.Title = "MM_ProductRegistration";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    @@media only screen and (min-device-width: 1280px) and (max-device-width: 1599px) {
+        .modal-header {
+            margin-bottom: -15px;
+            margin-top: -10px;
+        }
+
+        .multiselect-all {
+            float: left;
+            padding-left: 0.2rem !important;
+        }
+    }
+
+    @@media (min-width: 1599px) {
+        .modal-header {
+            margin-bottom: -25px;
+            margin-top: -10px;
+        }
+
+        .multiselect-all {
+            float: left;
+            text-align: left;
+        }
+    }
+
+    .toolbar {
+        float: right;
+    }
+
+    /* Override -2px, form some reason the non-bootstrap is -6px */
+    table.dataTable tbody td.select-checkbox::before,
+    table.dataTable tbody th.select-checkbox::before {
+        margin-top: -6px;
+    }
+
+    .tr-no-border {
+        border: 0px !important;
+    }
+
+    .multiselect-container > .disabled {
+        display: none;
+    }
+
+    .form-check-input {
+        border-color: #929292;
+    }
+
+    .dataTables_scrollHeadInner, .table {
+        width: 100% !important;
+        max-width: none;
+    }
+
+    .form-check-input[type="checkbox"]:indeterminate {
+        background-color: #057FE5;
+        border-color: #057FE5;
+    }
+
+    /*slider*/
+    [slider] {
+        position: relative;
+        height: 8px;
+        border-radius: 14px;
+        text-align: left;
+        margin: 45px auto 10px auto;
+        bottom: 15px;
+        width: 80%;
+    }
+
+        [slider] > div {
+            position: absolute;
+            left: 13px;
+            right: 15px;
+            height: 8px;
+        }
+
+            [slider] > div > [inverse-left] {
+                position: absolute;
+                left: 0;
+                height: 8px;
+                border-radius: 10px;
+                background-color: #CCC;
+            }
+
+            [slider] > div > [inverse-right] {
+                position: absolute;
+                right: 0;
+                height: 8px;
+                border-radius: 10px;
+                background-color: #CCC;
+                margin: 0 7px;
+            }
+
+            [slider] > div > [range] {
+                position: absolute;
+                left: 0;
+                height: 8px;
+                border-radius: 14px;
+                background-color: #057FE5;
+            }
+
+            [slider] > div > [thumb] {
+                position: absolute;
+                top: -3px;
+                z-index: 2;
+                height: 15px;
+                width: 15px;
+                text-align: left;
+                margin-left: -11px;
+                cursor: pointer;
+                box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
+                background-color: #057FE5;
+                border-radius: 50%;
+                outline: none;
+            }
+
+        [slider] > input[type=range] {
+            position: absolute;
+            pointer-events: none;
+            -webkit-appearance: none;
+            z-index: 3;
+            height: 8px;
+            top: -2px;
+            width: 100%;
+            -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=0)";
+            filter: alpha(opacity=0);
+            -moz-opacity: 0;
+            -khtml-opacity: 0;
+            opacity: 0;
+        }
+
+    div[slider] > input[type=range]::-ms-track {
+        -webkit-appearance: none;
+        background: transparent;
+        color: transparent;
+    }
+
+    div[slider] > input[type=range]::-moz-range-track {
+        -moz-appearance: none;
+        background: transparent;
+        color: transparent;
+    }
+
+    div[slider] > input[type=range]:focus::-webkit-slider-runnable-track {
+        background: transparent;
+        border: transparent;
+    }
+
+    div[slider] > input[type=range]:focus {
+        outline: none;
+    }
+
+    div[slider] > input[type=range]::-ms-thumb {
+        pointer-events: all;
+        width: 14px;
+        height: 14px;
+        border-radius: 0px;
+        border: 0 none;
+        background: red;
+    }
+
+    div[slider] > input[type=range]::-moz-range-thumb {
+        pointer-events: all;
+        width: 14px;
+        height: 14px;
+        border-radius: 0px;
+        border: 0 none;
+        background: red;
+    }
+
+    div[slider] > input[type=range]::-webkit-slider-thumb {
+        pointer-events: all;
+        width: 14px;
+        height: 14px;
+        border-radius: 0px;
+        border: 0 none;
+        background: red;
+        -webkit-appearance: none;
+    }
+
+    div[slider] > input[type=range]::-ms-fill-lower {
+        background: transparent;
+        border: 0 none;
+    }
+
+    div[slider] > input[type=range]::-ms-fill-upper {
+        background: transparent;
+        border: 0 none;
+    }
+
+    div[slider] > input[type=range]::-ms-tooltip {
+        display: none;
+    }
+
+    [slider] > div > [sign] {
+        opacity: 0;
+        position: absolute;
+        margin-left: -11px;
+        top: -39px;
+        z-index: 3;
+        background-color: #1ABC9C;
+        color: #fff;
+        width: 28px;
+        height: 28px;
+        border-radius: 28px;
+        -webkit-border-radius: 28px;
+        align-items: center;
+        -webkit-justify-content: center;
+        justify-content: center;
+        text-align: center;
+    }
+
+        [slider] > div > [sign]:after {
+            position: absolute;
+            content: '';
+            left: 0;
+            border-radius: 16px;
+            top: 19px;
+            border-left: 14px solid transparent;
+            border-right: 14px solid transparent;
+            border-top-width: 16px;
+            border-top-style: solid;
+            border-top-color: #1ABC9C;
+        }
+
+        [slider] > div > [sign] > span {
+            font-size: 12px;
+            font-weight: 700;
+            line-height: 28px;
+        }
+
+    [slider]:hover > div > [sign] {
+        opacity: 1;
+    }
+
+    #rangeMaxTxt, #rangeMinTxt {
+        font-size: 10px;
+        float: right;
+        margin-top: 25px;
+        height: 20px;
+        width: 35px;
+        padding-left: 8px;
+        padding-right: 5px;
+    }
+
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-clear-button {
+        -webkit-appearance: none;
+        appearance: none;
+        display: none;
+    }
+
+    .multiselect-reset .multiselect-all:hover {
+        background-color: transparent !important;
+    }
+
+    .multiselectDdlCustom {
+        font-weight: bold;
+        border: none;
+        outline: none;
+        --bs-btn-box-shadow: none;
+    }
+
+    .btn-reset {
+        float: right;
+    }
+
+        .btn-reset:hover {
+            background-color: transparent;
+        }
+
+    #finishedTypeMulti {
+        margin-right: 9px;
+        display: none;
+    }
+
+    .tr-action-btn {
+        position: relative;
+        background: none !important;
+        border-top: none;
+        border-bottom: none;
+        border-right: none;
+        border-left: 1px solid #D6D4D4;
+        color: #004098;
+        text-decoration: underline;
+        cursor: pointer;
+        font: 16px Roboto, sans-serif;
+    }
+</style>
+
+<!-- Common Listing CSS -->
+<link href="~/ViewsHelpers/CommonListing/Listing.css" rel="stylesheet" />
+
+
+<div class="row g-0 px-3 tr-listing-header">
+    <div class="col-sm-6 align-self-center">
+        <p class="text-muted m-0 tr-listing-header-title">Fabric Registration</p>
+    </div>
+    <div class="col-sm-6 text-end align-self-center">
+        <div class="d-flex justify-content-end">
+            <div id="customDTButton"></div>
+        </div>
+    </div>
+</div>
+<div class="tr-btm-line"></div>
+
+<div class="page-container px-3 overflow-auto">
+    <div class="tr-btm-btn-margin">
+        <div>
+            <div class="row mt-3 mb-2">
+                <div class="col-12 col-sm-8">
+                    <div class="accordion" id="accordionExample">
+                        <div class="accordion-item rounded-0 p-0">
+                            <div class="row align-items-center">
+                                @Html.DropDownListFor(m => m.STATUS_DDL, Model.STATUS_DDL, null, new { @class = "tr-select", id = "select-id1" })
+                            </div>
+                            <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#accordionExample" style="border-top: 1px solid #F0F0F0;">
+                                <div class="accordion-body text-center">
+                                    <p class="h6 m-0 p-1 tr-rec green"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-sm-4 align-self-end text-end pb-0 mb-0" id="action-bar">
+                    <div class="dt-bottons btn-group flex-wrap">
+                        <button class="m-0 p-0 tr-btn" tabindex="0" aria-controls="tr-datatable" type="button" id="btnAuditTrail"><span>Audit Trail</span></button>
+                    </div>
+                    <div class="dt-buttons btn-group flex-wrap">
+                        <div class="dropdown">
+                            <button class="tr-action-btn ms-2 px-2 dropdown-toggle hidden" type="button" id="btnAction" data-bs-toggle="dropdown">
+                                Action
+                            </button>
+                            <ul class="dropdown-menu p-0" id="ulAction">
+                                @foreach (var item in Model.ACTION_LIST)
+                                {
+                                    <li><a class="dropdown-item" href="#"onclick="Action('@item')" data-cat="@item">@item</a></li>
+                                }
+                            </ul>
+                        </div>
+                    </div>
+                   
+                </div>
+            </div>
+            <div class="row">
+                <table id="tr-datatable" class="table table-hover table-bordered compact">
+                    <thead>
+                        <tr class="bg-datatable-tr">
+                            <th></th>
+                            <th>Ref No</th>
+                            <th>Chop No</th>
+                            <th>Product Type</th>
+                            <th>Product Category</th>
+                            <th>Product Material</th>
+                            <th>Weave Type</th>
+                            <th>Width</th>
+                            <th>Weight</th>
+                            <th>Location</th>
+                            <th>Active Status</th>
+                            <th>Status</th>
+                            <th>Assignee</th>
+                            <th>Warp Count</th>
+                            <th>Weft Count</th>
+                            <th>Composition</th>
+                            <th>Warp Density</th>
+                            <th>Weft Density</th>
+                            <th>Fin Warp Density</th>
+                            <th>Fin Weft Density</th>
+                            <th>Finish Width 1</th>
+                            <th>Finish Width 2</th>
+                            <th>Finished Type</th>
+                            <th width="50px">View</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <div class="row tr-btm-btn-area">
+                <div class="col">
+                    <div class="aud export-section"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="confirmation-modal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmation</h5>
+            </div>
+            <hr />
+            <div class="modal-body">
+                <h6>Are you sure to delete this record?</h6>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal" id="btnConfirm2">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="activation-modal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmation</h5>
+            </div>
+            <hr />
+            <div class="modal-body">
+                <h6 id="productActDeact"></h6>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal" data-action="" id="btnConfirmAct">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalSearch" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="text-muted m-2 tr-listing-header-title">Advanced Search</h5>
+            </div>
+            <hr />
+            <div class="modal-body">
+                <div class="container-fluid">
+                    <div class="row align-items-center mt-2">
+                        <div class="col-md-2 isLabel">Reference No<span class="float-end">:</span></div>
+                        <div class="col-md-4"><input class="form-control" type="text" id="REFERENCE_NO_SEARCH" /></div>
+                        <div class="col-md-2 isLabel">Warp Count<span class="float-end">:</span></div>
+                        <div class="col-md-4"><input class="form-control" type="text" id="WARP_COUNT_SEARCH" /></div>
+                    </div>
+                    <div class="row align-items-center mt-2">
+                        <div class="col-md-2 isLabel">Chop No<span class="float-end">:</span></div>
+                        <div class="col-md-4"><input class="form-control" type="text" id="CHOP_NO_SEARCH" /></div>
+                        <div class="col-md-2 isLabel">Weft Count<span class="float-end">:</span></div>
+                        <div class="col-md-4"><input class="form-control" type="text" id="WEFT_COUNT_SEARCH" /></div>
+                    </div>
+                    <div class="row align-items-center mt-2">
+                        <div class="col-md-2 isLabel">Fabric Type<span class="float-end">:</span></div>
+                        <div class="col-md-4">
+                            @Html.DropDownListFor(m => m.FABRIC_TYPE_DDL, Model.FABRIC_TYPE_DDL, null, new { @class = "tr-select2 form-control", id = "select-id2" })
+                        </div>
+                        <div class="col-md-2 isLabel">Finished Type<span class="float-end">:</span></div>
+                        <div class="col-md-4">
+                            @Html.DropDownListFor(m => m.FINISHED_TYPE_DDL, new MultiSelectList(Model.FINISHED_TYPE_DDL, "Value", "Text"), null, new { @class = "multiselectpicker form-control", multiple = "multiple", id = "multiselect-id1" })
+                        </div>
+                    </div>
+                    <div class="row align-items-center mt-2">
+                        <div class="col-md-2 isLabel">Weave Type<span class="float-end">:</span></div>
+                        <div class="col-md-4"><input class="form-control" type="text" id="WEAVE_TYPE_SEARCH" /></div>
+                        <div class="col-md-2 isLabel">Composition<span class="float-end">:</span></div>
+                        <div class="col-md-4"><input class="form-control" type="text" id="COMPOSITION_SEARCH" /></div>
+                    </div>
+                    <div class="row align-items-center mt-2">
+                        <div class="col-md-2 isLabel">Warp Density<span class="float-end">:</span></div>
+                        <div class="col-md-4"><input class="form-control" type="text" id="WARP_DENSITY_SEARCH" /></div>
+                        <div class="col-md-2 isLabel">Weft Density<span class="float-end">:</span></div>
+                        <div class="col-md-4"><input class="form-control" type="text" id="WEFT_DENSITY_SEARCH" /></div>
+                    </div>
+                    <div class="row align-items-center mt-2">
+                        <div class="col-md-2 isLabel">Fin Warp Density<span class="float-end">:</span></div>
+                        <div class="col-md-4"><input class="form-control" type="text" id="FIN_WARP_DENSITY_SEARCH" /></div>
+                        <div class="col-md-2 isLabel">Fin Weft Density<span class="float-end">:</span></div>
+                        <div class="col-md-4"><input class="form-control" type="text" id="FIN_WEFT_DENSITY_SEARCH" /></div>
+                    </div>
+                    <div class="row align-items-center mt-2">
+                        <div class="col-md-2 isLabel">Finish Width 1<span class="float-end">:</span></div>
+                        <div class="col-md-4"><input class="form-control" type="text" id="FINISH_WIDTH1_SEARCH" /></div>
+                        <div class="col-md-2 isLabel">Grey Width<span class="float-end">:</span></div>
+                        <div class="col-md-4"><input class="form-control" type="text" id="WIDTH_SEARCH" /></div>
+                    </div>
+                    <div class="row align-items-center mt-2">
+                        <div class="col-md-2 isLabel">Finish Width 2<span class="float-end">:</span></div>
+                        <div class="col-md-4"><input class="form-control" type="text" id="FINISH_WIDTH2_SEARCH" /></div>
+                        <div class="col-md-2 isLabel">Fabric Weight<span class="float-end">:</span></div>
+                        <div class="col-md-4 d-flex justify-content-between">
+                            <input type="number" class="form-control" id="rangeMinTxt" value="0">
+                            <div slider id="slider-distance" class="float-start">
+                                <div>
+                                    <div inverse-left style="width:70%;"></div>
+                                    <div inverse-right style="width:70%;"></div>
+                                    <div range style="left:0%;right:0%;"></div>
+                                    <span thumb style="left:0%;"></span>
+                                    <span thumb style="left:100%;"></span>
+                                </div>
+                                <input type="range" tabindex="0" value="0" max="600" min="0" step="1" id="lower" />
+
+                                <input type="range" tabindex="0" value="600" max="600" min="0" step="1" id="upper" />
+                            </div>
+                            <input type="number" class="form-control" id="rangeMaxTxt" value="600">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="reset" id="btnReset" class="btn btn-sm btn-secondary me-auto">Reset</button>
+                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Back</button>
+                <button type="button" class="btn btn-sm btn-primary" id="btnSearchAS" data-bs-dismiss="modal">Search</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="toast-container position-fixed toast-alert">
+    <div id="liveToast1" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true" style="border: 1px solid #B1003C">
+        <div class="toast-header" style="background-color: #FFF0EE">
+            <strong class="me-auto text-danger">Warning!</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body text-muted" style="background-color: #FFF0EE; border-top: 1px solid #FFF0EE; border-bottom-left-radius: inherit; border-bottom-right-radius: inherit">
+            Multiple selection for audit trail is not applicable!
+        </div>
+    </div>
+</div>
+<div class="toast-container position-fixed toast-alert">
+    <div id="liveToast2" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true" style="border: 1px solid #B1003C">
+        <div class="toast-header" style="background-color: #FFF0EE">
+            <strong class="me-auto text-danger">Warning!</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body text-muted" style="background-color: #FFF0EE; border-top: 1px solid #FFF0EE; border-bottom-left-radius: inherit; border-bottom-right-radius: inherit">
+            Please select at least one record!
+        </div>
+    </div>
+</div>
+
+
+<!-- Common Listing Html -->
+@Html.Partial("_Listing_Page")
+
+<!-- Common Listing JavaScript -->
+<script src="~/ViewsHelpers/CommonListing/Listing.js"></script>
+
+<script>
+    var urlGetData = "/MM_ProductRegistration/GetProductListAsync"
+    var table;
+    var data = [], dataAll = [];
+
+    $(document).ready(function () {
+
+        onPageLoad();
+
+        $('#rangeMinTxt').on('input', function () {
+            var inputValue = $(this).val();
+            updateRangeMin(inputValue);
+        });
+
+        $("#rangeMaxTxt").blur(function () {
+            var inputValue = $(this).val();
+            updateRangeMax(inputValue);
+        });
+
+        $('.multiselectpicker').multiselect({
+            buttonClass: 'form-select form-control text-start',
+            includeResetOption: true,
+            includeResetDivider: true,
+            resetText: "CLEAR",
+            selectAllText: ' Select all',
+            includeSelectAllOption: true,
+            onSelectAll: function () {
+                // Custom code to limit the selection to the top 6 options
+                var selectedOptions = $(".multiselectpicker").val() || [];
+                if (selectedOptions.length > 6) {
+                    var firstSixOptions = selectedOptions.slice(0, 6);
+                    $(".multiselectpicker").multiselect("deselectAll", false)
+                        .multiselect("select", firstSixOptions);
+                }
+
+                checkSelectionLimit();
+            },
+            enableCaseInsensitiveFiltering: true,
+            enableFiltering: true,
+            templates: {
+                button: '<button type="button" class="multiselect dropdown-toggle" data-bs-toggle="dropdown"><span class="multiselect-selected-text"></span></button>',
+                resetButton: '<div class="multiselect-reset text-end p-2"> <label class="multiselect-all dark-blue btn btn-sm btn-block multiselectDdlCustom" for="finishedTypeMulti" ><input type="checkbox" class="form-check-input" id="finishedTypeMulti" value="multiselect-all"> SELECT ALL</label> <button class="btn btn-sm btn-block btn-outline-secondary btn-reset dark-blue multiselectDdlCustom" type="button" id="resetBtn"></button></div></br><div class="text-start" id="selectLimit" style="padding:5px 11px;">0 out of 6</div>',
+                filter: '<div class="multiselect-filter"><div class="input-group input-group-sm p-1"><div class="input-group-prepend"></div><input class="form-control multiselect-search" type="text" /></div></div>',
+            },
+
+            onChange: function (option, checked) {
+                checkSelectionLimit();
+            }
+        });
+
+        $("#resetBtn").click(function () {
+            checkSelectionLimit();
+        });
+
+        $('.tr-select').select2({
+            theme: "bootstrap-5",
+            width: $(this).data('width') ? $(this).data('width') : $(this).hasClass('w-100') ? '100%' : 'style',
+            placeholder: $(this).data('placeholder'),
+            minimumResultsForSearch: Infinity,
+            templateSelection: function formatState(state) {
+                return 'Status : ' + state.element.value;
+            },
+            dropdownCssClass: 'tr-select2-container',
+            selectionCssClass: 'tr-no-border'
+        });
+
+        $('#select-id2').multiselect({
+            buttonClass: 'form-select form-control text-start',
+            templates: {
+                button: '<button type="button" class="multiselect dropdown-toggle" id="fabricTypDdl" data-bs-toggle="dropdown"><span class="multiselect-selected-text"></span></button>',
+            }
+        });
+
+        $('.multiselect-native-select > .btn-group').addClass("w-100");
+        $('.dataTables_length .multiselect-native-select > .btn-group').removeClass("w-100");
+        $('.multiselect-native-select > .btn-group > .multiselect').removeClass("text-center");
+        $('.multiselect-native-select > .btn-group > .multiselect-container').addClass("w-100");
+
+        $('#btnSearchAS').on('click', function () {
+            table.columns(1).search($('#REFERENCE_NO_SEARCH').val().trim());
+            table.columns(12).search($('#WARP_COUNT_SEARCH').val().trim());
+            table.columns(2).search($('#CHOP_NO_SEARCH').val().trim());
+            table.columns(13).search($('#WEFT_COUNT_SEARCH').val().trim());
+            if ($('#fabricTypDdl').text() != 'ALL') {
+                table.columns(4).search($('#fabricTypDdl').text());
+            }
+            else {
+                table.columns(4).search('');
+            }
+            table.columns(6).search($('#WEAVE_TYPE_SEARCH').val().trim());
+            table.columns(14).search($('#COMPOSITION_SEARCH').val().trim());
+            table.columns(15).search($('#WARP_DENSITY_SEARCH').val().trim());
+            table.columns(16).search($('#WEFT_DENSITY_SEARCH').val().trim());
+            table.columns(17).search($('#FIN_WARP_DENSITY_SEARCH').val().trim());
+            table.columns(18).search($('#FIN_WEFT_DENSITY_SEARCH').val().trim());
+            table.columns(19).search($('#FINISH_WIDTH1_SEARCH').val().trim());
+            table.columns(7).search($('#WIDTH_SEARCH').val().trim());
+            table.columns(20).search($('#FINISH_WIDTH2_SEARCH').val().trim());
+            $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
+                var minNum = parseInt($('#rangeMinTxt').val());
+                var maxNum = parseInt($('#rangeMaxTxt').val());
+
+                var weight = parseFloat(data[8]) || 0;
+                if ((minNum <= weight) && (maxNum >= weight)) {
+                    return true;
+                }
+                return false;
+            });
+
+            var finishedTypeArr = [], finishTypeCount = 0;
+            $('#multiselect-id1 option:selected').each(function () {
+                finishedTypeArr.push($(this).val());
+            });
+
+            if (finishedTypeArr.length != 0) {
+                $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
+                    var finishedTypeArr = [], finishTypeCount = 0;
+                    $('#multiselect-id1 option:selected').each(function () {
+                        finishedTypeArr.push($(this).val());
+                    });
+                    finishTypeCount = 0;
+                    for (var i = 0; i < finishedTypeArr.length; i++) {
+
+                        if (data[21].includes(finishedTypeArr[i]) == true) {
+                            finishTypeCount++;
+                        }
+                    }
+                    if (finishTypeCount == finishedTypeArr.length) { return true; }
+                    else {
+                        if (finishedTypeArr.length == 0) {
+                            return true;
+                        }
+                        else return false;
+                    }
+                });
+            }
+
+            table.draw();
+            adjustDataTableColumn();
+
+        });
+
+        $('#btnReset').on('click', function () {
+            $('.modal-body :input[type=text]').val('');
+
+            //reset Fabric Type dropdown in advanced search
+            $('#select-id2').next().find('.multiselect-option').first().click();
+
+            $('#rangeMinTxt').val(0);
+            $('#rangeMaxTxt').val(600);
+            updateRangeMin(0);
+            updateRangeMax(600);
+            $("#resetBtn").click();
+
+        });
+
+        $('.tr-select').on('change', function (e) {
+            if (e.target.value == "All") {
+                data = dataAll;
+            } else {
+                data = dataAll.filter(x => x.STATUS.toString() == e.target.value);
+            }
+            $('.tr-rec').text(data.length);
+            table.clear().rows.add(data).draw();
+        });
+
+        table.on('select deselect', function () {
+            var rowCnt = table.rows({ selected: true }).count();
+            if (rowCnt > 0) {
+                $("#btnAction").removeClass('hidden');
+            } else {
+                $("#btnAction").addClass('hidden');
+            }
+        });
+    });
+
+    function onPageLoad() {
+        initPage();
+        loadDataTable();
+        initDataTableComponent();
+        adjustDataTableColumn();
+        initButtonFunction()
+        initSlider();
+    }
+
+    function initSlider() {
+        var lowerSlider = document.querySelector('#lower'),
+            upperSlider = document.querySelector('#upper');
+
+        lowerSlider.oninput = function () {
+            this.value = Math.min(this.value, this.parentNode.childNodes[5].value - 1);
+            var value = (100 / (parseInt(this.max) - parseInt(this.min))) * parseInt(this.value) - (100 / (parseInt(this.max) - parseInt(this.min))) * parseInt(this.min);
+            var children = this.parentNode.childNodes[1].childNodes;
+            children[1].style.width = value + '%';
+            children[5].style.left = value + '%';
+            children[7].style.left = value + '%';
+            $('#rangeMinTxt').val(this.value);
+        };
+
+        upperSlider.oninput = function () {
+            this.value = Math.max(this.value, this.parentNode.childNodes[3].value - (-1));
+            var value = (100 / (parseInt(this.max) - parseInt(this.min))) * parseInt(this.value) - (100 / (parseInt(this.max) - parseInt(this.min))) * parseInt(this.min);
+            var children = this.parentNode.childNodes[1].childNodes;
+            children[3].style.width = (100 - value) + '%';
+            children[5].style.right = (100 - value) + '%';
+            children[9].style.left = (value + 2) + '%';
+            $('#rangeMaxTxt').val(this.value);
+        };
+    }
+
+    function updateRangeMin(inputValue) {
+        if (inputValue > 200 || inputValue >= parseInt($('#rangeMaxTxt').val())) {
+            $('#rangeMinTxt').val($('#rangeMaxTxt').val() - 1);
+        }
+        else if (inputValue < 0) {
+            $('#rangeMinTxt').val(0);
+        }
+
+        lowerSlider.value = Math.min(inputValue, lowerSlider.parentNode.childNodes[5].value - 1);
+        var value = (100 / (parseInt(lowerSlider.max) - parseInt(lowerSlider.min))) * parseInt(lowerSlider.value) - (100 / (parseInt(lowerSlider.max) - parseInt(lowerSlider.min))) * parseInt(lowerSlider.min);
+        var children = lowerSlider.parentNode.childNodes[1].childNodes;
+        children[1].style.width = value + '%';
+        children[5].style.left = value + '%';
+        children[7].style.left = value + '%';
+        $('#rangeMinTxt').val(lowerSlider.value);
+    }
+
+    function updateRangeMax(inputValue) {
+        if (inputValue <= parseInt($('#rangeMinTxt').val()) || isNaN(inputValue)) {
+            $('#rangeMaxTxt').val(parseInt($('#rangeMinTxt').val()) + 1);
+        }
+        else if (inputValue > 600) {
+            $('#rangeMaxTxt').val(600);
+        }
+
+        upperSlider.value = Math.max(inputValue, upperSlider.parentNode.childNodes[3].value - (-1));
+        var value = (100 / (parseInt(upperSlider.max) - parseInt(upperSlider.min))) * parseInt(upperSlider.value) - (100 / (parseInt(upperSlider.max) - parseInt(upperSlider.min))) * parseInt(upperSlider.min);
+        var children = upperSlider.parentNode.childNodes[1].childNodes;
+        children[3].style.width = (100 - value) + '%';
+        children[5].style.right = (100 - value) + '%';
+        children[9].style.left = (value + 2) + '%';
+    }
+
+    function checkSelectionLimit() {
+        // Get selected options.
+        var selectedOptions = $('.multiselectpicker option:selected');
+        var selectLimit = $("#selectLimit");
+
+        if (selectedOptions.length >= 6) {
+            // Disable all other checkboxes.
+            var nonSelectedOptions = $('.multiselectpicker option').filter(function () {
+                return !$(this).is(':selected');
+            });
+
+            nonSelectedOptions.each(function () {
+                var input = $('input[value="' + $(this).val() + '"]').parents('.multiselect-option');
+                input.prop('disabled', true);
+                input.parent('li').addClass('disabled');
+            });
+        }
+        else {
+            // Enable all checkboxes.
+            $('.multiselectpicker option').each(function () {
+                var input = $('input[value="' + $(this).val() + '"]').parents('.multiselect-option');
+                input.prop('disabled', false);
+                input.parent('li').addClass('disabled');
+            });
+        }
+        selectLimit.text(selectedOptions.length + " out of 6")
+    }
+
+    function Action(act)
+    {
+        switch (act)
+        {
+            case "Product Activation": case "Product Deactivation":
+                console.log(act)
+                showConfirmationModal(act);
+                break;
+            case "Edit Category":
+                editCategory();
+                break;
+            default:
+
+                break;
+        }
+    }
+
+    function editCategory()
+    {
+         var selectedValues = [];
+         var selectedRows = table.rows({ selected: true }).data().toArray();
+         selectedRows.forEach(function (rowData) {
+             var checkboxValue = rowData["PRODUCT_H_ID"];
+             selectedValues.push(checkboxValue);
+         });
+         var selectedStr = selectedValues.join(',');
+
+         var url = '@Url.Action("MM_ProductRegistration_EditCategory", "MM_ProductRegistration")?editID=' + selectedStr;
+         window.location.href = url;
+    }
+
+    function initButtonFunction()
+    {
+        $("#ulAction > li").each(function () {
+            var cat = $(this).find("a").data("cat");
+            if (cat == "Edit Category") {
+                $(this).find("a").attr("id", "btnEdit");
+                $(this).find("a").removeClass('btn btn-secondary');
+            }
+            else if (cat == "Delete")
+            {
+                $(this).find("a").attr("data-bs-toggle", "modal");
+                $(this).find("a").attr("data-bs-target", "#confirmation-modal");
+                $(this).find("a").removeClass('btn btn-secondary');
+            }
+        });
+        $("#btnAuditTrail").click(function () {
+            
+            var selectedValues = [];
+            var selectedRows = table.rows({ selected: true }).data().toArray();
+            selectedRows.forEach(function (rowData) {
+                var checkboxValue = rowData;
+                selectedValues.push(checkboxValue);
+            });
+
+            if (selectedValues.length >= 2) {
+                const toastLiveExample = document.getElementById('liveToast1');
+                const toast = new bootstrap.Toast(toastLiveExample);
+                toast.show();
+                return;
+            } else if (selectedValues.length == 0) {
+                const toastLiveExample = document.getElementById('liveToast2');
+                const toast = new bootstrap.Toast(toastLiveExample);
+                toast.show();
+                return;
+            } else {
+                selectedValues.forEach(function (element) {
+                    var url = '@Url.Action("MM_ProductRegistration_AuditTrail", "MM_ProductRegistration")';
+                    window.location.href = url + '?id=' + element.PRODUCT_H_ID;
+                });
+            }
+        });
+        $('#btnConfirm2').on('click', function () {
+            var selectedValues = [];
+            var selectedRows = table.rows({ selected: true }).data().toArray();
+            selectedRows.forEach(function (rowData) {
+                var checkboxValue = rowData["PRODUCT_H_ID"];
+                selectedValues.push(checkboxValue);
+            });
+
+            $.ajax({
+                url: '/MM_ProductRegistration/MM_ProductRegistration_DeleteListing',
+                type: 'POST',
+                data: { deleteID: selectedValues },
+                success: function (response) {
+                    if (response.isSuccess == "Success") {
+                        Swal.fire({
+                            title: "Success",
+                            text: "Successfully Deleted.",
+                            icon: "success",
+                            showCancelButton: false,
+                            confirmButtonText: "OK"
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                // User pressed "OK", redirect to another view
+                                window.location.href = "/MM_ProductRegistration/MM_ProductRegistration";
+                            }
+                        });
+                    } else {
+                        Swal.fire('Failed!', 'Failed Delete.', 'error');
+                    }
+                },
+                error: function (xhr, status, error) {
+                    Swal.fire('Error!', error, 'error');
+                }
+            });
+        });
+
+        $("#btnConfirmAct").click(function ()
+        {
+            var type = $(this).data("action");
+
+            var status = ["Inactive", "Active"];
+            var txt = ""
+            if (type == 0) {
+                txt = "Successfully deactivate the product";
+            }
+            else {
+                txt = "Successfully activate the product";
+            }
+
+            var selectedValues = [];
+            var selectedRows = table.rows({ selected: true }).data().toArray();
+            selectedRows.forEach(function (rowData) {
+                var checkboxValue = rowData["PRODUCT_H_ID"];
+                selectedValues.push(checkboxValue);
+            });
+
+            $.ajax({
+                url: '/MM_ProductRegistration/MM_ProductRegistration_ProductActDeact',
+                type: 'POST',
+                data: { type: status[type], id: selectedValues },
+                success: function (response) {
+                    if (response.isSuccess == "Success") {
+                        Swal.fire({
+                            title: "Success",
+                            text: txt,
+                            icon: "success",
+                            showCancelButton: false,
+                            confirmButtonText: "OK"
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                // User pressed "OK", redirect to another view
+                                window.location.href = "/MM_ProductRegistration/MM_ProductRegistration";
+                            }
+                        });
+                    } else {
+                        Swal.fire('Failed!', 'Failed.', 'error');
+                    }
+                },
+                error: function (xhr, status, error) {
+                    Swal.fire('Error!', error, 'error');
+                }
+            });
+        })
+
+
+    }
+
+    function showConfirmationModal(act)
+    {
+        var message = ""
+        //"Product Activation"
+        if (act == "Product Activation") {
+            message = "Are you sure you want to activate the selected product?";
+            $("#btnConfirmAct").data("action",1)
+        }
+        else //"Product Deactivation"
+        {
+            message = "Are you sure you want to deactivate the selected product?";
+            $("#btnConfirmAct").data("action", 0)
+        }
+        $("#productActDeact").text(message);
+        $("#activation-modal").modal("show");
+    }
+
+    function loadDataTable() {
+
+        table = $('#tr-datatable').DataTable({
+            processing: true,
+            scrollCollapse: true,
+            scrollY: calcDataTableHeight,
+            pagingType: 'simple_numbers',
+            ajax: {
+                url: urlGetData,
+                type: "POST",
+                dataSrc: function (json) {
+                    data = json.data;
+                    dataAll = json.data;
+                    $('.tr-rec').text(data.length);
+                    return json.data;
+                }
+            },
+            columns: [
+                { data: "PRODUCT_H_ID" },
+                { data: "REFERENCE_NO" },
+                { data: "CHOP_NO" },
+                { data: "PRODUCT_TYPE" },
+                { data: "CATEGORY_NAME" },
+                { data: "MATERIAL_TYPE" },
+                { data: "WEAVE_TYPE" },
+                { data: "WIDTH" },
+                { data: "FAB_WEIGHT_GSM" },
+                { data: "HANGER_LOC" },
+                { data: "ACTIVESTATUS" },
+                { data: "STATUS" },
+                { data: "ASSIGNEE_COL" },
+                { data: "WARP_COUNT" },
+                { data: "WEFT_COUNT" },
+                { data: "COMPOSITION" },
+                { data: "WARP_DENSITY" },
+                { data: "WEFT_DENSITY" },
+                { data: "FIN_WARP_DENSITY" },
+                { data: "FIN_WEFT_DENSITY" },
+                { data: "FINISH_WIDTH1" },
+                { data: "FINISH_WIDTH2" },
+                { data: "FINISH_TYPE" }
+            ],
+            columnDefs: [
+                {
+                    targets: 0,
+                    render: function (data, type, row, meta) {
+                        if (type === 'display') {
+                            data = '<div class="checkbox"><input type="checkbox" class="dt-checkboxes form-check-input"><label></label></div>';
+                        }
+
+                        return data;
+                    },
+                    checkboxes: {
+                        selectRow: true,
+                        selectAllPages: false,
+                        selectAllRender: '<div class="checkbox"><input type="checkbox" id="checkboxAll" class="dt-checkboxes form-check-input"><label></label></div>'
+                    },
+                    orderable: false, // Disable sorting for this column
+                },
+                {
+                    targets: 11,
+                    render: function (data, type, row, meta) {
+                        //var _status = statusArr[Math.floor(Math.random() * statusArr.length)];
+                        var _status = row.STATUS;
+                        var _color = "";
+                        if (_status == "Completed") {
+                            _color = "#00A251";
+                        } else if (_status == "Pending") {
+                            _color = "#FF850A";
+                            _status = _status;
+                        } else {
+                            _color = "#B1003C";
+                            _status = "Unknown";
+                        }
+                        return '<span style=color:' + _color + '>' + _status + '</span>';
+                    }
+                },
+                {
+                    targets: 13,
+                    visible: false,
+                    render: function (data, type, row, meta) {
+                        return row.WARP_COUNT;
+                    }
+                },
+                {
+                    targets: 14,
+                    visible: false,
+                    render: function (data, type, row, meta) {
+                        return row.WEFT_COUNT;
+                    }
+                },
+                {
+                    targets: 15,
+                    visible: false,
+                    render: function (data, type, row, meta) {
+                        return row.COMPOSITION;
+                    }
+                },
+                {
+                    targets: 16,
+                    visible: false,
+                    render: function (data, type, row, meta) {
+                        return row.WARP_DENSITY;
+                    }
+                },
+                {
+                    targets: 17,
+                    visible: false,
+                    render: function (data, type, row, meta) {
+                        return row.WEFT_DENSITY;
+                    }
+                },
+                {
+                    targets: 18,
+                    visible: false,
+                    render: function (data, type, row, meta) {
+                        return row.FIN_WARP_DENSITY;
+                    }
+                },
+                {
+                    targets: 19,
+                    visible: false,
+                    render: function (data, type, row, meta) {
+                        return row.FIN_WEFT_DENSITY;
+                    }
+                },
+                {
+                    targets: 20,
+                    visible: false,
+                    render: function (data, type, row, meta) {
+                        return row.FINISH_WIDTH1;
+                    }
+                },
+                {
+                    targets: 21,
+                    visible: false,
+                    render: function (data, type, row, meta) {
+                        return row.FINISH_WIDTH2;
+                    }
+                },
+                {
+                    targets: 22,
+                    visible: false,
+                    render: function (data, type, row, meta) {
+                        return row.FINISH_TYPE;
+                    }
+                },
+                {
+                    targets: 23,
+                    render: function (data, type, row, meta) {
+                        return '<a href="@Url.Action("MM_ProductRegistration_View", "MM_ProductRegistration")?id=' + row.PRODUCT_H_ID + '&status=' + row.STATUS + '" class="name tr-icon-size" id="' + row.PRODUCT_H_ID + '"><i class="fa-solid fa-eye"></i></a>';
+                    },
+                    orderable: false,
+                }
+
+            ],
+            select: {
+                style: 'multi',
+                info: false,
+                selector: 'td:nth-child(1)'
+            },
+            order: [],
+            dom: `<'row toolbar-row g-0 custom-toolbar'<'col-sm-12 col-md-6 align-self-center'l><'col-sm-12 col-md-6 d-flex align-items-center justify-content-end'<'toolbar'>>>
+                  <'row'<'col-sm-12'tr>>
+                  <'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'<'d-flex justify-content-end mt-2'p<'go-to align-self-center mx-2'>>>>`,
+            fixedHeader: {
+                header: true,
+                footer: false
+            },
+            initComplete: function () {
+                $('.custom-toolbar .toolbar').html(searchInputHtml);
+                adjustInputGroup();
+            },
+            drawCallback: function (settings) {
+                var api = this.api();
+                $("#txtGoTo").val(api.page() + 1);
+            }
+        });
+    }
+</script>

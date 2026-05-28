@@ -1,0 +1,280 @@
+﻿@model PAB_NewAquarium.Models.FabricLocation
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var UrlActionAudit = Url.Action("MM_FabricLocation_AuditTrail", "MM_FabricLocation");
+    var UrlActionCreate = Url.Action("MM_FabricLocation_Create", "MM_FabricLocation");
+    var UrlActionDelete = Url.Action("MM_FabricLocation_DeleteListing", "MM_FabricLocation");
+    var UrlActionEdit = Url.Action("MM_FabricLocation_Edit", "MM_FabricLocation");
+    var UrlActionList = Url.Action("MM_FabricLocation", "MM_FabricLocation");
+    var UrlActionView = Url.Action("MM_FabricLocation_View", "MM_FabricLocation");
+}
+
+<!-- Common Listing CSS -->
+<link href="~/ViewsHelpers/CommonListing/Listing.css" rel="stylesheet" />
+
+<div class="row g-0 px-3 tr-listing-header">
+    <div class="col-sm-6 align-self-center">
+        <p class="text-muted m-0 tr-listing-header-title">Location</p>
+    </div>
+    <div class="col-sm-6 text-end align-self-center">
+        <div class="d-flex justify-content-end">
+            <div id="customDTButton"></div>
+        </div>
+    </div>
+</div>
+<div class="tr-btm-line"></div>
+
+<div class="page-container px-3 overflow-auto">
+    <div class="tr-btm-btn-margin">
+        <div>
+            <div class="row mt-3 mb-2">
+                <div class="col-12 col-sm-8">
+
+                </div>
+                <div class="col-12 col-sm-4 align-self-end text-end pb-0 mb-0" id="action-bar">
+
+                </div>
+            </div>
+            <div class="row">
+                <table id="tr-datatable" class="table table-hover table-bordered compact w-100">
+                    <thead>
+                        <tr class="bg-datatable-tr">
+                            <th></th>
+                            <th>Location Code</th>
+                            <th>Location Description</th>
+                            <th>Location Type</th>
+                            <th>View</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <div class="row tr-btm-btn-area">
+                <div class="col">
+                    <div class="aud export-section"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Common Listing Html -->
+@Html.Partial("_Listing_Page_V2")
+
+<!-- Common Listing JavaScript -->
+<script src="~/ViewsHelpers/CommonListing/Listing.js"></script>
+
+<script>
+    var urlActionAudit = "@UrlActionAudit";
+    var urlActionCreate = "@UrlActionCreate";
+    var urlActionDelete = "@UrlActionDelete";
+    var urlActionList = "@UrlActionList";
+    var urlActionView = "@UrlActionView";
+    var table;
+    var data = [];
+    var jsonData = @Html.Raw(Json.Encode(Model.FabricLocationListing));
+    var data = jsonData;
+
+    $(document).ready(function () {
+
+        onPageLoad();
+
+        $('#btnDeleteConfirm').on('click', function () {
+            var selectedValues = [];
+            var selectedRows = table.rows({ selected: true }).data().toArray();
+            selectedRows.forEach(function (rowData) {
+                var checkboxValue = rowData["LOC_CODE"];
+                selectedValues.push(checkboxValue);
+            });
+
+            $('#modalDelete').modal('hide');
+
+            $.ajax({
+                url: urlActionDelete,
+                type: 'POST',
+                data: { id: selectedValues },
+                success: function (response) {
+                    if (response.valid) {
+                        showAlert('Success', 'Record deleted successfully.', urlActionList);
+                    } else {
+                        showAlert('Error', 'Record deletion failed.');
+                    }
+                },
+                error: function (xhr, status, error) {
+                    showAlert('Error', error);
+                }
+            });
+        });
+    });
+
+    function onPageLoad() {
+        initPage();
+        loadDataTable();
+        initDataTableComponent();
+        adjustDataTableColumn();
+        addTableButtons();
+    }
+
+    function loadDataTable() {
+        table = $('#tr-datatable').DataTable({
+            data: data,
+            scrollCollapse: true,
+            scrollY: calcDataTableHeight,
+            pagingType: 'simple_numbers',
+            columns: [
+                { data: 'ID' },
+                { data: 'LOC_CODE' },
+                { data: 'LOC_DESC' },
+                { data: 'LOC_TYPE' },
+                { data: 'ID' }
+            ],
+            columnDefs: [
+                {
+                    targets: 0,
+                    render: function (data, type, row, meta) {
+                        if (type === 'display') {
+                            data = '<div class="checkbox"><input type="checkbox" class="dt-checkboxes form-check-input"><label></label></div>';
+                        }
+
+                        return data;
+                    },
+                    checkboxes: {
+                        selectRow: true,
+                        selectAllPages: false,
+                        selectAllRender: '<div class="checkbox"><input type="checkbox" id="checkboxAll" class="dt-checkboxes form-check-input"><label></label></div>'
+                    },
+                    orderable: false, // Disable sorting for this column
+                },
+                {
+                    targets: 4,
+                    render: function (data, type, row, meta) {
+                        return '<a href="' + urlActionView +'?id=' + row.LOC_CODE + '" class="name tr-icon-size" id="' + row.LOC_CODE + '"><i class="fa-solid fa-eye"></i></a>';
+                    },
+                    orderable: false,
+                }
+            ],
+            select: {
+                style: 'multi',
+                info: false,
+                selector: 'td:nth-child(1)'
+            },
+            order: [[1, 'asc']],
+            dom: `<'row toolbar-row g-0 custom-toolbar'<'col-sm-12 col-md-6 align-self-center'l><'col-sm-12 col-md-6 d-flex align-items-center justify-content-end'<'toolbar'>>>
+                  <'row'<'col-sm-12'tr>>
+                  <'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'<'d-flex justify-content-end mt-2'p<'go-to align-self-center mx-2'>>>>`,
+            fixedHeader: {
+                header: true,
+                footer: false
+            },
+            initComplete: function () {
+                $('.custom-toolbar .toolbar').html(searchInputHtml);
+            },
+            drawCallback: function (settings) {
+                var api = this.api();
+                $("#txtGoTo").val(api.page() + 1);
+            }
+        });
+    }
+
+    function getColumnConfig() {
+
+        var dynamicColumns = [];
+        var val = data[0];
+        var columnJsonArrs = new Array();
+
+        var x = 0;
+        for (var j in val) {
+            columnJsonArrs[x] = j;
+            x++
+        }
+
+        columnJsonArrs.forEach(function (columnJsonArr, index) {
+            var columnConfig = {
+                data: columnJsonArr
+            };
+            dynamicColumns.push(columnConfig);
+        });
+        return dynamicColumns;
+    }
+
+    function addTableButtons() {
+        new $.fn.dataTable.Buttons(table, {
+            name: "add",
+            buttons: [
+                {
+                    text: '<i class="fa-solid fa-plus text-primary"></i>&nbsp;&nbsp; Add Location',
+                    className: 'btn-sm btn-outline-secondary mt-1',
+                    init: function (api, node, config) {
+                        $(node).attr("id", "btnAdd");
+                        $(node).removeClass('btn-secondary');
+                    },
+                    action: function (e, dt, node, config) {
+                        // Add new action here
+                        var url = urlActionCreate;
+                        window.location.href = url;
+                    }
+                }
+            ]
+        });
+
+        new $.fn.dataTable.Buttons(table, {
+            name: "delete",
+            buttons: [
+                {
+                    text: '<i class="fa-solid fa-trash-can tr-icon-size tr-icon-del"></i>',
+                    className: 'tr-btn m-0 py-0 px-3 text-danger tr-trash isHide',
+                    init: function (api, node, config) {
+                        $(node).attr("id", "btnDelete");
+                        $(node).attr("data-bs-toggle", "modal");
+                        $(node).attr("data-bs-target", "#modalDelete");
+                        $(node).removeClass('btn btn-secondary');
+                    }
+                }
+            ]
+        });
+
+        new $.fn.dataTable.Buttons(table, {
+            name: "audit",
+            buttons: [
+                {
+                    text: 'Audit Trail',
+                    className: 'm-0 p-0 tr-btn',
+                    attr: {
+                        id: 'btnAuditTrail'
+                    },
+                    init: function (api, node, config) {
+                        $(node).removeClass('btn btn-secondary')
+                    },
+                    action: function (e, dt, node, config) {
+                        var selectedValues = [];
+                        var selectedRows = table.rows({ selected: true }).data().toArray();
+                        selectedRows.forEach(function (rowData) {
+                            var checkboxValue = rowData;
+                            selectedValues.push(checkboxValue);
+                        });
+
+                        if (selectedValues.length >= 2) {
+                            showAlert('Error', 'Multiple selection for audit trail is not applicable!');
+                            return;
+                        }
+                        else if (selectedValues.length == 0) {
+                            showAlert('Error', 'Please select at least one record!');
+                            return;
+                        }
+                        else {
+                            selectedValues.forEach(function (element) {
+                                var url = urlActionAudit;
+                                window.location.href = url + '?id=' + element.LOC_CODE;
+                            });
+                        }
+
+                    }
+                }
+            ]
+        });
+
+        table.buttons("add", null).containers().appendTo('#customDTButton');
+        table.buttons("audit, delete", null).containers().appendTo('#action-bar');
+    }
+</script>

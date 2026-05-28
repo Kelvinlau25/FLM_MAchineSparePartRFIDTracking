@@ -1,0 +1,547 @@
+﻿@model PAB_NewAquarium.Models.UserDetail
+@{
+    ViewBag.Title = "MM_User_Create";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+
+<style type="text/css">
+
+    .status-select {
+        border: 0px;
+    }
+
+    .tr-text {
+        text-align: end;
+    }
+
+    @@media only screen and (min-device-width: 1280px) and (max-device-width: 1599px) {
+
+        .modal-header {
+            margin-bottom: -15px;
+            margin-top: -10px;
+        }
+
+        .custom-toolbar {
+            margin-right: 2px;
+        }
+    }
+
+    @@media (min-width: 1599px) {
+
+        .modal-header {
+            margin-bottom: -25px;
+            margin-top: -10px;
+        }
+
+        .custom-toolbar-add-margin {
+            margin-right: 2px;
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .tr-text {
+            text-align: start;
+        }
+    }
+
+    .toolbar {
+        float: right;
+    }
+
+    table.dataTable tbody td.select-checkbox::before,
+    table.dataTable tbody th.select-checkbox::before {
+        margin-top: -6px;
+    }
+
+    .searchbtn {
+    }
+
+    .searchtxt {
+        width: 79%;
+        /*border-radius: 8px;
+        /*border: 2px solid #ccc;*/
+    }
+
+    .dataTables_length {
+        display: inline;
+    }
+
+    .dataTables_paginate {
+        text-align: right;
+        /*display: none;*/
+    }
+
+    .dataTables_info {
+        text-align: left;
+        /*display: none;*/
+    }
+
+    /*.dataTables_filter {
+        display: inline;
+    }*/
+
+    /*-------------------------------------------------*/
+    .styled-select {
+        position: relative;
+        display: flex;
+        align-items: center;
+        width: 300px;
+        font-family: "Helvetica", "Arial", sans-serif;
+    }
+
+        .styled-select label {
+            flex: 1 1 60px;
+        }
+
+        .styled-select .select-wrapper {
+            border: none;
+            flex: 1 1 100%;
+            background: white;
+            border-radius: 5px;
+            position: relative;
+        }
+
+    .select-wrapper[data-prefix]:before {
+        content: attr(data-prefix);
+        display: flex;
+        align-items: center;
+        position: absolute;
+        z-index: 0;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        padding: 0 5px 0 10px;
+    }
+
+    .styled-select .select-wrapper[data-suffix]:after {
+        content: attr(data-suffix);
+        display: flex;
+        align-items: center;
+        position: absolute;
+        z-index: 0;
+        right: 23px;
+        top: 0;
+        bottom: 0;
+        padding: 0 10px 0 5px;
+    }
+
+    .styled-select .select-wrapper select {
+        display: block;
+        padding-top: 10px;
+        padding-bottom: 10px;
+        width: 100%;
+        border: none;
+        outline: none;
+        -webkit-appearance: none;
+        position: relative;
+        z-index: 1;
+        background: transparent;
+        font-size: 16px;
+    }
+
+    .styled-select .select-wrapper .fas {
+        display: flex;
+        align-items: center;
+        font-size: 14px;
+        position: absolute;
+        z-index: 0;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        padding: 0 10px 0 0;
+        width: 23px;
+        /*color: #b3b3b3;*/
+    }
+
+    .tr-no-border {
+        border: 0px !important;
+    }
+
+    .multiselect-container button[title="Please select an option..."] {
+        display: none;
+    }
+
+
+    .form-check-input {
+        border-color: #929292;
+    }
+
+        .form-check-input[type="checkbox"]:indeterminate {
+            background-color: #057FE5;
+            border-color: #057FE5;
+        }
+
+    #select-id + .btn-group {
+        display: flex;
+    }
+
+        #select-id + .btn-group .text-center {
+            text-align: left !important; /* or use any other desired text alignment */
+        }
+
+        #select-id + .btn-group .multiselect-container {
+            /* Your custom styles here */
+            /* For example, change the background color */
+            width: 100% !important;
+            /* Add other styles as needed */
+        }
+
+    .multiselect-container.dropdown-menu {
+        max-height: 200px !important;
+    }
+
+    .tr-select2 + .btn-group > .multiselect-container input[type="text"] {
+        visibility: visible;
+    }
+</style>
+
+@using (Html.BeginForm())
+{
+
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(model => model.USER_ID)
+    <div class="row g-0 px-3 tr-listing-header">
+        <div class="col-sm-6 align-self-center">
+            <p class="text-muted m-0 tr-listing-header-title">RFID Employee Batch Registration</p>
+        </div>
+        <div class="col-sm-6 text-end align-self-center">
+            <div class="d-flex justify-content-end">
+                <div id="customDTButton">
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="tr-btm-line"></div>
+    <div class="page-container px-3 overflow-auto">
+        <div class="tr-btm-btn-margin">
+            <div class="card mt-3 mb-2 card-height">
+                <div class="card-body">
+                    <div class="row align-items-baseline">
+                        <div class="col"><h6 class="text-muted card-title">New User</h6></div>
+                    </div>
+                    <hr />
+                    <div class="row mt-2 align-items-baseline">
+                        <div class="col-sm-2">
+                            <p class="text-muted">Employee ID <span class="text-danger">*</span><span class="float-end">:</span></p>
+                        </div>
+                        <div class="col-sm-4">
+                            @Html.DropDownListFor(m => m.EMPLOYEE_ID, Model.EmployeeIDDdl, "Please select an Employee ID...", new { @class = "tr-select2 form-valid", id = "select-id" })
+                            @Html.ValidationMessageFor(model => model.EMPLOYEE_ID, null, new { @class = "text-danger validate-text" })
+                        </div>
+                    </div>
+                    <div class="row mt-2 align-items-baseline">
+                        <div class="col-sm-2">
+                            <p class="text-muted">Employee Name <span class="float-end">:</span></p>
+                        </div>
+                        <div class="col-sm-4">
+                            @Html.TextBoxFor(model => model.EMPLOYEE_NAME, null, new { @class = "form-control grayed-out", @id = "txtEmployeeName" })
+                        </div>
+                    </div>
+                    <div class="row mt-2 align-items-baseline">
+                        <div class="col-sm-2">
+                            <p class="text-muted">RFID Tag <span class="text-danger">*</span><span class="float-end">:</span></p>
+                        </div>
+                        <div class="col-sm-4">
+                            @Html.TextBoxFor(model => model.RFID_TAG, null, new { @class = "form-control grayed-out form-valid" })
+                            @Html.ValidationMessageFor(model => model.RFID_TAG, null, new { @class = "text-danger validate-text" })
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row tr-btm-btn-area">
+                <div class="col"></div>
+                <div class="col">
+                    <div class="row row-cols-auto justify-content-end isEditable g-1" style="padding-right: 20px">
+                        <div class="col"><button id="btnBack" type="button" class="btn btn-sm btn-secondary" onclick="location.href='@Url.Action("MM_User","MM_User")'">Back</button></div>
+                        <div class="col"><button id="btnSubmit" type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#submit-confirmation-modal">Submit</button></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="submit-confirmation-modal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirmation</h5>
+                </div>
+                <hr />
+                <div class="modal-body">
+                    <h6>Are you sure to submit this record?</h6>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-sm btn-primary" id="btnConfirm">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast-container position-fixed toast-alert">
+        <div id="liveToast" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true" style="border: 1px solid #B1003C">
+            <div class="toast-header" style="background-color: #FFF0EE">
+                <strong class="me-auto text-danger">Warning!</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body text-muted" style="background-color: #FFF0EE; border-top: 1px solid #FFF0EE; border-bottom-left-radius: inherit; border-bottom-right-radius: inherit">
+                Failed to submit, Duplicated Employee ID.
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container position-fixed toast-success">
+        <div id="liveToast2" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true" style="border: 1px solid #00A251">
+            <div class="toast-header" style="background-color: #E9FFF8">
+                <strong class="me-auto green">Successful!</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body text-muted" style="background-color: #E9FFF8; border-top: 1px solid #E9FFF8; border-bottom-left-radius: inherit; border-bottom-right-radius: inherit">
+                Submit Successfully.
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container position-fixed toast-alert">
+        <div id="errorToast" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true" style="border: 1px solid #B1003C">
+            <div class="toast-header" style="background-color: #FFF0EE">
+                <strong class="me-auto text-danger">Warning!</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body text-muted" style="background-color: #FFF0EE; border-top: 1px solid #FFF0EE; border-bottom-left-radius: inherit; border-bottom-right-radius: inherit">
+
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container position-fixed toast-success">
+        <div id="infoToast" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="10000" style="border: 1px solid #057FE5">
+            <div class="toast-header" style="background-color: #EBF3FF">
+                <strong class="me-auto">Information</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body text-muted" style="background-color: #EBF3FF; border-top: 1px solid #EBF3FF; border-bottom-left-radius: inherit; border-bottom-right-radius: inherit">
+
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container position-fixed toast-alert">
+        <div id="liveToast3" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true" style="border: 1px solid #B1003C">
+            <div class="toast-header" style="background-color: #FFF0EE">
+                <strong class="me-auto text-danger">Warning!</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body text-muted" style="background-color: #FFF0EE; border-top: 1px solid #FFF0EE; border-bottom-left-radius: inherit; border-bottom-right-radius: inherit">
+                Submit Unsuccessful, Please Check Your Input.
+            </div>
+        </div>
+    </div>
+}
+
+<script src="~/Scripts/jquery.signalR-2.4.3.min.js"></script>
+<script src="~/signalr/hubs"></script>
+<script>
+    var hub = $.connection.signalRHub;
+    var webConnectionID = "";
+    var rfidConnect = false;
+    var returnMessage = "@ViewBag.Result";
+    var readerName = "@Model.RFID_READER.READER_NAME";
+    var readerSignal = "@Model.RFID_READER.READER_SIGNAL";
+    var urlMMUser = '@Url.Action("MM_User", "MM_User")';
+    var ajaxRFIDStatus = '@Url.Action("RFIDStatus", "RFIDDashboard")';
+    var ajaxEmployeeName = '@Url.Action("GetEmployeeNameAjaxAsync", "MM_User")';
+
+    $(document).ready(function () {
+        $("div.spanner").addClass("show");
+        $("div.overlay").addClass("show");
+
+        hub.client.getRFIDConnectionID = function (rfidConnectionID) {
+            if (rfidConnectionID != "") {
+                if (returnMessage != "Success") {
+                    hub.server.connectRFID(webConnectionID, readerName, readerSignal);
+                }
+            }
+            else {
+                toastMessage("Error", "RFID reader is disconnected.");
+            }
+        };
+
+        hub.client.receiveMessage = function (message) {
+            if (message == "RFID reader is connected.") {
+                rfidConnect = true;
+                if (returnMessage == "") {
+                    toastMessage("Info", message);
+                }                
+            }
+            else {
+                toastMessage("Error", message);
+            }
+        };
+
+        hub.client.getTags = function (tag) {
+            $('#RFID_TAG').val(tag);
+            $('#RFID_TAG').removeClass('is-invalid');
+            $('#RFID_TAG').siblings('.text-danger').text("").hide();
+        };
+
+        $.connection.hub.start().done(function () {
+            webConnectionID = $.connection.hub.id;
+            hub.server.getRFIDConnectionID(webConnectionID);
+        });
+
+        window.addEventListener("beforeunload", function () {
+            if (rfidConnect) {
+                hub.server.disconnectRFID(webConnectionID);
+            }
+        });
+
+        $('.dataTables_length select').addClass('tr-select2');
+
+        $('.tr-select2').multiselect({
+            buttonClass: 'form-select form-control text-start',
+            enableCaseInsensitiveFiltering: true,
+            enableFiltering: true,
+            templates: {
+                button: '<button type="button" class="multiselect dropdown-toggle" id="employeeIDDdl" data-bs-toggle="dropdown"><span class="multiselect-selected-text"></span></button>',
+                filter: '<div class="multiselect-filter"><div class="input-group input-group-sm p-1"><div class="input-group-prepend"></div><input class="form-control multiselect-search" type="text" /></div></div>',
+            }
+        });
+
+        $('.multiselect-native-select > .btn-group').addClass("w-100");
+        $('.multiselect-native-select > .btn-group > .multiselect').removeClass("text-center");
+        $('.multiselect-native-select > .btn-group > .multiselect-container').addClass("w-100");
+
+        $('.tr-select2').on('change', function () {
+            if ($(this).val().trim() === "") {
+                $(this).siblings('.btn-group').children('button').addClass('dropdown-is-invalid');
+                $(this).parent().siblings('span.text-danger').text("This field is required.").show();
+            } else {
+                $(this).siblings('.btn-group').children('button').removeClass('dropdown-is-invalid');
+                $(this).parent().siblings('span.text-danger').text("This field is required.").hide();
+            }
+        });
+
+        $('#btnConfirm').click(function () {
+            var employeeID = $('#select-id').val();
+            var employeeName = $('#txtEmployeeName').val();
+            var tag = $('#RFID_TAG').val();
+
+            $('#submit-confirmation-modal').modal('hide');
+
+            $('.tr-select2').each(function () {
+                if ($(this).val().trim() === "") {
+                    $(this).siblings('.btn-group').children('button').addClass('dropdown-is-invalid');
+                    $(this).parent().siblings('span.text-danger').text("This field is required.").show();
+                } else {
+                    $(this).siblings('.btn-group').children('button').removeClass('dropdown-is-invalid');
+                    $(this).parent().siblings('span.text-danger').text("This field is required.").hide();
+                }
+            });
+
+            $(".form-valid").each(function () {
+                var validationMessage = $(this).attr('data-val-required');
+                if (validationMessage == undefined) {
+                    validationMessage = "This field is required."
+                }
+                if ($(this).val().trim() === "") {
+                    $(this).addClass('is-invalid');
+                    $(this).siblings('.text-danger').text(validationMessage).show();
+                }
+                else {
+                    $(this).removeClass('is-invalid');
+                    $(this).siblings('.text-danger').text("").hide();
+                }
+            });
+
+            if (employeeID != "" && employeeName != "" && tag != "") {
+                $.ajax({
+                    type: "post",
+                    url: ajaxRFIDStatus,
+                    data: { tag: tag },
+                    datatype: "json",
+                    traditional: true,
+                    success: function (data) {
+                        if (data == "Y") {
+                            toastMessage("Error", "Failed to submit, RFID Tag was used.");
+                        }
+                        else if (data == "N") {
+                            $('form').submit();
+                        }
+                    },
+                });
+            }
+            else {
+                const toastLiveExample = document.getElementById('liveToast3');
+                const toast = new bootstrap.Toast(toastLiveExample);
+                toast.show();
+            }
+        });
+
+        $('#select-id').on('change', function () {
+            var selectedValue = $(this).val();
+
+            $.ajax({
+                url: ajaxEmployeeName + '?employeeID=' + selectedValue,
+                method: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    $('#txtEmployeeName').val(data);
+                },
+                error: function (xhr, status, error) {
+                    //const toastLiveExample = document.getElementById('liveToast3');
+                    //const toast = new bootstrap.Toast(toastLiveExample);
+                    //toast.show();
+                }
+            });
+
+            var defaultTxt = $(this).parent().find("option:selected").text()
+            if (defaultTxt != "Please select an employee ID...") {
+                $(this).parent().parent().find('.text-danger').hide();
+            }
+            else {
+                $(this).parent().parent().find('.text-danger').show();
+            }
+        });
+
+        if (returnMessage == "Duplicated Employee ID") {
+            const toastLiveExample = document.getElementById('liveToast');
+            const toast = new bootstrap.Toast(toastLiveExample);
+            toast.show();
+        }
+        else if (returnMessage == "Success"){
+            const toastLiveExample = document.getElementById('liveToast2');
+            const toast = new bootstrap.Toast(toastLiveExample);
+            toast.show();
+                setTimeout(function () {
+                    var url = urlMMUser;
+                    window.location.href = url;
+                }, 2000);
+        }
+
+    });
+
+    function toastMessage(status, message) {
+        const toastIDError = document.getElementById('errorToast');
+        const toastIDInfo = document.getElementById('infoToast');
+        const toastError = new bootstrap.Toast(toastIDError);
+        const toastInfo = new bootstrap.Toast(toastIDInfo);
+
+        if (status == "Info") {
+            $('#infoToast .toast-body').html(message);
+            toastError.hide();
+            toastInfo.show();
+        }
+        else if (status == "Error") {
+            $('#errorToast .toast-body').html(message);
+            toastError.show();
+            toastInfo.hide();
+        }
+
+        $("div.spanner").removeClass("show");
+        $("div.overlay").removeClass("show");
+    }
+</script>

@@ -1,0 +1,1326 @@
+﻿@model PAB_NewAquarium.Models.Product_H_Detail
+
+@{
+    ViewBag.Title = "MM_ProductRegistration_Edit";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    string referenceNo = Model.REFERENCE_NO;
+    string status = Model.STATUS;
+
+    if (Model.RFID_READER == null)
+    {
+        <script>
+            var readerObj = null;
+        </script>
+    }
+    else
+    {
+        <script>
+        var readerObj = {
+            READER_NAME: "@Model.RFID_READER.READER_NAME",
+            READER_BRAND: "@Model.RFID_READER.READER_BRAND",
+            READER_IP: "@Model.RFID_READER.READER_IP",
+            READER_PORT: "@Model.RFID_READER.READER_PORT",
+            READER_RANGE: "@Model.RFID_READER.READER_RANGE"
+        }
+        </script>
+    }
+}
+
+<style>
+    .custom-color-count {
+        width: 39%;
+    }
+
+    .card-height {
+        overflow-y: scroll;
+    }
+
+    .btn-file {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.5rem;
+    }
+
+    .file-caption.icon-visible .file-caption-name {
+        padding: 0.5rem 1rem;
+    }
+
+    @@media only screen and (max-device-width: 1280px) {
+        .card-height {
+            height: calc(100vh - 55px - 55px - 60px - 40px - 30px);
+        }
+    }
+
+    @@media only screen and (min-device-width: 1281px) and (max-device-width: 1919px) {
+        .card-height {
+            height: calc(100vh - 55px - 55px - 60px - 40px - 30px);
+        }
+    }
+
+    @@media only screen and (min-device-width: 1920px) {
+        .card-height {
+            height: calc(100vh - 70px - 70px - 70px - 60px - 30px);
+        }
+    }
+
+    #viewMoreButton {
+        background-color: transparent;
+        border: none;
+        cursor: pointer;
+        padding-right: 0px;
+        color: #004098;
+        text-decoration: underline;
+    }
+
+    .checkboxCustom {
+        border: none;
+        outline: none;
+        --bs-btn-box-shadow: none;
+        cursor: default;
+    }
+
+    .multiselect-reset .multiselect-all:hover {
+        background-color: transparent !important;
+    }
+
+    .multiselectDdlCustom {
+        font-weight: bold;
+        border: none;
+        outline: none;
+        --bs-btn-box-shadow: none;
+    }
+
+    .btn-reset {
+        float: right;
+    }
+
+        .btn-reset:hover {
+            background-color: transparent;
+        }
+
+    #productTypeMulti, #materialTypeMulti, #categoryMulti {
+        margin-right: 9px;
+        display: none;
+    }
+
+    @@media (min-width: 768px) {
+        .multiselect-all {
+            float: left;
+            padding-left: 0.2rem !important;
+        }
+
+        .multiselect-container.dropdown-menu {
+            transform: translate(0px, -33px) !important;
+        }
+
+        .delete-button {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background-color: red;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 50%;
+            height: 20px;
+            width: 20px;
+        }
+    }
+
+    @@media (min-width: 1400px) {
+        .multiselect-all {
+            float: left;
+            text-align: left;
+        }
+
+        .multiselect-container.dropdown-menu {
+            transform: translate(0px, 41px) !important;
+        }
+
+        .delete-button {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background-color: red;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 50%;
+            height: 20px;
+            width: 20px;
+            padding: 0;
+        }
+    }
+
+    #select-id + .btn-group {
+        display: flex;
+    }
+
+        #select-id + .btn-group .text-center {
+            text-align: left !important;
+        }
+
+        #select-id + .btn-group .multiselect-container {
+            width: 100% !important;
+        }
+
+    .tr-select2 + .btn-group > .multiselect-container input[type="text"] {
+        visibility: visible;
+    }
+
+    .grayed-out {
+        background-color: #F0F0F0;
+        pointer-events: none;
+        box-shadow: 0 0 0 0.01rem #c2cdf6;
+    }
+
+    .image-container {
+        position: relative;
+        display: inline-block;
+        margin-right: 10px;
+    }
+
+    #div_btnAddImage {
+        justify-content: flex-end !important;
+        display: flex;
+    }
+
+    .borderBottomImg {
+        border-bottom: 1px solid lightgray;
+    }
+
+    .image-element {
+        height: 100px;
+        width: 100px;
+        border-radius: 0.5rem;
+    }
+</style>
+
+
+@using (Html.BeginForm("MM_ProductRegistration_Edit", "MM_ProductRegistration", FormMethod.Post, new { enctype = "multipart/form-data" }))
+{
+
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(model => model.PRODUCT_H_ID)
+
+    <input type="hidden" id="imgHidden" />
+
+    <div class="row g-0 px-3 tr-listing-header">
+        <div class="col-sm-6 align-self-center">
+            <p class="text-muted m-0 tr-listing-header-title">Fabric Registration - @referenceNo - @status</p>
+        </div>
+        <div class="col-sm-6 text-end align-self-center">
+            <div class="d-flex justify-content-end">
+                <div id="customDTButton">
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="tr-btm-line"></div>
+    <div class="page-container px-3">
+        <div class="tr-btm-btn-margin">
+            <div class="card mt-3 mb-2 card-height">
+                <div class="card-body">
+                    <div class="row align-items-baseline">
+                        <div class="col"><h6 class="text-muted card-title">Fabric Detail</h6></div>
+                    </div>
+                    <hr />
+                    <div class="row mt-2 align-items-baseline">
+                        <div class="col-sm-2">
+                            <p class="text-muted">Ref No <span class="float-end">:</span></p>
+                        </div>
+                        <div class="col-sm-4">
+                            @Html.TextBoxFor(model => model.REFERENCE_NO, null, new { @class = "form-control grayed-out", @id = "idReferenceNo" })
+                        </div>
+                        <div class="col-sm-2">
+                            <p class="text-muted">Warp Count <span class="float-end">:</span></p>
+                        </div>
+                        <div class="col-sm-4">
+                            @Html.TextBoxFor(model => model.WARP_COUNT1, null, new { @class = "form-control grayed-out" })
+                        </div>
+                    </div>
+                    <div class="row mt-2 align-items-baseline">
+                        <div class="col-sm-2">
+                            <p class="text-muted">Chop No <span class="float-end">:</span></p>
+                        </div>
+                        <div class="col-sm-4">
+                            @Html.TextBoxFor(model => model.CHOP_NO, null, new { @class = "form-control grayed-out" })
+                        </div>
+                        <div class="col-sm-2">
+                            <p class="text-muted">Weft Count <span class="float-end">:</span></p>
+                        </div>
+                        <div class="col-sm-4">
+                            @Html.TextBoxFor(model => model.WEFT_COUNT1, null, new { @class = "form-control grayed-out" })
+                        </div>
+                    </div>
+                    <div class="row mt-2 align-items-baseline">
+                        <div class="col-sm-2">
+                            <p class="text-muted">Fabric Type <span class="float-end">:</span></p>
+                        </div>
+                        <div class="col-sm-4">
+                            @Html.TextBoxFor(model => model.FABRIC_TYPE, null, new { @class = "form-control grayed-out" })
+                        </div>
+                        <div class="col-sm-2">
+                            <p class="text-muted">Finished Type <span class="float-end">:</span></p>
+                        </div>
+                        <div class="col-sm-4">
+                            @Html.TextBoxFor(model => model.FINISH_TYPE1, null, new { @class = "form-control grayed-out" })
+                        </div>
+                    </div>
+                    <div class="row mt-2 align-items-baseline">
+                        <div class="col-sm-2">
+                            <p class="text-muted">Weave Type <span class="float-end">:</span></p>
+                        </div>
+                        <div class="col-sm-4">
+                            @Html.TextBoxFor(model => model.WEAVE_TYPE, null, new { @class = "form-control grayed-out" })
+                        </div>
+                        <div class="col-sm-2">
+                            <p class="text-muted">Composition <span class="float-end">:</span></p>
+                        </div>
+                        <div class="col-sm-4">
+                            @Html.TextBoxFor(model => model.COMPOSITION, null, new { @class = "form-control grayed-out" })
+                        </div>
+                    </div>
+                    <div class="additional-content" style="display:none;">
+                        <div class="row mt-2 align-items-baseline">
+                            <div class="col-sm-2">
+                                <p class="text-muted">Warp Density <span class="float-end">:</span></p>
+                            </div>
+                            <div class="col-sm-4">
+                                @Html.TextBoxFor(model => model.WARP_DENSITY, null, new { @class = "form-control grayed-out" })
+                            </div>
+                            <div class="col-sm-2">
+                                <p class="text-muted">Weft Density <span class="float-end">:</span></p>
+                            </div>
+                            <div class="col-sm-4">
+                                @Html.TextBoxFor(model => model.WEFT_DENSITY, null, new { @class = "form-control grayed-out" })
+                            </div>
+                        </div>
+                        <div class="row mt-2 align-items-baseline">
+                            <div class="col-sm-2">
+                                <p class="text-muted">Fin Warp Density <span class="float-end">:</span></p>
+                            </div>
+                            <div class="col-sm-4">
+                                @Html.TextBoxFor(model => model.FIN_WARP_DENSITY, null, new { @class = "form-control grayed-out" })
+                            </div>
+                            <div class="col-sm-2">
+                                <p class="text-muted">Fin Weft Density <span class="float-end">:</span></p>
+                            </div>
+                            <div class="col-sm-4">
+                                @Html.TextBoxFor(model => model.FIN_WEFT_DENSITY, null, new { @class = "form-control grayed-out" })
+                            </div>
+                        </div>
+                        <div class="row mt-2 align-items-baseline">
+                            <div class="col-sm-2">
+                                <p class="text-muted">Finish Width 1 <span class="float-end">:</span></p>
+                            </div>
+                            <div class="col-sm-4">
+                                @Html.TextBoxFor(model => model.FINISH_WIDTH1, null, new { @class = "form-control grayed-out" })
+                            </div>
+                            <div class="col-sm-2">
+                                <p class="text-muted">Grey Width <span class="float-end">:</span></p>
+                            </div>
+                            <div class="col-sm-4">
+                                @Html.TextBoxFor(model => model.WIDTH, null, new { @class = "form-control grayed-out" })
+                            </div>
+                        </div>
+                        <div class="row mt-2 align-items-baseline">
+                            <div class="col-sm-2">
+                                <p class="text-muted">Finish Width 2 <span class="float-end">:</span></p>
+                            </div>
+                            <div class="col-sm-4">
+                                @Html.TextBoxFor(model => model.FINISH_WIDTH2, null, new { @class = "form-control grayed-out" })
+                            </div>
+                            <div class="col-sm-2">
+                                <p class="text-muted">Fabric Weight <span class="float-end">:</span></p>
+                            </div>
+                            <div class="col-sm-4">
+                                @Html.TextBoxFor(model => model.FAB_WEIGHT_GSM, null, new { @class = "form-control grayed-out" })
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-2 align-items-baseline">
+                        <div class="col-sm-2">
+
+                        </div>
+                        <div class="col-sm-4">
+
+                        </div>
+                        <div class="col-sm-2">
+
+                        </div>
+                        <div class="col-sm-4">
+                            <button type="button" class="float-end" id="viewMoreButton">View More</button>
+                        </div>
+                    </div>
+                    <div class="row mt-2 align-items-baseline">
+                        <div class="col-sm-2">
+                            <p class="text-muted">Product Type <span class="text-danger rnd_input">*</span><span class="float-end">:</span></p>
+                        </div>
+                        <div class="col-sm-4">
+                            @Html.DropDownListFor(m => m.PRODUCT_TYPE_SELECTED, new MultiSelectList(Model.PRODUCT_TYPE_DDL, "Value", "Text", Model.PRODUCT_TYPE_DDL.Select(x => x.Value)), null, new { @class = "multiselectpicker form-control", multiple = "multiple", id = "multiselect-id1" })
+                        </div>
+                        <div class="col-sm-2">
+                            <p class="text-muted">Material <span class="text-danger rnd_input">*</span><span class="float-end">:</span></p>
+                        </div>
+                        <div class="col-sm-4">
+                            @Html.DropDownListFor(m => m.MATERIAL_TYPE_SELECTED, new MultiSelectList(Model.MATERIAL_TYPE_DDL, "Value", "Text"), null, new { @class = "multiselectpicker2 form-control", multiple = "multiple", id = "multiselect-id2" })
+                        </div>
+                    </div>
+                    <div class="row mt-2 align-items-baseline">
+                        <div class="col-sm-2">
+                            <p class="text-muted">Category <span class="text-danger sales_input">*</span><span class="float-end">:</span></p>
+                        </div>
+                        <div class="col-sm-4">
+                            @Html.DropDownListFor(m => m.CATEGORY_SELECTED, Model.CATEGORY_DDL, null, new { @class = "multiselectpicker3 form-control", multiple = "multiple", id = "multiselect-id3" })
+                        </div>
+                        <div class="col-sm-2">
+                            <p class="text-muted">RFID Tag <span class="text-danger sales_input">*</span><span class="float-end">:</span></p>
+                        </div>
+                        <div class="col-sm-4">
+                            @Html.TextBoxFor(model => model.RFID, null, new { @class = "form-control grayed-out", @readonly = true })
+                        </div>
+                    </div>
+                    <div class="row mt-2 align-items-baseline">
+                        <div class="col-sm-2">
+                            <p class="text-muted">Video Category<span class="float-end">:</span></p>
+                        </div>
+                        <div class="col-sm-4">
+                            @Html.DropDownListFor(m => m.VIDEO_CAT_SELECTED, new MultiSelectList(Model.VIDEO_CAT_DDL, "Value", "Text"), null, new { @class = "multiselectpicker4 form-control", multiple = "multiple" })
+                        </div>
+                        <div class="col-sm-2">
+                            <p class="text-muted">Location <span class="text-danger sales_input">*</span><span class="float-end">:</span></p>
+                        </div>
+                        <div class="col-sm-4">
+                            @Html.DropDownListFor(m => m.HANGER_LOC, Model.HANGER_LOC_DDL, "Please select a Location...", new { @class = "tr-select2 form-control", id = "select-id1" })
+                        </div>
+                    </div>
+                    <div class="row mt-2 align-items-baseline">
+                        <div class="col-sm-2">
+                            <p class="text-muted">Upload Image <span class="text-danger sales_input">*</span><span class="float-end">:</span></p>
+                        </div>
+                        <div class="col-sm-4">
+                            @Html.DropDownListFor(m => m.COLOR, Model.COLOR_WAY_DDL, "Please select a Color Way...", new { @class = "tr-select2 form-control", id = "select-id2" })
+                            <div class="mt-3"><input class="form-control file-upload tt" type="file" id="fileInput" accept="image/*"></div>
+                            <small id="imageText" class="form-text text-muted">Maximum upload file is 100MB</small>
+                            <div id="div_btnAddImage">
+                                <button type="button" class="btn btn-sm btn-primary mt-2" id="btnAddImage">Add</button>
+                            </div>
+                            <small id="resultText"></small>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="row">
+                                <div class="col-sm-4">
+                                    <p class="text-muted">Owned By <span class="float-end">:</span></p>
+                                </div>
+                                <div class="col-sm-8">
+                                    <label class="multiselect-all btn btn-sm btn-block checkboxCustom" for="ownedByChkbox">@Html.CheckBoxFor(m => m.RUNNING_NO, new { @class = "form-check-input me-sm-2", id = "ownedByChkbox" }) Hot Sales</label>
+                                </div>
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col-sm-4">
+                                    <p class="text-muted">Classified By <span class="float-end">:</span></p>
+                                </div>
+                                <div class="col-sm-8">
+                                    <label class="multiselect-all btn btn-sm btn-block checkboxCustom" for="classifiedByChkbox">@Html.CheckBoxFor(m => m.ISGARMENT, new { @class = "form-check-input me-sm-2", id = "classifiedByChkbox" }) Garment</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-2 align-items-baseline">
+                        <div class="col-sm-2">
+
+                        </div>
+                        <div class="col-sm-10" id="imgUploadRow">
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row tr-btm-btn-area">
+                <div class="col"></div>
+                <div class="col">
+                    <div class="row row-cols-auto justify-content-end isEditable g-1" style="padding-right: 20px">
+                        <div class="col"><button id="btnBack" type="button" class="btn btn-sm btn-secondary" onclick="location.href='@Url.Action("MM_ProductRegistration_View","MM_ProductRegistration")?id=' + @Model.PRODUCT_H_ID + '&status=' + '@Model.STATUS'">Back</button></div>
+                        <div class="col"><button id="btnSubmit" type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#submit-confirmation-modal">Submit</button></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="submit-confirmation-modal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirmation</h5>
+                </div>
+                <hr />
+                <div class="modal-body">
+                    <h6>Are you sure to submit this record?</h6>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-primary" value="submit" name="btn" id="btnConfirm">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast-container position-fixed toast-alert">
+        <div id="liveToast" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true" style="border: 1px solid #B1003C">
+            <div class="toast-header" style="background-color: #FFF0EE">
+                <strong class="me-auto text-danger">Warning!</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body text-muted" style="background-color: #FFF0EE; border-top: 1px solid #FFF0EE; border-bottom-left-radius: inherit; border-bottom-right-radius: inherit">
+                Failed to submit, Duplicated Company Name.
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container position-fixed toast-success">
+        <div id="liveToast2" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true" style="border: 1px solid #00A251">
+            <div class="toast-header" style="background-color: #E9FFF8">
+                <strong class="me-auto green">Successful!</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body text-muted" style="background-color: #E9FFF8; border-top: 1px solid #E9FFF8; border-bottom-left-radius: inherit; border-bottom-right-radius: inherit">
+                Submit Successfully.
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container position-fixed toast-alert">
+        <div id="errorToast" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true" style="border: 1px solid #B1003C">
+            <div class="toast-header" style="background-color: #FFF0EE">
+                <strong class="me-auto text-danger">Warning!</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body text-muted" style="background-color: #FFF0EE; border-top: 1px solid #FFF0EE; border-bottom-left-radius: inherit; border-bottom-right-radius: inherit">
+
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container position-fixed toast-success">
+        <div id="infoToast" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="10000" style="border: 1px solid #057FE5">
+            <div class="toast-header" style="background-color: #EBF3FF">
+                <strong class="me-auto">Information</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body text-muted" style="background-color: #EBF3FF; border-top: 1px solid #EBF3FF; border-bottom-left-radius: inherit; border-bottom-right-radius: inherit">
+
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="customConfirmModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirmation</h5>
+                </div>
+                <hr />
+                <div id="customConfirm" class="modal-body">
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal" id="btnConfirmReplace">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+}
+<script src="~/Scripts/jquery.signalR-2.4.3.min.js"></script>
+<script src="~/signalr/hubs"></script>
+<script>
+    var file, fileSizeInMB, colorCount = 0;
+    var returnMessage = "@ViewBag.Result";
+    var originalRFIDTag = "@Model.RFID";
+    var ajaxRFIDStatus = '@Url.Action("RFIDStatus", "RFIDDashboard")';
+    var firstLoad = true;
+    var hub = $.connection.rFIDFabricRegHub;
+    var connectionHub = "FabricReg";
+    var connectionId;
+    var obj = null, tagCounts = {};
+
+    //get uploaded image
+    document.addEventListener('DOMContentLoaded', function () {
+        var fileInput = document.getElementById('fileInput');
+        var resultElement = document.getElementById('resultText');
+
+        fileInput.addEventListener('change', function () {
+            if (fileInput.files.length > 0) {
+                file = fileInput.files[0];
+                fileSizeInMB = file.size / (1024 * 1024);
+
+                if (fileSizeInMB > 100) {
+                    resultElement.style.color = "#DA296B";
+                    resultElement.textContent = 'File size is over 100MB.';
+                } else {
+                    resultElement.textContent = 'File size within 100MB.';
+                    resultElement.style.color = "green";
+
+                    const reader = new FileReader();
+
+                    reader.onload = function (e) {
+                        $('#imgHidden').val(e.target.result); // Store the image data in the hidden field
+                    };
+
+                    reader.readAsDataURL(file);
+                }
+            }
+        });
+    });
+
+    $(document).ready(function () {
+
+        onPageLoad();
+
+        $("#btnConfirm").click(function (e) {
+            var tag = $('#RFID').val();
+            $('#submit-confirmation-modal').modal('hide');
+
+            if (tag != originalRFIDTag && tag != "") {
+                e.preventDefault();
+                $.ajax({
+                    type: "post",
+                    url: ajaxRFIDStatus,
+                    data: { tag: tag },
+                    datatype: "json",
+                    traditional: true,
+                    success: function (data) {
+                        if (data == "Y") {
+                            showAlert('Error', 'Failed to submit, RFID Tag was used.');
+                        }
+                        else if (data == "N") {
+                            $('form').submit();
+                        }
+                    },
+                });
+            }
+        });
+
+        $("#viewMoreButton").click(function () {
+        $(".additional-content").slideToggle();
+            var buttonText = "";
+            if ($(this).text() === "View More") {
+                buttonText = "View Less";
+                $(this).css('color', '#FF3366');
+            }
+            else {
+                buttonText = "View More";
+                $(this).css('color', '#004098');
+            }
+        $(this).text(buttonText);
+    });
+
+        //called when Add button is clicked
+        $("#btnAddImage").click(function () {
+            var resultElement = document.getElementById('resultText');
+            var selectedOptions = $('#select-id2').val();
+            var selectedColorWay = selectedOptions.replace(/[\/.#]/g, ' ');
+
+            //if no image is uploaded
+            if (file == undefined) {
+                resultElement.style.color = "#DA296B";
+                resultElement.textContent = 'Please Upload Fabric Image.';
+            }
+            //if file size is below 100MB
+            else if (fileSizeInMB < 100) {
+                var fileInput = document.getElementById('fileInput');
+                var imageName = (fileInput.files[0].name).trim().replace(/ /g, "~");
+                //if color way dropdown is not selected
+                if (selectedOptions == "") {
+                    resultElement.style.color = "#DA296B";
+                    resultElement.textContent = 'Please Select Color Way.';
+                }
+                else {
+                    var url = URL.createObjectURL(file);
+                    var imageDiv = $("<div>").attr("class", "imageDiv mt-2 borderBottomImg pb-3");
+                    var colorWay = $("<p class='custom-color-count'>");
+                    var numOfImg = $("<span>");
+                    var imgContainer = $("<div>").attr("class", "image-container");
+                    //var hiddenImg = $("<input type='hidden' id='ImageFile' name='ImageFile' />");
+                    var btnDelete = $("<button>").attr("class", "delete-button");
+                    var crossIcon = $("<i>").attr("class", "fas fa-times");
+                    var isColorExist = false;
+                    var matchedColorID;
+                    btnDelete.attr("id", imageName);
+                    btnDelete.attr("name", selectedColorWay.trim().replace(/ /g, "~"));
+
+                    btnDelete.attr("onclick", "deleteImage(this,'"+url.toString()+"', 0)");
+                    btnDelete.attr("type", "button");
+                    var img = $("<img>").attr("src", url);
+                    img.attr("class", "image-element");
+
+                    //loop to check if the color way has image
+                    $(".imageDiv").each(function (index, element) {
+                        var color = $(element).find("p").text();
+                        if (color.includes(selectedColorWay)) {
+                            isColorExist = true;
+                            matchedColorID = $(this).attr("id");
+                        }
+                    });
+
+                    //if not exist create a new div for the color way
+                    if (isColorExist == false) {
+                        colorCount++;
+                        resultElement.style.color = "green";
+                        resultElement.textContent = 'File size within 100MB.';
+                        imageDiv.attr("id", "imageDiv" + colorCount);
+                        imageDiv.attr("data-color", selectedColorWay);
+                        colorWay.text(colorCount + ". " + selectedColorWay);
+                        numOfImg.text("1 out of 5");
+                        numOfImg.attr("class", "float-end");
+                        btnDelete.append(crossIcon);
+                        imgContainer.append(img);
+                        imgContainer.append(btnDelete);
+                        //imgContainer.append(hiddenImg);
+                        imageDiv.append(colorWay);
+                        colorWay.append(numOfImg);
+                        imageDiv.append(imgContainer);
+                        $('#imgUploadRow').append(imageDiv);
+                        saveImageToTemp(selectedColorWay, imageName);
+                    }
+                    //if color way exist
+                    else {
+                        var currentImageDiv = $("#" + matchedColorID);
+                        var colorway = currentImageDiv.attr('data-color');
+                        //if the color way has 5 images
+                        if (currentImageDiv.find(".image-container").length >= 5) {
+                            resultElement.style.color = "#DA296B";
+                            resultElement.textContent = `${colorway} color cannot more than 5 images.`;
+                        }
+                        //else add the image into the color way
+                        else {
+                            var currentDivImgCount = currentImageDiv.find(".image-container").length + 1
+                            currentImageDiv.find("span").text(currentDivImgCount + " out of 5");
+                            resultElement.style.color = "green";
+                            resultElement.textContent = 'File size within 100MB.';
+                            btnDelete.append(crossIcon);
+                            imgContainer.append(img);
+                            imgContainer.append(btnDelete);
+                            //imgContainer.append(hiddenImg);
+                            currentImageDiv.append(imgContainer);
+                            saveImageToTemp(selectedColorWay, imageName);
+                        }
+                    }
+
+                    $('.card').animate({
+                        scrollTop: $('.card')[0].scrollHeight
+                    }, 200);
+                }
+            }
+
+        });
+
+        $('#select-id1').multiselect({
+        buttonClass: 'form-select form-control text-start',
+        enableCaseInsensitiveFiltering: true,
+        enableFiltering: true,
+        templates: {
+            button: '<button type="button" class="multiselect dropdown-toggle" id="locationTypDdl" data-bs-toggle="dropdown"><span class="multiselect-selected-text"></span></button>',
+            filter: '<div class="multiselect-filter"><div class="input-group input-group-sm p-1"><div class="input-group-prepend"></div><input class="form-control multiselect-search" type="text" /></div></div>',
+        }
+        });
+
+        $('#select-id2').multiselect({
+            buttonClass: 'form-select form-control text-start',
+            templates: {
+                button: '<button type="button" class="multiselect dropdown-toggle" id="colorWayDdl" data-bs-toggle="dropdown"><span class="multiselect-selected-text"></span></button>',
+            }
+        });
+
+        $('.multiselect-native-select > .btn-group').addClass("w-100");
+        $('.multiselect-native-select > .btn-group > .multiselect').removeClass("text-center");
+        $('.multiselect-native-select > .btn-group > .multiselect-container').addClass("w-100");
+
+        $('#select-id1').on('change', function () {
+            var defaultTxt = $(this).parent().find("option:selected").text()
+            if (defaultTxt != "Please select a Location...") {
+                $(this).parent().parent().find('.text-danger').hide();
+            }
+            else {
+                $(this).parent().parent().find('.text-danger').show();
+            }
+        });
+    });
+
+    function onPageLoad() {
+        displayMessage();
+        initDropdown();
+        generateImagePreview();
+        roleControl();
+    }
+
+    function initDropdown() {
+        initProductTypeDropdown();
+        initMaterialTypeDropdown();
+        initProductCategoryDropdown();
+        initVideoCategoryDropdown();
+        checkSelectionLimit();
+        checkSelectionLimit2();
+        checkSelectionLimit3();
+        checkSelectionLimit4();
+    }
+
+    function displayMessage() {
+        if ("@ViewBag.Result" == "Duplicated Product") {
+            const toastLiveExample = document.getElementById('liveToast');
+            const toast = new bootstrap.Toast(toastLiveExample);
+            generateImagePreview();
+            toast.show();
+        }
+        else if ("@ViewBag.Result" == "Success") {
+            const toastLiveExample = document.getElementById('liveToast2');
+            const toast = new bootstrap.Toast(toastLiveExample);
+            generateImagePreview();
+            toast.show();
+            setTimeout(function () {
+                var url = '@Url.Action("MM_ProductRegistration_View", "MM_ProductRegistration")?id=' + @ViewBag.NewID + '&status=Pending';
+                window.location.href = url;
+            }, 2000);
+        }
+        else {
+            var html = "<label>Do you want to connect RFID?</label>";
+            customConfirm(html, function (response) {
+                if (response == "Y") {
+                    initReader();
+                }
+            })
+        }
+    }
+
+    function initProductTypeDropdown() {
+         var productTypeSelected = @Html.Raw(Json.Encode(Model.PRODUCT_TYPE_SELECTED));
+         if (productTypeSelected != null) {
+             for (var i = 0; i < productTypeSelected.length; i++) {
+                 $(".multiselectpicker option[value='" + productTypeSelected[i] + "']").prop("selected", true);
+             }
+         }
+
+         $('.multiselectpicker').multiselect({
+             buttonClass: 'form-select form-control text-start',
+             includeResetOption: true,
+             includeResetDivider: true,
+             resetText: "CLEAR",
+             selectAllText: ' Select all',
+             includeSelectAllOption: true,
+             onSelectAll: function () {
+                 // Custom code to limit the selection to the top 6 options
+                 var selectedOptions = $(".multiselectpicker").val() || [];
+                 if (selectedOptions.length > 6) {
+                     var firstSixOptions = selectedOptions.slice(0, 6);
+                     $(".multiselectpicker").multiselect("deselectAll", false)
+                         .multiselect("select", firstSixOptions);
+                 }
+
+                 checkSelectionLimit();
+             },
+             enableCaseInsensitiveFiltering: true,
+             enableFiltering: true,
+             templates: {
+                 button: '<button type="button" class="multiselect dropdown-toggle" data-bs-toggle="dropdown"><span class="multiselect-selected-text"></span></button>',
+                 resetButton: '<div class="multiselect-reset text-end p-2"> <label class="multiselect-all dark-blue btn btn-sm btn-block multiselectDdlCustom" for="productTypeMulti" ><input type="checkbox" class="form-check-input" id="productTypeMulti" value="multiselect-all"> SELECT ALL</label> <button class="btn btn-sm btn-block btn-outline-secondary btn-reset dark-blue multiselectDdlCustom" type="button" id="resetBtn"></button></div></br><div class="text-start" id="selectLimit" style="padding:5px 11px;">0 out of 6</div>',
+                 filter: '<div class="multiselect-filter"><div class="input-group input-group-sm p-1"><div class="input-group-prepend"></div><input class="form-control multiselect-search" type="text" /></div></div>',
+             },
+
+             onChange: function (option, checked) {
+                 checkSelectionLimit();
+             }
+         });
+
+         $("#resetBtn").click(function () {
+             checkSelectionLimit();
+         });
+    }
+
+    function initMaterialTypeDropdown() {
+        var materialTypeSelected = @Html.Raw(Json.Encode(Model.MATERIAL_TYPE_SELECTED));
+        if (materialTypeSelected != null) {
+            for (var i = 0; i < materialTypeSelected.length; i++) {
+                $(".multiselectpicker2 option[value='" + materialTypeSelected[i] + "']").prop("selected", true);
+            }
+        }
+
+        $('.multiselectpicker2').multiselect({
+            buttonClass: 'form-select form-control text-start',
+            includeResetOption: true,
+            includeResetDivider: true,
+            resetText: "CLEAR",
+            selectAllText: ' Select all',
+            includeSelectAllOption: true,
+            onSelectAll: function () {
+                // Custom code to limit the selection to the top 6 options
+                var selectedOptions = $(".multiselectpicker2").val() || [];
+                if (selectedOptions.length > 6) {
+                    var firstSixOptions = selectedOptions.slice(0, 6);
+                    $(".multiselectpicker2").multiselect("deselectAll", false)
+                        .multiselect("select", firstSixOptions);
+                }
+
+                checkSelectionLimit2();
+            },
+            enableCaseInsensitiveFiltering: true,
+            enableFiltering: true,
+            templates: {
+                button: '<button type="button" class="multiselect dropdown-toggle" data-bs-toggle="dropdown"><span class="multiselect-selected-text"></span></button>',
+                resetButton: '<div class="multiselect-reset text-end p-2"> <label class="multiselect-all dark-blue btn btn-sm btn-block multiselectDdlCustom" for="materialTypeMulti" ><input type="checkbox" class="form-check-input" id="materialTypeMulti" value="multiselect-all"> SELECT ALL</label> <button class="btn btn-sm btn-block btn-outline-secondary btn-reset dark-blue multiselectDdlCustom" type="button" id="resetBtn2"></button></div></br><div class="text-start" id="selectLimit2" style="padding:5px 11px;">0 out of 6</div>',
+                filter: '<div class="multiselect-filter"><div class="input-group input-group-sm p-1"><div class="input-group-prepend"></div><input class="form-control multiselect-search" type="text" /></div></div>',
+            },
+
+            onChange: function (option, checked) {
+                checkSelectionLimit2();
+            }
+        });
+
+        $("#resetBtn2").click(function () {
+            checkSelectionLimit2();
+        });
+    }
+
+    function initProductCategoryDropdown() {
+        var categorySelected = @Html.Raw(Json.Encode(Model.CATEGORY_SELECTED));
+        if (categorySelected != null) {
+            for (var i = 0; i < categorySelected.length; i++) {
+                $(".multiselectpicker3 option:contains('" + categorySelected[i].trim() + "')").prop("selected", true);
+            }
+        }
+
+        $('.multiselectpicker3').multiselect({
+            buttonClass: 'form-select form-control text-start',
+            includeResetOption: true,
+            includeResetDivider: true,
+            resetText: "CLEAR",
+            selectAllText: ' Select all',
+            includeSelectAllOption: true,
+            onSelectAll: function () {
+                checkSelectionLimit3();
+            },
+            onDeselectAll: function () {
+                checkSelectionLimit3();
+            },
+            enableCaseInsensitiveFiltering: true,
+            enableFiltering: true,
+            templates: {
+                button: '<button type="button" class="multiselect dropdown-toggle" data-bs-toggle="dropdown"><span class="multiselect-selected-text"></span></button>',
+                resetButton: '<div class="multiselect-reset text-end p-2"> <label class="multiselect-all dark-blue btn btn-sm btn-block multiselectDdlCustom" for="materialTypeMulti" ><input type="checkbox" class="form-check-input" id="materialTypeMulti" value="multiselect-all"> SELECT ALL</label> <button class="btn btn-sm btn-block btn-outline-secondary btn-reset dark-blue multiselectDdlCustom" type="button" id="resetBtn3"></button></div></br><div class="text-start" id="selectLimit3" style="padding:5px 11px;">0 out of @ViewBag.CategoryNum</div>',
+                filter: '<div class="multiselect-filter"><div class="input-group input-group-sm p-1"><div class="input-group-prepend"></div><input class="form-control multiselect-search" type="text" /></div></div>',
+            },
+
+            onChange: function (option, checked) {
+                checkSelectionLimit3();
+            }
+        });
+
+        $("#resetBtn3").click(function () {
+            checkSelectionLimit3();
+        });
+    }
+
+    function initVideoCategoryDropdown() {
+        var videoSelected = @Html.Raw(Json.Encode(Model.VIDEO_CAT_SELECTED));
+
+        $('.multiselectpicker4').multiselect({
+            buttonClass: 'form-select form-control text-start',
+            includeResetOption: true,
+            includeResetDivider: true,
+            resetText: "CLEAR",
+            selectAllText: ' Select all',
+            includeSelectAllOption: true,
+            onSelectAll: function () {
+                // Custom code to limit the selection to the top 6 options
+                var selectedOptions = $(".multiselectpicker4").val() || [];
+                if (selectedOptions.length > 4) {
+                    var options = selectedOptions.slice(0, 4);
+                    $(".multiselectpicker4").multiselect("deselectAll", false)
+                        .multiselect("select", options);
+                }
+
+                checkSelectionLimit4();
+            },
+            enableCaseInsensitiveFiltering: true,
+            enableFiltering: true,
+            templates: {
+                button: '<button type="button" class="multiselect dropdown-toggle" data-bs-toggle="dropdown"><span class="multiselect-selected-text"></span></button>',
+                resetButton: '<div class="multiselect-reset text-end p-2"> <label class="multiselect-all dark-blue btn btn-sm btn-block multiselectDdlCustom" for="materialTypeMulti" ><input type="checkbox" class="form-check-input" id="materialTypeMulti" value="multiselect-all"> SELECT ALL</label> <button class="btn btn-sm btn-block btn-outline-secondary btn-reset dark-blue multiselectDdlCustom" type="button" id="resetBtn4"></button></div></br><div class="text-start" id="selectLimit4" style="padding:5px 11px;">0 out of 6</div>',
+                filter: '<div class="multiselect-filter"><div class="input-group input-group-sm p-1"><div class="input-group-prepend"></div><input class="form-control multiselect-search" type="text" /></div></div>',
+            },
+
+            onChange: function (option, checked) {
+                checkSelectionLimit4();
+            }
+        });
+
+        $("#resetBtn4").click(function () {
+            checkSelectionLimit4();
+        });
+
+        $.each(videoSelected, function (index, item) {
+            $('.multiselectpicker4 option').each(function () {
+                if ($(this).val() == videoSelected[index]) {
+                    $(this).prop('selected', true);
+                }
+            });
+        });
+        $('.multiselectpicker4').multiselect('refresh');
+    }
+
+    function checkSelectionLimit() {
+        // Get selected options.
+        var selectedOptions = $('.multiselectpicker option:selected');
+        var selectLimit = $("#selectLimit");
+
+        if (firstLoad == true) {
+            $('.multiselectpicker').next('.btn-group').find('.multiselect-option').addClass('multiselectpickerOption');
+        }
+
+        if (selectedOptions.length >= 6) {
+            // Disable all other checkboxes.
+            var nonSelectedOptions = $('.multiselectpicker option').filter(function () {
+                return !$(this).is(':selected');
+            });
+
+            nonSelectedOptions.each(function () {
+                var input = $('input[value="' + $(this).val() + '"]').parents('.multiselectpickerOption');
+                input.prop('disabled', true);
+                input.parent('li').addClass('disabled');
+            });
+        }
+        else {
+            // Enable all checkboxes.
+            $('.multiselectpicker option').each(function () {
+                var input = $('input[value="' + $(this).val() + '"]').parents('.multiselectpickerOption');
+                input.prop('disabled', false);
+                input.parent('li').addClass('disabled');
+            });
+        }
+        selectLimit.text(selectedOptions.length + " out of 6")
+    }
+
+    function checkSelectionLimit2() {
+        // Get selected options.
+        var selectedOptions = $('.multiselectpicker2 option:selected');
+        var selectLimit = $("#selectLimit2");
+
+        if (firstLoad == true) {
+            $('.multiselectpicker2').next('.btn-group').find('.multiselect-option').addClass('multiselectpicker2Option');
+        }
+
+        if (selectedOptions.length >= 6) {
+            // Disable all other checkboxes.
+            var nonSelectedOptions = $('.multiselectpicker2 option').filter(function () {
+                return !$(this).is(':selected');
+            });
+
+            nonSelectedOptions.each(function () {
+                var input = $('input[value="' + $(this).val() + '"]').parents('.multiselectpicker2Option');
+                input.prop('disabled', true);
+                input.parent('li').addClass('disabled');
+            });
+        }
+        else {
+            // Enable all checkboxes.
+            $('.multiselectpicker2 option').each(function () {
+                var input = $('input[value="' + $(this).val() + '"]').parents('.multiselectpicker2Option');
+                input.prop('disabled', false);
+                input.parent('li').addClass('disabled');
+            });
+        }
+        selectLimit.text(selectedOptions.length + " out of 6")
+    }
+
+    function checkSelectionLimit3() {
+        // Get selected options.
+        var selectedOptions = $('.multiselectpicker3 option:selected');
+        var selectLimit = $("#selectLimit3");
+
+        if (firstLoad == true) {
+            $('.multiselectpicker3').next('.btn-group').find('.multiselect-option').addClass('multiselectpicker3Option');
+        }
+
+        $('.multiselectpicker3 option').each(function () {
+            var input = $('input[value="' + $(this).val() + '"]').parents('.multiselectpicker3Option');
+            input.prop('disabled', false);
+            input.parent('li').addClass('disabled');
+        });
+        selectLimit.text(selectedOptions.length + " out of @ViewBag.CategoryNum")
+    }
+
+    function checkSelectionLimit4() {
+        // Get selected options.
+        var selectedOptions = $('.multiselectpicker4 option:selected');
+        var selectLimit = $("#selectLimit4");
+
+        if (firstLoad == true) {
+            $('.multiselectpicker4').next('.btn-group').find('.multiselect-option').addClass('multiselectpicker4Option');
+        }
+
+        if (selectedOptions.length >= 4) {
+            // Disable all other checkboxes.
+            var nonSelectedOptions = $('.multiselectpicker4 option').filter(function () {
+                return !$(this).is(':selected');
+            });
+
+            nonSelectedOptions.each(function () {
+                var input = $('input[value="' + $(this).val() + '"]').parents('.multiselectpicker4Option');
+                input.prop('disabled', true);
+                input.parent('li').addClass('disabled');
+            });
+        }
+        else {
+            // Enable all checkboxes.
+            $('.multiselectpicker4 option').each(function () {
+                var input = $('input[value="' + $(this).val() + '"]').parents('.multiselectpicker4Option');
+                input.prop('disabled', false);
+                input.parent('li').addClass('disabled');
+            });
+        }
+        selectLimit.text(selectedOptions.length + " out of 4")
+    }
+
+    //disable textbox based on the user role
+    function roleControl() {
+        var role = "@Html.Raw(ViewBag.Role)";
+        if (role == "PAB New Aquarium - R&D") {
+            $("#multiselect-id3").next().find('button').addClass('grayed-out')
+            $("#select-id1").next().find('button').addClass('grayed-out')
+            $("#select-id2").next().find('button').addClass('grayed-out')
+            $('.file-caption-name').addClass('file-caption-name-disabled');
+            $('#ownedByChkbox').prop('disabled', true);
+            $('#classifiedByChkbox').prop('disabled', true);
+            $('.sales_input').hide();
+        }
+        else if (role == "PAB New Aquarium - Sales"){
+            $("#multiselect-id1").next().find('button').addClass('grayed-out')
+            $("#multiselect-id2").next().find('button').addClass('grayed-out')
+            $('.rnd_input').hide();
+        }
+    }
+
+    //save image into temp folder
+    function saveImageToTemp(colorWay, imageName) {
+        const formData = new FormData();
+        var referenceNo = $('#idReferenceNo').val();
+        formData.append("imageData", $("#imgHidden").val()); // Add the image data to the form data
+        formData.append("referenceNo", referenceNo);
+        formData.append("colorWay", colorWay);
+        formData.append("imageName", imageName);
+
+        $.ajax({
+            url: "/MM_ProductRegistration/SaveImageToTemp",
+            type: "POST",
+            data: formData,
+            processData: false, // Prevent jQuery from converting the data to a query string
+            contentType: false, // Set the content type to false to prevent jQuery from setting the content type
+            success: function (result) {
+                // Handle the response from the server
+            }
+        });
+    }
+
+    // Initialize RFID reader
+    function initReader() {
+        if (readerObj == null) {
+            showAlert("Error", "RFID has not been set up yet");
+        } else {
+
+
+            Swal.fire({
+                title: 'Loading...',
+                html: 'Please wait while the RFID reader is connecting.',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                didOpen: () => {
+                    Swal.showLoading(); // Show loading spinner
+                }
+            });
+
+            hub.client.broadcastMessage = function (type, message) {
+                if (type == "Success") {
+
+                    window.onbeforeunload = function () {
+                        hub.server.stopRFID(connectionId);
+                    };
+
+                    Swal.fire({
+                        title: 'Connected!',
+                        text: message,
+                        //text: 'RFID Service is ready.',
+                        icon: 'success',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                }
+                else {
+                    Swal.fire({
+                        title: 'Error!',
+                        text: message,
+                        //text: 'Failed to start RFID Service.',
+                        icon: 'error',
+                        confirmButtonText: 'OK'
+                    });
+                }
+            };
+
+            hub.client.broadcastTag = function (tag) {
+                $('#RFID').val(tag);
+            };
+
+
+            // Start the SignalR connection
+            $.connection.hub.start().done(function () {
+                connectionId = $.connection.hub.id;
+
+                hub.server.startRFID(readerObj, connectionId, connectionHub)
+                    .done(function () {
+
+                    })
+                    .fail(function (error) {
+                        Swal.fire({
+                            title: 'Error!',
+                            text: 'Failed to start RFID Service.',
+                            icon: 'error',
+                            confirmButtonText: 'OK'
+                        });
+                    });
+
+            }).fail(function () {
+                Swal.fire({
+                    title: 'Error!',
+                    text: 'Failed to connect RFID Service.',
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                });
+            });
+        }
+    }
+
+    // Custom confirm() function
+    function customConfirm(html, callback) {
+        $('#customConfirm.modal-body').empty();
+        $('#customConfirm.modal-body').append(html);
+        $('#customConfirmModal').modal("show");
+
+        $('#btnConfirmReplace').off('click').on('click', function () {
+            if (typeof callback === 'function') {
+                callback("Y");
+            }
+            $('#customConfirmModal').modal("hide");
+            $('#removeBtn').css('display', 'none');
+        });
+
+        $('#btnCancel2').off('click').on('click', function () {
+            if (typeof callback === 'function') {
+                callback("N");
+            }
+            $('#customConfirmModal').modal("hide");
+        });
+    }
+
+    //generate image on page initiate
+    function generateImagePreview() {
+        var imageData = @Html.Raw(Model.imageList);
+        var imgID = ""
+
+        for (var i = 0; i < imageData.length; i++) {
+
+            imgID += imageData[i].imageID.join(",");
+            for (var j = 0; j < imageData[i].imageName.length; j++) {
+                var COLOR_WAY = imageData[i].COLOR_WAY;
+                var imageName = (imageData[i].imageName[j]);
+                var url = imageData[i].imageFile[j];
+                var imageDiv = $("<div>").attr("class", "imageDiv mt-2 borderBottomImg pb-3");
+                var colorWay = $("<p class='custom-color-count'>");
+                var numOfImg = $("<span>");
+                var imgContainer = $("<div>").attr("class", "image-container");
+                var btnDelete = $("<button>").attr("class", "delete-button");
+                var crossIcon = $("<i>").attr("class", "fas fa-times");
+                var isColorExist = false;
+                var matchedColorID;
+                btnDelete.attr("id", imageName);
+                btnDelete.attr("name", COLOR_WAY.trim().replace(/ /g, "~"));
+                btnDelete.attr("onclick", "deleteImage(this,'" + url.split("?")[0] + "','" + imageData[i].imageID[j] +"')");
+                btnDelete.attr("data-src", imageData[i].imageFile[j].split("?")[0])
+                btnDelete.attr("type", "button");
+                var img = $("<img>").attr("src", url);
+                img.attr("class", "image-element");
+
+                $(".imageDiv").each(function (index, element) {
+                    var color = $(element).find("p").text();
+                    if (color.includes(COLOR_WAY)) {
+                        isColorExist = true;
+                        matchedColorID = $(this).attr("id");
+                    }
+                });
+                if (isColorExist == false) {
+                    colorCount++;
+                    imageDiv.attr("id", "imageDiv" + colorCount);
+                    imageDiv.attr("data-color", COLOR_WAY);
+                    colorWay.text(colorCount + ". " + COLOR_WAY);
+                    numOfImg.text("1 out of 5");
+                    numOfImg.attr("class", "float-end");
+                    btnDelete.append(crossIcon);
+                    imgContainer.append(img);
+                    imgContainer.append(btnDelete);
+                    imageDiv.append(colorWay);
+                    colorWay.append(numOfImg);
+                    imageDiv.append(imgContainer);
+                    $('#imgUploadRow').append(imageDiv);
+                }
+                else {
+                    var currentImageDiv = $("#" + matchedColorID);
+                    if (currentImageDiv.find(".image-container").length < 6) {
+                        var currentDivImgCount = currentImageDiv.find(".image-container").length + 1
+                        currentImageDiv.find("span").text(currentDivImgCount + " out of 5");
+                        btnDelete.append(crossIcon);
+                        imgContainer.append(img);
+                        imgContainer.append(btnDelete);
+                        currentImageDiv.append(imgContainer);
+                    }
+                }
+            }
+        }
+    }
+
+    //called when image delete button is clicked
+    function deleteImage(button, url, id) {
+        $(button).parents(".imageDiv").find("span").text($(button).parents(".imageDiv").find(".image-container").length - 1 + " out of 5");
+        $(button).parent().remove();
+
+        deleteImageFromTemp($(button).attr("name"), $(button).attr("id"),url,id);
+    }
+
+    //remove image from temp folder
+    function deleteImageFromTemp(colorWay, imageName,url,id) {
+        const formData = new FormData();
+        var referenceNo = $('#idReferenceNo').val();
+        formData.append("referenceNo", referenceNo);
+        formData.append("colorWay", colorWay);
+        formData.append("imageName", imageName);
+        formData.append("url", url);
+        formData.append("id", id);
+
+
+        $.ajax({
+            url: "/MM_ProductRegistration/DeleteImageFromTemp",
+            type: "POST",
+            data: formData,
+            processData: false, // Prevent jQuery from converting the data to a query string
+            contentType: false, // Set the content type to false to prevent jQuery from setting the content type
+            success: function (result) {
+                // Handle the response from the server
+                eval(result)
+            }
+        });
+    }
+
+</script>
+

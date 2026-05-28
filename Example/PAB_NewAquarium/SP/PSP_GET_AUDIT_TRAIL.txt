@@ -1,0 +1,61 @@
+USE [pab_ACL]
+GO
+/****** Object:  StoredProcedure [dbo].[PSP_GET_AUDIT_TRAIL]    Script Date: 8/17/2023 1:51:40 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+-- =============================================
+-- Author:		<Author,,Name>
+-- Create date: <Create Date,,>
+-- Description:	<Description,,>
+-- =============================================
+ALTER PROCEDURE [dbo].[PSP_GET_AUDIT_TRAIL]
+	@TABLE NVARCHAR(300),
+    @KEY_VALUE INT =0,
+	@SortColumn NVARCHAR(100),
+	@SortType NVARCHAR(100)
+AS
+BEGIN
+	SET NOCOUNT ON;
+    DECLARE @TBLAUDIT NVARCHAR(300) = ''
+    DECLARE @SQL NVARCHAR(MAX) = ''
+    DECLARE @COUNT INT
+    DECLARE @WHERE NVARCHAR(MAX) = ''
+    --@TABLE = MM_Report_H
+    --MM_Report_H_A
+    --@TABLE = MM_Report_H_A
+    --MM_Report_H_A
+    SET @TBLAUDIT = CONCAT(REPLACE(@TABLE,'_A',''),'_A')
+
+ 
+
+    SELECT @COUNT=COUNT(*)
+    FROM information_schema.tables
+    WHERE table_name = @TBLAUDIT;
+
+ 
+
+    IF @KEY_VALUE <> 0
+        BEGIN
+            SET    @WHERE = CONCAT('AND KEY_VALUE=',@KEY_VALUE)
+        END
+    IF @COUNT > 0
+        BEGIN
+            SET @SQL = 'SELECT 
+							SQ_ID AS ID, 
+							KEY_FIELD AS "KEY FIELD",
+							FIELD_NAME AS "FIELD NAME",
+							B4_UPDATE AS "OLD VALUE",
+							AF_UPDATE AS "NEW VALUE",
+							UPDATED_BY AS "UPDATED BY",
+							UPDATED_DATE AS "UPDATED DATE"
+						FROM ' + @TBLAUDIT + ' 
+						WHERE 1=1 ' + @WHERE + ' 
+						ORDER BY ' + @SortColumn + ' ' + @SortType
+            PRINT(@SQL)
+            EXEC (@SQL)
+        END
+    ELSE
+        SELECT 0 AS [STATUS]
+END

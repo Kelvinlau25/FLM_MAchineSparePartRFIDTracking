@@ -1,0 +1,390 @@
+﻿@model PAB_NewAquarium.Models.CustomerDetail
+
+@{
+    ViewBag.Title = "MM_CustomerRegistration_View";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    @@media only screen and (min-device-width: 1280px) and (max-device-width: 1599px) {
+        .modal-header {
+            margin-bottom: -15px;
+            margin-top: -10px;
+        }
+    }
+
+    @@media (min-width: 1599px) {
+        .modal-header {
+            margin-bottom: -25px;
+            margin-top: -10px;
+        }
+    }
+
+    .toolbar {
+        float: right;
+    }
+
+    /* Override -2px, form some reason the non-bootstrap is -6px */
+    table.dataTable tbody td.select-checkbox::before,
+    table.dataTable tbody th.select-checkbox::before {
+        margin-top: -6px;
+    }
+
+    .tr-no-border {
+        border: 0px !important;
+    }
+
+    .multiselect-container > .disabled {
+        display: none;
+    }
+
+    .form-check-input {
+        border-color: #929292;
+    }
+
+    .page-container {
+        overflow: auto;
+        padding-bottom: 2rem;
+        padding-right: 1rem !important;
+        padding-left: 1rem !important;
+    }
+
+    .dataTables_scrollHeadInner, .table {
+        width: 100% !important;
+        max-width: none;
+    }
+
+    .form-check-input[type="checkbox"]:indeterminate {
+        background-color: #057FE5;
+        border-color: #057FE5;
+    }
+</style>
+
+
+@using (Html.BeginForm("MM_CustomerRegistration_View", "MM_CustomerRegistration", FormMethod.Post))
+{
+    @Html.AntiForgeryToken()
+    <div class="row g-0 px-3 tr-listing-header">
+        <div class="col-sm-6 align-self-center">
+            <p class="text-muted m-0 tr-listing-header-title">Customer</p>
+        </div>
+        <div class="col-sm-6 text-end align-self-center">
+            <div class="d-flex justify-content-end">
+                <div id="customDTButton">
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="tr-btm-line"></div>
+    <div class="page-container px-3 overflow-auto">
+        <div class="tr-btm-btn-margin">
+            <div class="card mt-3 mb-2 card-height">
+                <div class="card-body">
+                    <div class="row align-items-baseline">
+                        <div class="col"><h6 class="text-muted card-title">View Customer</h6></div>
+
+                    </div>
+                    <hr />
+                    <div class="row mt-2 align-items-baseline">
+                        <div class="col-sm-2">
+                            <p class="text-muted">Company Code <span class="float-end">:</span></p>
+                        </div>
+                        <div class="col-sm-4">
+                            @Html.TextBoxFor(model => model.CUST_CODE, null, new { @class = "form-control", @readonly = true, @disabled = "disabled" })
+                        </div>
+                        <div class="col-sm-2">
+                            <p class="text-muted">Address 1 <span class="float-end">:</span></p>
+                        </div>
+                        <div class="col-sm-4">
+                            @Html.TextBoxFor(model => model.CUST_ADD1, null, new { @class = "form-control", @readonly = true, @disabled = "disabled" })
+                        </div>
+                    </div>
+                    <div class="row mt-2 align-items-baseline">
+                        <div class="col-sm-2">
+                            <p class="text-muted">Customer Name <span class="float-end">:</span></p>
+                        </div>
+                        <div class="col-sm-4">
+                            @Html.TextBoxFor(model => model.CUST_NAME, null, new { @class = "form-control", @readonly = true, @disabled = "disabled" })
+                        </div>
+                        <div class="col-sm-2">
+                            <p class="text-muted">Address 2 <span class="float-end">:</span></p>
+                        </div>
+                        <div class="col-sm-4">
+                            @Html.TextBoxFor(model => model.CUST_ADD2, null, new { @class = "form-control", @readonly = true, @disabled = "disabled" })
+                        </div>
+                    </div>
+                    <div class="row mt-2 align-items-baseline">
+                        <div class="col-sm-2">
+                            <p class="text-muted">City <span class="float-end">:</span></p>
+                        </div>
+                        <div class="col-sm-4">
+                            @Html.TextBoxFor(model => model.CITY, null, new { @class = "form-control", @readonly = true, @disabled = "disabled" })
+                        </div>
+                        <div class="col-sm-2">
+                            <p class="text-muted">Address 3 <span class="float-end">:</span></p>
+                        </div>
+                        <div class="col-sm-4">
+                            @Html.TextBoxFor(model => model.CUST_ADD3, null, new { @class = "form-control", @readonly = true, @disabled = "disabled" })
+                        </div>
+                    </div>
+                    <div class="row mt-2 align-items-baseline">
+                        <div class="col-sm-2">
+                            <p class="text-muted">Country <span class="float-end">:</span></p>
+                        </div>
+                        <div class="col-sm-4">
+                            @Html.TextBoxFor(model => model.COUNTRY, null, new { @class = "form-control", @readonly = true, @disabled = "disabled" })
+                        </div>
+                        <div class="col-sm-2">
+                            <p class="text-muted">Address 4 <span class="float-end">:</span></p>
+                        </div>
+                        <div class="col-sm-4">
+                            @Html.TextBoxFor(model => model.CUST_ADD4, null, new { @class = "form-control", @readonly = true, @disabled = "disabled" })
+                        </div>
+                    </div>
+                    <div class="row">
+                        <table id="tr-datatable" class="table table-hover table-bordered compact">
+                            <thead>
+                                <tr class="bg-datatable-tr">
+                                    <th>Customer Name</th>
+                                    <th>Sales PIC</th>
+                                    <th>Last Visit Date</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="row tr-btm-btn-area">
+                
+                <div class="col">
+                    <div class="row row-cols-auto justify-content-end isNotEditable" style="padding-right: 20px">
+                        <div class="col"><button id="btnCancel" type="button" class="btn btn-sm btn-secondary" onclick="location.href='@Url.Action("MM_CustomerRegistration","MM_CustomerRegistration")'">Back</button></div>
+                    </div>
+                    <div class="row row-cols-auto justify-content-end isEditable g-1" style="display:none; padding-right: 20px">
+                        <div class="col"><button id="btnBack" type="button" class="btn btn-sm btn-secondary">Back</button></div>
+                        <div class="col"><button id="btnSubmit" type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#submit-confirmation-modal">Submit</button></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<script>
+    var table;
+    var data = [], dataAll = [];
+    var jsonData = @Html.Raw(Json.Encode(ViewBag.CustomerRecords));
+    var data = jsonData;
+    dataAll = data;
+
+    $(document).ready(function () {
+        loadDataTable();
+
+        $('.dataTables_length select').addClass('tr-select2');
+
+        $('.tr-select2').multiselect({
+            buttonClass: 'form-select form-control text-start',
+            templates: {
+                button: '<button type="button" class="multiselect dropdown-toggle" data-bs-toggle="dropdown"><span class="multiselect-selected-text"></span></button>',
+            }
+        });
+    });
+
+    function loadDataTable() {
+        table = $('#tr-datatable').DataTable({
+            data: data,
+            scrollCollapse: true,
+            scrollY: calcDataTableHeight,
+            pagingType: 'simple_numbers',
+            language: {
+                "zeroRecords": "No records found"
+            },
+            columns: [
+                { data: 'CUSTOMER_NAME' },
+                { data: 'SALES_PIC' },
+                { data: 'UPDATED_DATE' },
+            ],
+            columnDefs: [
+
+            ],
+            select: {
+                style: 'multi',
+                info: false,
+                selector: 'td:nth-child(1)'
+            },
+            order: [[1, 'asc']],
+            dom: "<'row toolbar-row g-0 custom-toolbar'<'col-sm-12 col-md-6 align-self-center'l><'col-sm-12 col-md-6'<'d-flex justify-content-end'<'toolbar'>>>>" +
+                "<'row'<'col-sm-12'tr>>" +
+                "<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'<'d-flex justify-content-end mt-2'p<'go-to align-self-center mx-2'>>>>",// +
+            initComplete: function () {
+                $("div.toolbar").html('<div class="input-group input-group-sm">' +
+                    '<input type="text" id="txtSearch" class="form-control remove-right-border tr-search-txt tr-list-txtbx-border" style="border-top-right-radius: 0px !important; border-bottom-right-radius: 0px !important;" placeholder="Search" aria-label="Search" aria-describedby="btnAdvanceSearch">' +
+                    '<div class="input-group-text listing-search-icon tr-list-txtbx-border tr-input-grp-right">' +
+                    '    <a href="" class="text-reset" id="btnSearch"><i class="fa-solid fa-magnifying-glass"></i></a>' +
+                    '</div>' +
+                    '</div>');
+
+                @*$("#btnAuditTrail").on("click", function () {
+                    var url = '@Url.Action("AuditTrail", "Home")';
+                    window.location.href = url;
+                });*@
+
+                $("#btnSearch").on("click", function (e) {
+                    e.preventDefault();
+                });
+
+                $("#txtSearch").on("keyup", function (e) {
+                    table.search($('#txtSearch').val()).draw();
+                });
+            },
+            drawCallback: function (settings) {
+                var api = this.api();
+                $("#txtGoTo").val(api.page() + 1);
+            },
+            fixedHeader: {
+                header: true,
+                footer: false
+            }
+        });
+
+        $("div.go-to").html('<div class="d-flex align-items-center p-0"><input class="form-control" type="text" id="txtGoTo" style="width:75px" value=1> &nbsp; <div class="page-info">of ' + table.page.info().pages + '</div></div>');
+        $("#txtGoTo").on('keyup', function (e) {
+            try {
+                var page = e.target.value;
+                if ($.isNumeric(page) && page > 0 && page <= table.page.info().pages) {
+                    table.page(page - 1).draw('page');
+                } else if (e.target.value.trim() == '') {
+
+                }
+                else {
+                    e.target.value = table.page() + 1;
+                }
+
+            } catch (ex) {
+                e.target.value = 1;
+            }
+        });
+        $("#txtGoTo").on('blur', function (e) {
+            try {
+                var page = e.target.value;
+                if (page.trim() == '') {
+                    $("#txtGoTo").val(1);
+                    table.page(0).draw('page');
+                    $("#txtGoTo").focus();
+                }
+            } catch (ex) {
+                e.target.value = 1;
+            }
+        });
+        $(".dataTables_length .form-select").on('change', function () {
+            $("#txtGoTo").val(table.page() + 1);
+            $("div.page-info").html('of ' + table.page.info().pages + '</div>');
+        });
+
+        $('#btnConfirm2').click(function () {
+            $('#confirmation-modal').modal('hide');
+        });
+
+        table.on('select deselect', function (e, dt, type, indexes) {
+            var rowCnt = table.rows({ selected: true }).count();
+            // do something with the number of selected rows
+            if (rowCnt > 0) {
+                $(".tr-trash").removeClass('isHide');
+                $("#btnExport").prop('disabled', false);
+            } else {
+                $(".tr-trash").addClass('isHide');
+                $("#btnExport").prop('disabled', true);
+            }
+        });
+
+        addTableButtons();
+    }
+
+    function calcDataTableHeight() {
+        var winWidth = $(window).width();
+        if (winWidth >= 1280 && winWidth <= 1599) {
+            return $(window).height() * 43 / 100;
+        } else {
+            return $(window).height() * 50 / 100;
+        }
+    };
+
+    function addTableButtons() {
+        
+
+
+        new $.fn.dataTable.Buttons(table, {
+            name: "delete",
+            buttons: [
+                {
+                    text: '<i class="fa-solid fa-trash-can tr-icon-size tr-icon-del"></i>',
+                    className: 'tr-btn m-0 py-0 px-3 text-danger tr-trash isHide',
+                    init: function (api, node, config) {
+                        $(node).attr("id", "btnDelete");
+                        $(node).attr("data-bs-toggle", "modal");
+                        $(node).attr("data-bs-target", "#confirmation-modal");
+                        $(node).removeClass('btn btn-secondary');
+                    },
+                    action: function (e, dt, node, config) {
+                        // Delete action here
+                        //$("div.spanner").addClass("show");
+                        //$("div.overlay").addClass("show");
+
+                        //setTimeout(function () {
+                        //    $("div.spanner").removeClass("show");
+                        //    $("div.overlay").removeClass("show");
+                        //}, 2500);
+                    }
+                }
+            ]
+        });
+
+        new $.fn.dataTable.Buttons(table, {
+            name: "audit",
+            buttons: [
+                {
+                    text: 'Audit Trail',
+                    className: 'm-0 p-0 tr-btn',
+                    attr: {
+                        id: 'btnAuditTrail'
+                    },
+                    init: function (api, node, config) {
+                        $(node).removeClass('btn btn-secondary')
+                    },
+                    action: function (e, dt, node, config) {
+                        var selectedValues = [];
+                        var selectedRows = table.rows({ selected: true }).data().toArray();
+                        selectedRows.forEach(function (rowData) {
+                            var checkboxValue = rowData;
+                            selectedValues.push(checkboxValue);
+                        });
+
+                        if (selectedValues.length >= 2) {
+                            const toastLiveExample = document.getElementById('liveToast1');
+                            const toast = new bootstrap.Toast(toastLiveExample);
+                            toast.show();
+                            return;
+                        } else if (selectedValues.length == 0) {
+                            const toastLiveExample = document.getElementById('liveToast2');
+                            const toast = new bootstrap.Toast(toastLiveExample);
+                            toast.show();
+                            return;
+                        }else {
+                            selectedValues.forEach(function (element) {
+                                var url = '@Url.Action("MM_CustomerRegistration_AuditTrail", "MM_CustomerRegistration")';
+                                window.location.href = url + '?id=' + element.GROUP_H_ID;
+                            });
+                        }
+
+                    }
+                }
+            ]
+        });
+
+        table.buttons("add", null).containers().appendTo('#customDTButton');
+        table.buttons("audit, delete", null).containers().appendTo('#action-bar');
+    }
+</script>
+
+

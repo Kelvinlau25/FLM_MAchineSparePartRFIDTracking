@@ -1,0 +1,14 @@
+CREATE OR REPLACE PROCEDURE SP_B2B_WP_PIC_AUDIT(
+    p_id_list IN VARCHAR2,
+    SREF OUT SYS_REFCURSOR
+)
+IS
+BEGIN
+    -- Open the cursor for the result set
+    OPEN SREF FOR
+        SELECT KEY_VALUE AS "TITLE", KEY_VALUE, FIELD_NAME, B4_UPDATE, AF_UPDATE, UPDATED_BY, UPDATED_DATE
+        FROM ACL_AC_ACL_A
+        WHERE KEY_VALUE IN (SELECT TRIM(REGEXP_SUBSTR(p_id_list, '[^,]+', 1, LEVEL)) AS ID
+                            FROM DUAL
+                            CONNECT BY REGEXP_SUBSTR(p_id_list, '[^,]+', 1, LEVEL) IS NOT NULL);
+END SP_B2B_WP_PIC_AUDIT;

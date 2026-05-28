@@ -1,0 +1,93 @@
+﻿@model PAB_NewAquarium.Models.MM_PRODUCT_MATERIAL
+
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var UrlActionDelete = Url.Action("MM_ProductMaterial_Delete", "MM_ProductMaterial");
+    var UrlActionEdit = Url.Action("MM_ProductMaterial_Edit", "MM_ProductMaterial", new { id = Model.PRODUCT_MATERIAL_ID });
+    var UrlActionList = Url.Action("MM_ProductMaterial_List", "MM_ProductMaterial");
+}
+
+<div class="row g-0 px-3 tr-listing-header">
+    <div class="col-sm-6 align-self-center">
+        <p class="text-muted m-0 tr-listing-header-title">Material</p>
+    </div>
+</div>
+<div class="tr-btm-line"></div>
+<div class="page-container px-3 overflow-auto">
+    <div class="tr-btm-btn-margin">
+        <div class="card mt-3 mb-2 card-height">
+            <div class="card-body">
+                <div class="row header-row">
+                    <div class="col"><h6 class="text-muted card-title m-0">View Material</h6></div>
+                    <div class="col text-end"><button class="btn btn-sm btn-primary" id="btnEdit" type="button" onclick="location.href='@UrlActionEdit'">Edit</button></div>
+                </div>
+                <hr />
+                <div class="row mt-2 align-items-baseline">
+                    <div class="col-sm-2">
+                        <p class="text-muted">Material Type <span class="float-end">:</span></p>
+                    </div>
+                    <div class="col-sm-4">
+                        @Html.TextBoxFor(model => model.MATERIAL_TYPE, new { @class = "form-control", disabled = "disabled" })
+                    </div>
+                </div>
+                <div class="row mt-2 align-items-baseline">
+                    <div class="col-sm-2">
+                        <p class="text-muted">Description <span class="float-end">:</span></p>
+                    </div>
+                    <div class="col-sm-4">
+                        @Html.TextBoxFor(model => model.MATERIAL_DESC, null, new { @class = "form-control", disabled = "disabled" })
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row tr-btm-btn-area">
+            <div class="col">
+                <button id="btnDelete" type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#modalDelete">Delete</button>
+            </div>
+            <div class="col text-end me-3">
+                <button id="btnBack" type="button" class="btn btn-sm btn-secondary mx-1" onclick="location.href='@UrlActionList'">Back</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Dialog -->
+<div class="modal fade" id="modalDelete" tabindex="-1" aria-hidden="true">
+    @Html.Partial("_Modal_Delete")
+</div>
+
+<script>
+    var urlActionDelete = "@UrlActionDelete";
+    var urlActionList = "@UrlActionList";
+    var returnMessage = "@ViewBag.ReturnMessage";
+    var deleteID = [];
+    deleteID.push("@Model.PRODUCT_MATERIAL_ID");
+
+    $(document).ready(function () {
+        $('#btnDeleteConfirm').click(function () {
+            $('#modalDelete').modal('hide');
+            loadings(true);
+
+            $.ajax({
+                type: "post",
+                url: urlActionDelete,
+                data: { id: deleteID },
+                datatype: "json",
+                traditional: true,
+                success: function (response) {
+                    if (response.valid) {
+                        showAlert('Success', 'Record deleted successfully.', urlActionList);
+                    } else {
+                        showAlert('Error', response.msg);
+                    }
+                },
+                error: function (xhr, status, error) {
+                    showAlert('Error', error);
+                },
+                complete: function () {
+                    loadings(false);
+                }
+            });
+        });
+    });
+</script>
