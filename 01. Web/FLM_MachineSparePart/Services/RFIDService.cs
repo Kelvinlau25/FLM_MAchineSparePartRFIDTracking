@@ -9,6 +9,7 @@ using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
+using System.Threading;
 
 namespace FILM_Sparepart_MVC.Services
 {
@@ -21,6 +22,12 @@ namespace FILM_Sparepart_MVC.Services
 
         // Connection string name for the Tower database (SP2/SERVER2)
         private const string TowerConnectionStringName = "SQLConTower";
+
+        // Tower zone reader IP (same hardcoded value as Form1.vb)
+        private const string TowerZoneReaderIP = "10.28.92.50";
+
+        // GPI direction detection timer interval in milliseconds (equivalent to Timer1.Interval = 10000 in Form1.Designer.vb)
+        private const int GpiTimerIntervalMs = 10000;
 
         /// <summary>
         /// Loads RFID reader configurations from the database (equivalent to bg_GetRFIDConfig in Form1.vb)
@@ -213,6 +220,10 @@ namespace FILM_Sparepart_MVC.Services
                 ReaderConnection conn;
                 if (_readers.TryGetValue(readerIP, out conn) && conn.Reader != null)
                 {
+                    // Dispose GPI timer if active
+                    conn.GpiTimer?.Dispose();
+                    conn.GpiTimer = null;
+
                     if (conn.Reader.IsConnected)
                     {
                         try
@@ -301,8 +312,8 @@ namespace FILM_Sparepart_MVC.Services
 
         /// <summary>
         /// Handle RFID tag read events (equivalent to Events_ReadNotify / myUpdateRead in Form1.vb).
-        /// When a new tag is detected, the stored procedure from RFID_CONFIG is automatically executed,
-        /// matching the original WinForm behaviour in StartUpdateDB / StartUpdateDBTower.
+        /// Tags are collected into TagDetected for later processing when the GPI direction is confirmed.
+        /// The stored procedure is NOT called here — it is called from the GPI timer callback.
         /// </summary>
         private void Events_ReadNotify(object sender, Events.ReadEventArgs e)
         {
@@ -338,41 +349,11 @@ namespace FILM_Sparepart_MVC.Services
                             int antennaID = tag.AntennaID;
 
                             // --- Tag deduplication (equivalent to ht_TagDetected in Form1.vb) ---
-                            bool isNewTag = conn.TagDetected.TryAdd(tagID, DateTime.UtcNow);
+                            // Tags accumulate here until GPI direction is confirmed and StartUpdateDB processes them
+                            conn.TagDetected.TryAdd(tagID, DateTime.UtcNow);
 
                             // Broadcast tag to all connected web clients
                             hubContext.Clients.All.tagRead(readerHostName, tagID, antennaID, DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
-
-                            // --- Execute stored procedure for NEW tags only (equivalent to StartUpdateDB / StartUpdateDBTower) ---
-                            if (isNewTag)
-                            {
-                                string storedProcedure;
-                                string server;
-
-                                if (antennaID == 1)
-                                {
-                                    storedProcedure = conn.Config.STORED_PROCEDURE;
-                                    server = conn.Config.SERVER;
-                                }
-                                else
-                                {
-                                    // Antenna 2+: use SP2/SERVER2 if available, otherwise fall back to SP/SERVER
-                                    storedProcedure = !string.IsNullOrEmpty(conn.Config.STORED_PROCEDURE2) ? conn.Config.STORED_PROCEDURE2 : conn.Config.STORED_PROCEDURE;
-                                    server = !string.IsNullOrEmpty(conn.Config.SERVER2) ? conn.Config.SERVER2 : conn.Config.SERVER;
-                                }
-
-                                if (!string.IsNullOrEmpty(storedProcedure) && !string.IsNullOrEmpty(server) && server == "MSSQL")
-                                {
-                                    bool useTowerConnection = antennaID != 1
-                                        && !string.IsNullOrEmpty(conn.Config.SERVER2)
-                                        && !string.IsNullOrEmpty(conn.Config.STORED_PROCEDURE2);
-
-                                    var spResult = ExecuteStoredProcedure("IN", tagID, conn.Config.READER_NAME, conn.Config.READER_IP, storedProcedure, useTowerConnection);
-
-                                    // Broadcast stored procedure result to web clients
-                                    hubContext.Clients.All.tagProcessed(readerHostName, tagID, antennaID, spResult.Success, spResult.Message);
-                                }
-                            }
                         }
                     }
                 }
@@ -441,7 +422,203 @@ namespace FILM_Sparepart_MVC.Services
         }
 
         /// <summary>
-        /// Handle RFID status events (equivalent to Events_StatusNotify / myUpdateStatus in Form1.vb)
+        /// Batch-execute the stored procedure for all accumulated tags on a reader.
+        /// Equivalent to StartUpdateDB in Form1.vb — iterates ht_TagDetected and calls RFID_Common_MSSQL for each tag.
+        /// </summary>
+        private void StartUpdateDB(string tranType, ReaderConnection conn)
+        {
+            var hubContext = GlobalHost.ConnectionManager.GetHubContext<RfidHub>();
+            var tagsSnapshot = conn.TagDetected.Keys.ToList();
+
+            foreach (var tagID in tagsSnapshot)
+            {
+                var spResult = ExecuteStoredProcedure(tranType, tagID, conn.Config.READER_NAME, conn.Config.READER_IP, conn.Config.STORED_PROCEDURE, false);
+                hubContext.Clients.All.tagProcessed(conn.Config.READER_IP, tagID, 0, spResult.Success, spResult.Message);
+            }
+
+            conn.TagDetected.Clear();
+        }
+
+        /// <summary>
+        /// Batch-execute the stored procedure for all accumulated tags on a Tower reader.
+        /// Equivalent to StartUpdateDBTower in Form1.vb — uses the Tower database connection.
+        /// </summary>
+        private void StartUpdateDBTower(string tranType, ReaderConnection conn)
+        {
+            var hubContext = GlobalHost.ConnectionManager.GetHubContext<RfidHub>();
+            var tagsSnapshot = conn.TagDetected.Keys.ToList();
+
+            foreach (var tagID in tagsSnapshot)
+            {
+                var spResult = ExecuteStoredProcedure(tranType, tagID, conn.Config.READER_NAME, conn.Config.READER_IP, conn.Config.STORED_PROCEDURE, true);
+                hubContext.Clients.All.tagProcessed(conn.Config.READER_IP, tagID, 0, spResult.Success, spResult.Message);
+            }
+
+            conn.TagDetected.Clear();
+        }
+
+        /// <summary>
+        /// Handle the first GPI event — determines initial direction.
+        /// Equivalent to updateIn() in Form1.vb.
+        /// GPI Port 1 LOW → "In" direction (or tower="1" for Tower zone reader).
+        /// GPI Port 2 LOW → "Out" direction (or tower="2" for Tower zone reader).
+        /// Starts the GPI timer to wait for the second loop coil confirmation.
+        /// </summary>
+        private void HandleFirstGpiEvent(ReaderConnection conn)
+        {
+            bool isTowerZone = conn.Config.READER_IP == TowerZoneReaderIP;
+
+            // Check GPI Port 1 state (PortState 0 = LOW = triggered)
+            if (conn.Reader.Config.GPI.Item(1).PortState == 0)
+            {
+                if (isTowerZone)
+                {
+                    conn.GpiTower = "1";
+                }
+                else
+                {
+                    conn.GpiLoopCoil1 = "In";
+                }
+                StartGpiTimer(conn);
+            }
+
+            // Check GPI Port 2 state
+            if (conn.Reader.Config.GPI.Item(2).PortState == 0)
+            {
+                if (isTowerZone)
+                {
+                    conn.GpiTower = "2";
+                }
+                else
+                {
+                    conn.GpiLoopCoil1 = "Out";
+                }
+                StartGpiTimer(conn);
+            }
+        }
+
+        /// <summary>
+        /// Handle a second GPI event while timer is running — confirms direction.
+        /// Equivalent to check2ndloop() in Form1.vb.
+        /// </summary>
+        private void HandleSecondGpiEvent(ReaderConnection conn)
+        {
+            bool isTowerZone = conn.Config.READER_IP == TowerZoneReaderIP;
+
+            // Check GPI Port 2 state → "In"
+            if (conn.Reader.Config.GPI.Item(2).PortState == 0)
+            {
+                conn.GpiLoopCoil2 = "In";
+            }
+
+            // Check GPI Port 1 state → "Out"
+            if (conn.Reader.Config.GPI.Item(1).PortState == 0)
+            {
+                conn.GpiLoopCoil2 = "Out";
+            }
+
+            // For tower zone, translate numeric tower to direction
+            if (isTowerZone)
+            {
+                if (conn.GpiTower == "1")
+                {
+                    conn.GpiTower = "Out";
+                }
+
+                if (conn.GpiTower == "2")
+                {
+                    conn.GpiTower = "In";
+                }
+            }
+        }
+
+        /// <summary>
+        /// Start or restart the GPI direction resolution timer for a reader.
+        /// </summary>
+        private void StartGpiTimer(ReaderConnection conn)
+        {
+            // Dispose existing timer if any
+            conn.GpiTimer?.Dispose();
+
+            conn.GpiTimer = new System.Threading.Timer(GpiTimerCallback, conn, GpiTimerIntervalMs, Timeout.Infinite);
+
+            // Notify web clients that GPI event was detected
+            var hubContext = GlobalHost.ConnectionManager.GetHubContext<RfidHub>();
+            hubContext.Clients.All.gpiEventDetected(conn.Config.READER_IP, conn.GpiLoopCoil1, conn.GpiTower);
+        }
+
+        /// <summary>
+        /// Timer callback — equivalent to Timer1_Tick in Form1.vb.
+        /// Resolves GPI direction and executes the stored procedure for all accumulated tags.
+        /// </summary>
+        private void GpiTimerCallback(object state)
+        {
+            var conn = (ReaderConnection)state;
+
+            try
+            {
+                // Dispose the timer (one-shot, equivalent to Timer1.Stop() + Timer1.Enabled = False)
+                conn.GpiTimer?.Dispose();
+                conn.GpiTimer = null;
+
+                var hubContext = GlobalHost.ConnectionManager.GetHubContext<RfidHub>();
+                bool isTowerZone = conn.Config.READER_IP == TowerZoneReaderIP;
+
+                if (!isTowerZone)
+                {
+                    // Non-tower readers: direction confirmed only if both loop coils agree
+                    if (conn.GpiLoopCoil1 == "In" && conn.GpiLoopCoil1 == conn.GpiLoopCoil2)
+                    {
+                        StartUpdateDB("IN", conn);
+                        hubContext.Clients.All.gpiDirectionResolved(conn.Config.READER_IP, "IN");
+                    }
+                    else if (conn.GpiLoopCoil1 == "Out" && conn.GpiLoopCoil1 == conn.GpiLoopCoil2)
+                    {
+                        StartUpdateDB("OUT", conn);
+                        hubContext.Clients.All.gpiDirectionResolved(conn.Config.READER_IP, "OUT");
+                    }
+                    else
+                    {
+                        // Direction not confirmed — clear tags without processing
+                        conn.TagDetected.Clear();
+                        hubContext.Clients.All.gpiDirectionResolved(conn.Config.READER_IP, "UNCONFIRMED");
+                    }
+                }
+                else
+                {
+                    // Tower zone reader: use tower direction
+                    if (conn.GpiTower == "In")
+                    {
+                        StartUpdateDBTower("IN", conn);
+                        hubContext.Clients.All.gpiDirectionResolved(conn.Config.READER_IP, "IN (Tower)");
+                    }
+                    else if (conn.GpiTower == "Out")
+                    {
+                        StartUpdateDBTower("OUT", conn);
+                        hubContext.Clients.All.gpiDirectionResolved(conn.Config.READER_IP, "OUT (Tower)");
+                    }
+                    else
+                    {
+                        // Direction not confirmed — clear tags without processing
+                        conn.TagDetected.Clear();
+                        hubContext.Clients.All.gpiDirectionResolved(conn.Config.READER_IP, "UNCONFIRMED (Tower)");
+                    }
+                }
+
+                // Reset GPI state for next detection cycle
+                conn.GpiLoopCoil1 = "";
+                conn.GpiLoopCoil2 = "";
+                conn.GpiTower = "";
+            }
+            catch (Exception)
+            {
+                // Silently handle timer errors
+            }
+        }
+
+        /// <summary>
+        /// Handle RFID status events (equivalent to Events_StatusNotify / myUpdateStatus in Form1.vb).
+        /// Includes GPI_EVENT handling for loop coil direction detection.
         /// </summary>
         private void Events_StatusNotify(object sender, Events.StatusEventArgs e)
         {
@@ -479,6 +656,33 @@ namespace FILM_Sparepart_MVC.Services
                         break;
                     case Events.STATUS_EVENT_TYPE.READER_EXCEPTION_EVENT:
                         statusMsg = "Reader ExceptionEvent " + eventData.ReaderExceptionEventData.ReaderExceptionEventInfo;
+                        break;
+                    case Events.STATUS_EVENT_TYPE.GPI_EVENT:
+                        // GPI event triggered when loop coil detects forklift presence
+                        // Equivalent to GPI_EVENT handling in myUpdateStatus in Form1.vb
+                        statusMsg = "GPI Event Port " + eventData.GPIEventData.PortNumber + " State " + eventData.GPIEventData.GPIEvent;
+                        ReaderConnection gpiConn;
+                        if (!_readers.TryGetValue(readerHostName, out gpiConn))
+                        {
+                            var gpiConfig = _readerConfigs.FirstOrDefault(r => r.READER_IP == readerHostName || r.READER_NAME == readerHostName);
+                            if (gpiConfig != null)
+                            {
+                                _readers.TryGetValue(gpiConfig.READER_IP, out gpiConn);
+                            }
+                        }
+                        if (gpiConn != null)
+                        {
+                            if (gpiConn.GpiTimer != null)
+                            {
+                                // Timer already running — this is the 2nd GPI event (equivalent to check2ndloop)
+                                HandleSecondGpiEvent(gpiConn);
+                            }
+                            else
+                            {
+                                // First GPI event (equivalent to updateIn)
+                                HandleFirstGpiEvent(gpiConn);
+                            }
+                        }
                         break;
                     default:
                         statusMsg = "Unhandled Status";
@@ -522,6 +726,23 @@ namespace FILM_Sparepart_MVC.Services
         /// Key = TagID, Value = first detection time (UTC).
         /// </summary>
         public ConcurrentDictionary<string, DateTime> TagDetected { get; set; } = new ConcurrentDictionary<string, DateTime>();
+
+        // --- GPI Loop Coil Direction State (equivalent to Form1.vb fields) ---
+
+        /// <summary>First loop coil direction: "In" or "Out" (equivalent to loopCoil1 in Form1.vb)</summary>
+        public string GpiLoopCoil1 { get; set; } = "";
+
+        /// <summary>Second loop coil direction for confirmation: "In" or "Out" (equivalent to loopCoil2 in Form1.vb)</summary>
+        public string GpiLoopCoil2 { get; set; } = "";
+
+        /// <summary>Tower zone direction state: "1", "2", "In", or "Out" (equivalent to tower in Form1.vb)</summary>
+        public string GpiTower { get; set; } = "";
+
+        /// <summary>
+        /// Timer for GPI direction resolution (equivalent to Timer1 in Form1.vb).
+        /// After the first GPI event, waits for a second event to confirm direction before executing the SP.
+        /// </summary>
+        public System.Threading.Timer GpiTimer { get; set; }
     }
 
     /// <summary>
