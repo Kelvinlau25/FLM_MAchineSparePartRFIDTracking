@@ -123,7 +123,7 @@ namespace FILM_Sparepart_MVC.Services
                     if (!uint.TryParse(readerItem.Port != null ? readerItem.Port.Trim() : "", out port) || port == 0)
                         port = 5084;
 
-                    readerItem.ReaderAPI = new RFIDReader(readerItem.IPAddress, port, 50000);
+                    readerItem.ReaderAPI = new RFIDReader(readerItem.IPAddress, port, 0);
 
                     _readerList.TryAdd(readerItem.IPAddress, readerItem);
                     readerIndex++;
@@ -281,7 +281,7 @@ namespace FILM_Sparepart_MVC.Services
                             if (!uint.TryParse(reader.Port != null ? reader.Port.Trim() : "", out port) || port == 0)
                                 port = 5084;
 
-                            reader.ReaderAPI = new RFIDReader(reader.IPAddress, port, 50000);
+                            reader.ReaderAPI = new RFIDReader(reader.IPAddress, port, 0);
                             ConnectReaderHardware(reader);
                             success = true;
                         }
@@ -438,7 +438,7 @@ namespace FILM_Sparepart_MVC.Services
                 if (!uint.TryParse(reader.Port != null ? reader.Port.Trim() : "", out port) || port == 0)
                     port = 5084;
 
-                reader.ReaderAPI = new RFIDReader(reader.IPAddress, port, 50000);
+                reader.ReaderAPI = new RFIDReader(reader.IPAddress, port, 0);
                 LogMessage(string.Format("ReaderAPI recreated for {0}", reader.IPAddress));
             }
         }
