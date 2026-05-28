@@ -1,0 +1,400 @@
+@{
+    ViewBag.Title = "RFID Reader Management";
+    Layout = "~/Views/Shared/_Layout_iFrame.cshtml";
+}
+
+<style>
+    .rfid-container {
+        padding: 15px;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .rfid-title {
+        font-size: 20px;
+        font-weight: bold;
+        margin-bottom: 10px;
+        color: #333;
+    }
+
+    .table-wrapper {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: auto;
+        border: 1px solid #ddd;
+        margin-bottom: 10px;
+        min-height: 0;
+    }
+
+    #readerTable {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+    }
+
+    #readerTable thead {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+    }
+
+    #readerTable thead th {
+        background-color: #343a40;
+        color: #fff;
+        padding: 10px 12px;
+        text-align: left;
+        border: 1px solid #454d55;
+        white-space: nowrap;
+    }
+
+    #readerTable tbody td {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        vertical-align: middle;
+    }
+
+    #readerTable tbody tr {
+        cursor: pointer;
+    }
+
+    #readerTable tbody tr:hover {
+        background-color: #e9ecef;
+    }
+
+    #readerTable tbody tr.selected-row {
+        background-color: #cce5ff;
+    }
+
+    .status-connected {
+        color: green;
+        font-weight: bold;
+    }
+
+    .status-disconnected {
+        color: red;
+        font-weight: bold;
+    }
+
+    .status-connecting {
+        color: orange;
+        font-weight: bold;
+    }
+
+    .btn-rfid {
+        font-size: 14px;
+        font-weight: bold;
+        padding: 10px 20px;
+        min-width: 140px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .btn-connect-all {
+        background-color: #00ff00;
+        color: #000;
+    }
+
+    .btn-connect-all:hover {
+        background-color: #00cc00;
+    }
+
+    .btn-disconnect-all {
+        background-color: #ff0000;
+        color: #fff;
+    }
+
+    .btn-disconnect-all:hover {
+        background-color: #cc0000;
+    }
+
+    .btn-connect-single {
+        background-color: #00ff00;
+        color: #000;
+    }
+
+    .btn-connect-single:hover {
+        background-color: #00cc00;
+    }
+
+    .btn-connect-single.disconnect-mode {
+        background-color: #ff0000;
+        color: #fff;
+    }
+
+    .btn-connect-single.disconnect-mode:hover {
+        background-color: #cc0000;
+    }
+
+    .button-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 5px 0;
+        flex-shrink: 0;
+    }
+
+    .button-group-left {
+        display: flex;
+        gap: 8px;
+    }
+
+    #lblError {
+        color: red;
+        font-size: 13px;
+        margin-top: 5px;
+        flex-shrink: 0;
+    }
+
+    #lblLoading {
+        color: #007bff;
+        font-size: 13px;
+        margin-top: 5px;
+        flex-shrink: 0;
+    }
+</style>
+
+<div class="rfid-container">
+    <div class="rfid-title">
+        <i class="fa fa-wifi"></i> Film RFID Reader Management
+    </div>
+
+    <div id="lblLoading">Loading RFID configuration from database...</div>
+
+    <div class="table-wrapper">
+        <table id="readerTable">
+            <thead>
+                <tr>
+                    <th style="width:20%">Location</th>
+                    <th style="width:20%">IP Address</th>
+                    <th style="width:25%">Reader Name</th>
+                    <th style="width:35%">Connection Status</th>
+                </tr>
+            </thead>
+            <tbody id="readerTableBody">
+            </tbody>
+        </table>
+    </div>
+
+    <div class="button-bar">
+        <div class="button-group-left">
+            <button id="btnConnectAll" class="btn-rfid btn-connect-all" onclick="connectAll()" disabled>
+                Connect All
+            </button>
+            <button id="btnDisconnectAll" class="btn-rfid btn-disconnect-all" onclick="disconnectAll()" disabled>
+                Disconnect All
+            </button>
+        </div>
+        <div>
+            <button id="btnConnectSingle" class="btn-rfid btn-connect-single" onclick="connectSingle()" disabled>
+                Connect
+            </button>
+        </div>
+    </div>
+
+    <div id="lblError"></div>
+</div>
+
+<script src="~/Scripts/jquery.signalR-2.2.2.min.js"></script>
+<script src="~/signalr/hubs"></script>
+
+<script type="text/javascript">
+    var selectedIp = null;
+    var readerData = [];
+    var rfidHub = null;
+
+    $(document).ready(function () {
+        // Initialize SignalR
+        rfidHub = $.connection.rfidHub;
+
+        // Client-side hub methods
+        rfidHub.client.updateReaderStatus = function (ipAddress, status) {
+            updateRowStatus(ipAddress, status);
+        };
+
+        rfidHub.client.receiveReaderStatuses = function (statuses) {
+            if (statuses && statuses.length > 0) {
+                for (var i = 0; i < statuses.length; i++) {
+                    updateRowStatus(statuses[i].ipAddress, statuses[i].status);
+                }
+            }
+        };
+
+        // Start the connection
+        $.connection.hub.start().done(function () {
+            console.log("SignalR connected. Connection ID: " + $.connection.hub.id);
+            loadConfig();
+        }).fail(function (err) {
+            console.log("SignalR connection failed: " + err);
+            $('#lblError').text("SignalR connection failed. Please refresh the page.");
+            loadConfig();
+        });
+    });
+
+    function loadConfig() {
+        $.ajax({
+            url: '@Url.Action("GetConfig", "RfidReader")',
+            type: 'GET',
+            dataType: 'json',
+            success: function (response) {
+                $('#lblLoading').hide();
+                if (response.success) {
+                    readerData = response.data;
+                    renderTable(readerData);
+                    enableButtons(true);
+
+                    // After loading config, get current statuses
+                    if (rfidHub && $.connection.hub.state === $.signalR.connectionState.connected) {
+                        rfidHub.server.getReaderStatuses();
+                    }
+                } else {
+                    $('#lblError').text("Error loading config: " + response.message);
+                }
+            },
+            error: function (xhr, status, error) {
+                $('#lblLoading').hide();
+                $('#lblError').text("Failed to load RFID configuration: " + error);
+            }
+        });
+    }
+
+    function renderTable(data) {
+        var tbody = $('#readerTableBody');
+        tbody.empty();
+
+        for (var i = 0; i < data.length; i++) {
+            var row = $('<tr></tr>');
+            row.attr('data-ip', data[i].IP_ADDRESS);
+            row.append('<td>' + escapeHtml(data[i].LOCATION) + '</td>');
+            row.append('<td>' + escapeHtml(data[i].IP_ADDRESS) + '</td>');
+            row.append('<td>' + escapeHtml(data[i].HOST_NAME) + '</td>');
+            row.append('<td class="status-cell status-disconnected">Disconnected</td>');
+
+            row.on('click', function () {
+                selectRow($(this));
+            });
+
+            tbody.append(row);
+        }
+    }
+
+    function selectRow(row) {
+        $('#readerTableBody tr').removeClass('selected-row');
+        row.addClass('selected-row');
+        selectedIp = row.attr('data-ip');
+
+        var statusText = row.find('.status-cell').text();
+        var btn = $('#btnConnectSingle');
+        if (statusText === 'Connected') {
+            btn.text('Disconnect');
+            btn.addClass('disconnect-mode');
+        } else {
+            btn.text('Connect');
+            btn.removeClass('disconnect-mode');
+        }
+    }
+
+    function updateRowStatus(ipAddress, status) {
+        var row = $('#readerTableBody tr[data-ip="' + ipAddress + '"]');
+        if (row.length > 0) {
+            var cell = row.find('.status-cell');
+            cell.text(status);
+
+            cell.removeClass('status-connected status-disconnected status-connecting');
+
+            if (status === 'Connected' || status === 'Already connected.') {
+                cell.addClass('status-connected');
+                cell.text('Connected');
+            } else if (status === 'Disconnected') {
+                cell.addClass('status-disconnected');
+            } else if (status === 'Connecting...') {
+                cell.addClass('status-connecting');
+            } else if (status.indexOf('failed') >= 0 || status.indexOf('error') >= 0) {
+                cell.addClass('status-disconnected');
+            } else {
+                cell.addClass('status-disconnected');
+            }
+
+            // Update single button if this row is selected
+            if (selectedIp === ipAddress) {
+                var btn = $('#btnConnectSingle');
+                if (cell.hasClass('status-connected')) {
+                    btn.text('Disconnect');
+                    btn.addClass('disconnect-mode');
+                } else {
+                    btn.text('Connect');
+                    btn.removeClass('disconnect-mode');
+                }
+            }
+        }
+    }
+
+    function connectAll() {
+        $('#lblError').text('');
+        // Update all rows to Connecting...
+        $('#readerTableBody tr .status-cell').text('Connecting...').removeClass('status-connected status-disconnected').addClass('status-connecting');
+
+        if (rfidHub && $.connection.hub.state === $.signalR.connectionState.connected) {
+            rfidHub.server.connectAll();
+        } else {
+            $('#lblError').text('SignalR is not connected. Please refresh the page.');
+        }
+    }
+
+    function disconnectAll() {
+        $('#lblError').text('');
+        // Update all rows to Disconnecting...
+        $('#readerTableBody tr .status-cell').text('Disconnecting...').removeClass('status-connected status-connecting').addClass('status-disconnected');
+
+        if (rfidHub && $.connection.hub.state === $.signalR.connectionState.connected) {
+            rfidHub.server.disconnectAll();
+        } else {
+            $('#lblError').text('SignalR is not connected. Please refresh the page.');
+        }
+    }
+
+    function connectSingle() {
+        if (!selectedIp) {
+            $('#lblError').text('Please select a reader from the table first.');
+            return;
+        }
+
+        $('#lblError').text('');
+        var btn = $('#btnConnectSingle');
+
+        if (btn.text() === 'Connect') {
+            var row = $('#readerTableBody tr[data-ip="' + selectedIp + '"]');
+            row.find('.status-cell').text('Connecting...').removeClass('status-connected status-disconnected').addClass('status-connecting');
+
+            if (rfidHub && $.connection.hub.state === $.signalR.connectionState.connected) {
+                rfidHub.server.connectReader(selectedIp);
+            } else {
+                $('#lblError').text('SignalR is not connected. Please refresh the page.');
+            }
+        } else {
+            var row = $('#readerTableBody tr[data-ip="' + selectedIp + '"]');
+            row.find('.status-cell').text('Disconnecting...').removeClass('status-connected status-connecting').addClass('status-disconnected');
+
+            if (rfidHub && $.connection.hub.state === $.signalR.connectionState.connected) {
+                rfidHub.server.disconnectReader(selectedIp);
+            } else {
+                $('#lblError').text('SignalR is not connected. Please refresh the page.');
+            }
+        }
+    }
+
+    function enableButtons(enabled) {
+        $('#btnConnectAll').prop('disabled', !enabled);
+        $('#btnDisconnectAll').prop('disabled', !enabled);
+        $('#btnConnectSingle').prop('disabled', !enabled);
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        var div = document.createElement('div');
+        div.appendChild(document.createTextNode(text));
+        return div.innerHTML;
+    }
+</script>

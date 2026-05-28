@@ -165,6 +165,28 @@
       <HintPath>..\packages\Antlr.3.5.0.2\lib\Antlr3.Runtime.dll</HintPath>
     </Reference>
     <Reference Include="WindowsBase" />
+    <Reference Include="Microsoft.AspNet.SignalR.Core, Version=2.2.2.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>packages\Microsoft.AspNet.SignalR.Core.2.2.2\lib\net45\Microsoft.AspNet.SignalR.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.AspNet.SignalR.SystemWeb, Version=2.2.2.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>packages\Microsoft.AspNet.SignalR.SystemWeb.2.2.2\lib\net45\Microsoft.AspNet.SignalR.SystemWeb.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Owin, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>packages\Microsoft.Owin.4.0.0\lib\net451\Microsoft.Owin.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Owin.Host.SystemWeb, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>packages\Microsoft.Owin.Host.SystemWeb.4.0.0\lib\net451\Microsoft.Owin.Host.SystemWeb.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Owin.Security, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>packages\Microsoft.Owin.Security.4.0.0\lib\net451\Microsoft.Owin.Security.dll</HintPath>
+    </Reference>
+    <Reference Include="Owin, Version=1.0.0.0, Culture=neutral, PublicKeyToken=f0ebd12fd5e55cc5, processorArchitecture=MSIL">
+      <HintPath>packages\Owin.1.0\lib\net40\Owin.dll</HintPath>
+    </Reference>
+    <Reference Include="Symbol.RFID3.Host, Version=1.2.0.0, Culture=neutral, PublicKeyToken=68ec8db391f150ca, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>SDK\Symbol.RFID3.Host.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="App_Start\BundleConfig.cs" />
@@ -176,6 +198,7 @@
     <Compile Include="Controllers\ReportController.cs" />
     <Compile Include="Controllers\RfidAuditController.cs" />
     <Compile Include="Controllers\RfidAuditSimilarityController.cs" />
+    <Compile Include="Controllers\RfidReaderController.cs" />
     <Compile Include="DAL\RfidAuditContext.cs" />
     <Compile Include="DAL\TMS_ITEquiptContext.cs" />
     <Compile Include="Enums\RFID_FLAG.cs" />
@@ -192,6 +215,7 @@
     <Compile Include="Helper_Code\Objects\StorageCodeObj.cs" />
     <Compile Include="Helper_Code\Objects\UnknownObj.cs" />
     <Compile Include="Helper_Code\Objects\UserObj.cs" />
+    <Compile Include="Hubs\RfidHub.cs" />
     <Compile Include="Models\DatabaseModel.cs" />
     <Compile Include="Models\DBModel.cs" />
     <Compile Include="Models\DBModelList.cs" />
@@ -206,6 +230,7 @@
     <Compile Include="Models\MSPTransReg.cs" />
     <Compile Include="Models\PVIEW_MM_SPARE_PART.cs" />
     <Compile Include="Models\PVIEW_MM_SP_STORAGE.cs" />
+    <Compile Include="Models\RFIDReaderConfigModel.cs" />
     <Compile Include="Models\Registration_Asset_Management.cs" />
     <Compile Include="Models\ReportModel.cs" />
     <Compile Include="Models\RfidEntryRequestModel.cs" />
@@ -220,6 +245,8 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Repositories\CommonRepo.cs" />
     <Compile Include="Repositories\RfidAuditRepo.cs" />
+    <Compile Include="Services\RFIDService.cs" />
+    <Compile Include="Startup.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="bin\ACL_System.dll" />
@@ -655,6 +682,11 @@
     <Content Include="Views\RfidAudit\inquiryDetail.cshtml" />
     <Content Include="Views\RfidAudit\report.cshtml" />
     <Content Include="Views\RfidAudit\RFID_SCAN.cshtml" />
+    <Content Include="Views\RfidReader\Index.cshtml" />
+    <Content Include="SDK\Symbol.RFID3.Host.dll" />
+    <Content Include="SDK\RFIDAPI32PC.dll" />
+    <Content Include="Scripts\jquery.signalR-2.2.2.js" />
+    <Content Include="Scripts\jquery.signalR-2.2.2.min.js" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
