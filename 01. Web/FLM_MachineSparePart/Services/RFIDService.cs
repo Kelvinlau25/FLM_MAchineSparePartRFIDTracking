@@ -1,16 +1,18 @@
+using FILM_Sparepart_MVC.Hubs;
+using Microsoft.AspNet.SignalR;
+using Symbol.RFID3;
 using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
-using System.Configuration;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
-using Microsoft.AspNet.SignalR;
-using FILM_Sparepart_MVC.Hubs;
+using static Symbol.RFID3.Events;
 
 namespace FILM_Sparepart_MVC.Services
 {
@@ -86,6 +88,14 @@ namespace FILM_Sparepart_MVC.Services
                     return result;
                 }
 
+                // Force-disconnect any existing readers before reloading
+                // This handles the case where a previous debug session was killed abruptly
+                foreach (var kvp in _readerList)
+                {
+                    try { DisconnectReaderHardware(kvp.Value); }
+                    catch { }
+                }
+
                 _readerList.Clear();
                 int readerIndex = 0;
 
@@ -109,18 +119,22 @@ namespace FILM_Sparepart_MVC.Services
                         TagTime = new ConcurrentDictionary<string, DateTime>()
                     };
 
+                    uint port = 0;
+                    if (!uint.TryParse(readerItem.Port != null ? readerItem.Port.Trim() : "", out port) || port == 0)
+                        port = 5084;
+
+                    readerItem.ReaderAPI = new RFIDReader(readerItem.IPAddress, port, 50000);
+
                     _readerList.TryAdd(readerItem.IPAddress, readerItem);
                     readerIndex++;
                 }
 
-                // Start the reset table timer (10 seconds)
                 _resetTableTimer = new Timer(ResetTableTick, null, 10000, 10000);
-                // Start reconnect timer (5 seconds)
                 _reconnectTimer = new Timer(ReconnectTimerTick, null, 5000, 5000);
 
                 _isInitialized = true;
                 result.Success = true;
-                result.Message = $"{dto.Table.Rows.Count} reader(s) loaded from configuration.";
+                result.Message = string.Format("{0} reader(s) loaded from configuration.", dto.Table.Rows.Count);
             }
             catch (Exception ex)
             {
@@ -242,22 +256,20 @@ namespace FILM_Sparepart_MVC.Services
         {
             try
             {
-                if (reader.IsConnected)
+                // Guard against concurrent connect calls only
+                if (reader.IsConnected && reader.ReaderAPI != null && reader.ReaderAPI.IsConnected)
                 {
                     reader.Status = "Connected";
                     BroadcastReaderStatus(reader);
                     return;
                 }
 
-                // Simulate connection to RFID reader hardware
-                // In production, this would use Symbol.RFID3.RFIDReader
                 bool success = false;
 
                 if (reader.ReconnectRequired)
                 {
                     try
                     {
-                        // Try reconnect first
                         ReconnectReaderHardware(reader);
                         success = true;
                     }
@@ -265,7 +277,11 @@ namespace FILM_Sparepart_MVC.Services
                     {
                         try
                         {
-                            // Create new connection with 50s timeout
+                            uint port = 0;
+                            if (!uint.TryParse(reader.Port != null ? reader.Port.Trim() : "", out port) || port == 0)
+                                port = 5084;
+
+                            reader.ReaderAPI = new RFIDReader(reader.IPAddress, port, 50000);
                             ConnectReaderHardware(reader);
                             success = true;
                         }
@@ -297,8 +313,16 @@ namespace FILM_Sparepart_MVC.Services
                     }
 
                     BroadcastReaderStatus(reader);
-                    LogMessage($"Reader {reader.HostName} ({reader.IPAddress}) connected successfully.");
+                    LogMessage(string.Format("Reader {0} ({1}) connected successfully.", reader.HostName, reader.IPAddress));
                 }
+            }
+            catch (OperationFailureException ofe)
+            {
+                reader.Status = ofe.StatusDescription + " : " + reader.IPAddress;
+                reader.IsConnected = false;
+                AddFailEmail(reader, "Connect failed. " + ofe.StatusDescription);
+                BroadcastReaderStatus(reader);
+                LogMessage(string.Format("Reader {0} ({1}) OperationFailure: {2}", reader.HostName, reader.IPAddress, ofe.StatusDescription));
             }
             catch (Exception ex)
             {
@@ -306,7 +330,7 @@ namespace FILM_Sparepart_MVC.Services
                 reader.IsConnected = false;
                 AddFailEmail(reader, "Connect failed. " + ex.Message);
                 BroadcastReaderStatus(reader);
-                LogMessage($"Reader {reader.HostName} ({reader.IPAddress}) connection failed: {ex.Message}");
+                LogMessage(string.Format("Reader {0} ({1}) connection failed: {2}", reader.HostName, reader.IPAddress, ex.Message));
             }
         }
 
@@ -317,7 +341,7 @@ namespace FILM_Sparepart_MVC.Services
         {
             try
             {
-                if (reader.IsConnected)
+                if (reader.ReaderAPI != null && reader.ReaderAPI.IsConnected)
                 {
                     DisconnectReaderHardware(reader);
                 }
@@ -325,14 +349,14 @@ namespace FILM_Sparepart_MVC.Services
                 reader.IsConnected = false;
                 reader.Status = "Disconnect";
                 BroadcastReaderStatus(reader);
-                LogMessage($"Reader {reader.HostName} ({reader.IPAddress}) disconnected.");
+                LogMessage(string.Format("Reader {0} ({1}) disconnected.", reader.HostName, reader.IPAddress));
             }
             catch (Exception ex)
             {
                 reader.IsConnected = false;
                 reader.Status = "Disconnect";
                 BroadcastReaderStatus(reader);
-                LogMessage($"Error disconnecting reader {reader.HostName}: {ex.Message}");
+                LogMessage(string.Format("Error disconnecting reader {0}: {1}", reader.HostName, ex.Message));
             }
         }
 
@@ -340,45 +364,291 @@ namespace FILM_Sparepart_MVC.Services
 
         #region Hardware Abstraction (Symbol.RFID3 SDK)
 
-        // These methods wrap the Symbol.RFID3 SDK calls.
-        // When the SDK DLL is available at runtime, uncomment the SDK calls.
-
+        /// <summary>
+        /// Replicates: readerItem.m_ReaderAPI.Connect() + ConnectBackgroundWorker_RunWorkerCompleted event wiring
+        /// </summary>
         private void ConnectReaderHardware(RfidReaderItem reader)
         {
-            // Production code using Symbol.RFID3 SDK:
-            // var rfidReader = new Symbol.RFID3.RFIDReader(reader.IPAddress, Convert.ToUInt32(reader.Port), 50000);
-            // rfidReader.Connect();
-            // reader.ReaderAPI = rfidReader;
-            // AttachEventHandlers(reader);
-            // var antennaList = new ushort[] { 1, 2 };
-            // var antennaInfo = new Symbol.RFID3.AntennaInfo(antennaList);
-            // rfidReader.Actions.Inventory.Perform(null, null, antennaInfo);
+            reader.ReaderAPI.Connect();
+            AttachEventHandlers(reader);
 
-            // For web-based operation, the connection is managed through the service
-            reader.IsConnected = true;
-            LogMessage($"ConnectReaderHardware: {reader.IPAddress}:{reader.Port}");
+            // Replicates: readerItem.m_ReaderAPI.Actions.Inventory.Perform(Nothing, Nothing, antennaInfo)
+            var antennaList = new ushort[] { 1, 2 };
+            var antennaInfo = new AntennaInfo(antennaList);
+            try
+            {
+                reader.ReaderAPI.Actions.Inventory.Perform(null, null, antennaInfo);
+            }
+            catch (OperationFailureException ex)
+            {
+                LogMessage(string.Format("Inventory.Perform failed for {0}: {1}", reader.IPAddress, ex.Result));
+            }
+
+            LogMessage(string.Format("ConnectReaderHardware: {0}:{1}", reader.IPAddress, reader.Port));
         }
 
+        /// <summary>
+        /// Replicates: readerItem.m_ReaderAPI.Reconnect() in ReconnectBackgroundWorker_DoWork
+        /// </summary>
         private void ReconnectReaderHardware(RfidReaderItem reader)
         {
-            // Production code:
-            // reader.ReaderAPI.Reconnect();
-
-            reader.IsConnected = true;
-            LogMessage($"ReconnectReaderHardware: {reader.IPAddress}");
+            reader.ReaderAPI.Reconnect();
+            LogMessage(string.Format("ReconnectReaderHardware: {0}", reader.IPAddress));
         }
 
+        /// <summary>
+        /// Replicates: BackgroundWorkerDisconnectReader_DoWork disconnect sequence
+        /// </summary>
         private void DisconnectReaderHardware(RfidReaderItem reader)
         {
-            // Production code:
-            // if (reader.ReaderAPI != null && reader.ReaderAPI.IsConnected)
-            // {
-            //     try { reader.ReaderAPI.Actions.Inventory.Stop(); } catch { }
-            //     reader.ReaderAPI.Disconnect();
-            // }
+            if (reader.ReaderAPI == null)
+                return;
 
-            reader.IsConnected = false;
-            LogMessage($"DisconnectReaderHardware: {reader.IPAddress}");
+            try
+            {
+                if (reader.ReaderAPI.IsConnected)
+                {
+                    try
+                    {
+                        if (reader.ReaderAPI.Actions.TagAccess.OperationSequence.Length > 0)
+                        {
+                            reader.ReaderAPI.Actions.TagAccess.OperationSequence.StopSequence();
+                            reader.ReaderAPI.Actions.Inventory.Stop();
+                        }
+                        else
+                        {
+                            reader.ReaderAPI.Actions.Inventory.Stop();
+                        }
+                    }
+                    catch { }
+
+                    reader.ReaderAPI.Disconnect();
+                    LogMessage(string.Format("DisconnectReaderHardware: {0}", reader.IPAddress));
+                }
+            }
+            catch (Exception ex)
+            {
+                LogMessage(string.Format("DisconnectReaderHardware error [{0}]: {1}", reader.IPAddress, ex.Message));
+            }
+            finally
+            {
+                // Always recreate the RFIDReader object to fully reset SDK state
+                // This prevents "connection already exists" on next connect attempt
+                uint port = 0;
+                if (!uint.TryParse(reader.Port != null ? reader.Port.Trim() : "", out port) || port == 0)
+                    port = 5084;
+
+                reader.ReaderAPI = new RFIDReader(reader.IPAddress, port, 50000);
+                LogMessage(string.Format("ReaderAPI recreated for {0}", reader.IPAddress));
+            }
+        }
+
+        /// <summary>
+        /// Attach SDK event handlers (replicates ConnectBackgroundWorker_RunWorkerCompleted wiring)
+        /// </summary>
+        private void AttachEventHandlers(RfidReaderItem reader)
+        {
+            bool isTestEnv = string.Equals(
+                ConfigurationManager.AppSettings["TEST_ENVIRONMENT"],
+                "true",
+                StringComparison.OrdinalIgnoreCase);
+
+            // Replicates: If Not My.Settings.TEST_ENVIRONMENT Then ... AddHandler ReadNotify
+            if (!isTestEnv)
+            {
+                reader.ReaderAPI.Events.ReadNotify += (sender, e) => OnReadNotify(reader, e);
+                reader.ReaderAPI.Events.AttachTagDataWithReadEvent = false;
+            }
+
+            reader.ReaderAPI.Events.StatusNotify += (sender, e) => OnStatusNotify(reader, e);
+            reader.ReaderAPI.Events.NotifyGPIEvent = true;
+            reader.ReaderAPI.Events.NotifyBufferFullEvent = true;
+            reader.ReaderAPI.Events.NotifyBufferFullWarningEvent = true;
+            reader.ReaderAPI.Events.NotifyReaderDisconnectEvent = true;
+            reader.ReaderAPI.Events.NotifyReaderExceptionEvent = true;
+            reader.ReaderAPI.Events.NotifyAccessStartEvent = true;
+            reader.ReaderAPI.Events.NotifyAccessStopEvent = true;
+            reader.ReaderAPI.Events.NotifyInventoryStartEvent = true;
+            reader.ReaderAPI.Events.NotifyInventoryStopEvent = true;
+        }
+
+        #endregion
+
+        #region SDK Event Handlers
+
+        /// <summary>
+        /// Replicates: Events_ReadNotify -> myUpdateRead in Form1.vb
+        /// </summary>
+        private void OnReadNotify(RfidReaderItem reader, ReadEventArgs e)
+        {
+            try
+            {
+                TagData[] tagData = reader.ReaderAPI.Actions.GetReadTags(50);
+                if (tagData == null)
+                    return;
+
+                var updateList = new List<string>();
+
+                for (int i = 0; i < tagData.Length; i++)
+                {
+                    TagData tag = tagData[i];
+
+                    if (tag.OpCode != ACCESS_OPERATION_CODE.ACCESS_OPERATION_NONE &&
+                        !(tag.OpCode == ACCESS_OPERATION_CODE.ACCESS_OPERATION_READ &&
+                          tag.OpStatus == ACCESS_OPERATION_STATUS.ACCESS_SUCCESS))
+                        continue;
+
+                    string tagID = tag.TagID;
+                    string antennaID = tag.AntennaID.ToString();
+
+                    bool isNewTag = reader.TagDetected.TryAdd(tagID, false);
+                    if (isNewTag)
+                        reader.TagTime.TryAdd(tagID, DateTime.UtcNow);
+
+                    // Replicates the tag email block in myUpdateRead for Tower Zone host
+                    string location = GetLocationName(reader.IPAddress);
+                    if (reader.IPAddress == "10.28.92.50" && !string.IsNullOrEmpty(tagID))
+                    {
+                        char firstChar = tagID[0];
+                        if (firstChar == 'E' || firstChar == 'B')
+                        {
+                            if (string.IsNullOrEmpty(_lockTag) || tagID != _lockTag)
+                            {
+                                _lockTag = tagID;
+                                StartTagLockTimer();
+
+                                var tagInfo = new ReaderTagInfo
+                                {
+                                    Host = reader.IPAddress,
+                                    Location = location,
+                                    AntennaID = antennaID,
+                                    TagID = tagID,
+                                    TimeOccured = DateTime.Now
+                                };
+
+                                lock (_readerEmailTagList)
+                                {
+                                    _readerEmailTagList.Add(tagInfo);
+                                }
+
+                                StartSendTagEmailTimer();
+                            }
+                        }
+                    }
+
+                    if (!reader.TagDetected[tagID])
+                        updateList.Add(tagID);
+
+                    BroadcastTagDetected(reader.IPAddress, location, tagID, antennaID);
+                }
+
+                // Replicates: mark tags as processed outside the loop to avoid collection exception
+                foreach (var key in updateList)
+                    reader.TagDetected[key] = true;
+            }
+            catch (Exception ex)
+            {
+                LogMessage(string.Format("OnReadNotify error [{0}]: {1}", reader.IPAddress, ex.Message));
+            }
+        }
+
+        /// <summary>
+        /// Replicates: Events_StatusNotify -> myUpdateStatus in Form1.vb
+        /// </summary>
+        private void OnStatusNotify(RfidReaderItem reader, StatusEventArgs e)
+        {
+            try
+            {
+                string statusMsg = "";
+                StatusEventData eventData = e.StatusEventData;
+
+                switch (eventData.StatusEventType)
+                {
+                    case STATUS_EVENT_TYPE.INVENTORY_START_EVENT:
+                        statusMsg = "Inventory started";
+                        break;
+
+                    case STATUS_EVENT_TYPE.INVENTORY_STOP_EVENT:
+                        statusMsg = "Inventory stopped";
+                        break;
+
+                    case STATUS_EVENT_TYPE.ACCESS_START_EVENT:
+                        statusMsg = "Access Operation started";
+                        break;
+
+                    case STATUS_EVENT_TYPE.ACCESS_STOP_EVENT:
+                        statusMsg = "Access Operation stopped";
+                        break;
+
+                    case STATUS_EVENT_TYPE.BUFFER_FULL_WARNING_EVENT:
+                        statusMsg = "Buffer full warning";
+                        break;
+
+                    case STATUS_EVENT_TYPE.BUFFER_FULL_EVENT:
+                        statusMsg = "Buffer full";
+                        break;
+
+                    case STATUS_EVENT_TYPE.DISCONNECTION_EVENT:
+                        // Replicates: reader.bool_ReconnectRequired = True + run ReconnectBackgroundWorker
+                        statusMsg = "Disconnection Event " + eventData.DisconnectionEventData.DisconnectEventInfo.ToString();
+                        reader.ReconnectRequired = true;
+                        reader.IsConnected = false;
+                        reader.Status = "Disconnect";
+                        BroadcastReaderStatus(reader);
+                        AddDisconnectEmail(reader, statusMsg);
+                        LogMessage(string.Format("Reader {0} disconnected: {1}", reader.IPAddress, statusMsg));
+                        break;
+
+                    case STATUS_EVENT_TYPE.ANTENNA_EVENT:
+                        statusMsg = "Antenna Status Update";
+                        break;
+
+                    case STATUS_EVENT_TYPE.NXP_EAS_ALARM_EVENT:
+                        break;
+
+                    case STATUS_EVENT_TYPE.READER_EXCEPTION_EVENT:
+                        statusMsg = "Reader ExceptionEvent " + eventData.ReaderExceptionEventData.ReaderExceptionEventInfo;
+                        break;
+
+                    case STATUS_EVENT_TYPE.GPI_EVENT:
+                        // Replicates: Timer1.Enabled check -> updateIn or check2ndloop
+                        HandleGPIEvent(
+                            reader.IPAddress,
+                            eventData.GPIEventData.PortNumber,
+                            eventData.GPIEventData.GPIEvent);
+                        break;
+
+                    default:
+                        statusMsg = "Unhandled Status";
+                        break;
+                }
+
+                // Replicates: If Not reader.m_ReaderAPI.IsConnected Then ... Reconnect()
+                if (reader.ReaderAPI != null && !reader.ReaderAPI.IsConnected &&
+                    eventData.StatusEventType != STATUS_EVENT_TYPE.DISCONNECTION_EVENT)
+                {
+                    try
+                    {
+                        reader.ReaderAPI.Reconnect();
+                        statusMsg += ", Reconnect success.";
+                        reader.IsConnected = true;
+                        reader.Status = "Connected";
+                        BroadcastReaderStatus(reader);
+                    }
+                    catch
+                    {
+                        statusMsg += ", Reconnect fail.";
+                        reader.ReconnectRequired = true;
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(statusMsg))
+                    LogMessage(string.Format("[{0}] {1}", reader.IPAddress, statusMsg));
+            }
+            catch (Exception ex)
+            {
+                LogMessage(string.Format("OnStatusNotify error [{0}]: {1}", reader.IPAddress, ex.Message));
+            }
         }
 
         #endregion
@@ -436,10 +706,8 @@ namespace FILM_Sparepart_MVC.Services
                 }
             }
 
-            // Update tag as processed
             reader.TagDetected[tagID] = true;
 
-            // Broadcast tag event to connected clients
             BroadcastTagDetected(hostName, location, tagID, antennaID);
         }
 
@@ -476,8 +744,8 @@ namespace FILM_Sparepart_MVC.Services
 
         private void UpdateIn(string hostName, int portNumber, bool portState)
         {
-            // Port 1 = In direction, Port 2 = Out direction
-            if (portNumber == 1 && !portState) // GPI_PORT_STATE_LOW = active
+            // GPI_PORT_STATE_LOW (false) = active, replicates: Config.GPI.Item(1).PortState = 0
+            if (portNumber == 1 && !portState)
             {
                 _currentHostName = hostName;
                 if (hostName == "10.28.92.50")
@@ -569,9 +837,6 @@ namespace FILM_Sparepart_MVC.Services
 
         #region Database Operations (replicates RFID_COMMON.vb)
 
-        /// <summary>
-        /// Get RFID config from DB (replicates GET_RFID_CONFIG)
-        /// </summary>
         private DTOResult GetRfidConfig(string company)
         {
             var dto = new DTOResult();
@@ -599,9 +864,6 @@ namespace FILM_Sparepart_MVC.Services
             return dto;
         }
 
-        /// <summary>
-        /// Execute RFID transaction (replicates RFID_Common_MSSQL)
-        /// </summary>
         private DTOResult RfidCommonMSSQL(string mode, string rfid, string reader, string ipAddress, string sp)
         {
             var dto = new DTOResult();
@@ -621,9 +883,8 @@ namespace FILM_Sparepart_MVC.Services
                     cmd.ExecuteNonQuery();
 
                     if (cmd.Parameters["@pRETURN_VALUE1"].Value.ToString() != "0")
-                    {
                         throw new Exception(cmd.Parameters["@pRETURN_VALUE1"].Value.ToString());
-                    }
+
                     dto.HasError = false;
                 }
             }
@@ -635,9 +896,6 @@ namespace FILM_Sparepart_MVC.Services
             return dto;
         }
 
-        /// <summary>
-        /// Execute Tower transaction (replicates RFID_Common_MSSQL_Tower)
-        /// </summary>
         private DTOResult RfidCommonMSSQLTower(string mode, string rfid, string reader, string ipAddress, string sp)
         {
             var dto = new DTOResult();
@@ -656,9 +914,8 @@ namespace FILM_Sparepart_MVC.Services
                     cmd.ExecuteNonQuery();
 
                     if (cmd.Parameters["@pRETURN_VALUE1"].Value.ToString() != "0")
-                    {
                         throw new Exception(cmd.Parameters["@pRETURN_VALUE1"].Value.ToString());
-                    }
+
                     dto.HasError = false;
                 }
             }
@@ -670,9 +927,6 @@ namespace FILM_Sparepart_MVC.Services
             return dto;
         }
 
-        /// <summary>
-        /// Send email via stored procedure (replicates RFID_SendMail_MSSQL)
-        /// </summary>
         private DTOResult SendMailMSSQL(string body, string subject, string mailTo)
         {
             var dto = new DTOResult();
@@ -700,9 +954,6 @@ namespace FILM_Sparepart_MVC.Services
             return dto;
         }
 
-        /// <summary>
-        /// Update DB with tag transactions (replicates StartUpdateDB)
-        /// </summary>
         private void StartUpdateDB(string value)
         {
             RfidReaderItem reader;
@@ -711,7 +962,8 @@ namespace FILM_Sparepart_MVC.Services
 
             foreach (var tagItem in reader.TagDetected)
             {
-                LogMessage($"StartUpdateDB >> pTRAN_TYPE: {value}; pRFID: {tagItem.Key}; pReader: {reader.HostName}; pIPADDR: {reader.IPAddress}; SP: {reader.StoredProcedure}");
+                LogMessage(string.Format("StartUpdateDB >> pTRAN_TYPE: {0}; pRFID: {1}; pReader: {2}; pIPADDR: {3}; SP: {4}",
+                    value, tagItem.Key, reader.HostName, reader.IPAddress, reader.StoredProcedure));
                 RfidCommonMSSQL(value, tagItem.Key, reader.HostName, reader.IPAddress, reader.StoredProcedure);
             }
 
@@ -719,9 +971,6 @@ namespace FILM_Sparepart_MVC.Services
             reader.TagTime.Clear();
         }
 
-        /// <summary>
-        /// Update Tower DB with tag transactions (replicates StartUpdateDBTower)
-        /// </summary>
         private void StartUpdateDBTower(string value)
         {
             RfidReaderItem reader;
@@ -730,7 +979,8 @@ namespace FILM_Sparepart_MVC.Services
 
             foreach (var tagItem in reader.TagDetected)
             {
-                LogMessage($"StartUpdateDBTower >> pTRAN_TYPE: {value}; pRFID: {tagItem.Key}; pReader: {reader.HostName}; pIPADDR: {reader.IPAddress}; SP: {reader.StoredProcedure}");
+                LogMessage(string.Format("StartUpdateDBTower >> pTRAN_TYPE: {0}; pRFID: {1}; pReader: {2}; pIPADDR: {3}; SP: {4}",
+                    value, tagItem.Key, reader.HostName, reader.IPAddress, reader.StoredProcedure));
                 RfidCommonMSSQLTower(value, tagItem.Key, reader.HostName, reader.IPAddress, reader.StoredProcedure);
             }
 
@@ -742,9 +992,6 @@ namespace FILM_Sparepart_MVC.Services
 
         #region Timer Callbacks (replicates WinForm timers)
 
-        /// <summary>
-        /// Clear old tags from hashtable (replicates Reset_Table_Tick - 10s)
-        /// </summary>
         private void ResetTableTick(object state)
         {
             foreach (var kvp in _readerList)
@@ -755,9 +1002,7 @@ namespace FILM_Sparepart_MVC.Services
                 foreach (var tagKvp in reader.TagTime)
                 {
                     if (tagKvp.Value.AddMinutes(2) < DateTime.UtcNow)
-                    {
                         toRemove.Add(tagKvp.Key);
-                    }
                 }
 
                 foreach (var key in toRemove)
@@ -770,9 +1015,6 @@ namespace FILM_Sparepart_MVC.Services
             }
         }
 
-        /// <summary>
-        /// Reconnect failed readers (replicates TimerReconnect_Tick - 5s)
-        /// </summary>
         private void ReconnectTimerTick(object state)
         {
             foreach (var kvp in _readerList)
@@ -784,16 +1026,13 @@ namespace FILM_Sparepart_MVC.Services
                 }
             }
 
-            // Retry pending emails
             lock (_pendingEmailList)
             {
                 foreach (var email in _pendingEmailList.ToList())
                 {
                     var dto = SendMailMSSQL(email.Body, email.Subject, email.MailTo);
                     if (!dto.HasError)
-                    {
                         email.Sent = true;
-                    }
                 }
                 _pendingEmailList.RemoveAll(e => e.Sent);
             }
@@ -835,7 +1074,7 @@ namespace FILM_Sparepart_MVC.Services
                 {
                     var batch = _readerEmailTagList.Skip(i).Take(batchSize).ToList();
                     string body = BuildTagEmailBody(batch);
-                    string subject = $"[{company}] Reader Notification: These tags requires attention";
+                    string subject = string.Format("[{0}] Reader Notification: These tags requires attention", company);
 
                     var dto = SendMailMSSQL(body, subject, mailTo);
                     if (dto.HasError)
@@ -933,7 +1172,7 @@ namespace FILM_Sparepart_MVC.Services
             string mailTo = ConfigurationManager.AppSettings["READER_NOTIFICATION_MAILTO"] ?? "";
 
             string body = BuildReaderEmailBody(readerList, company);
-            string subject = $"[{company}] Reader Notification: These readers requires attention";
+            string subject = string.Format("[{0}] Reader Notification: These readers requires attention", company);
 
             var dto = SendMailMSSQL(body, subject, mailTo);
             if (dto.HasError)
@@ -948,7 +1187,7 @@ namespace FILM_Sparepart_MVC.Services
         private string BuildReaderEmailBody(List<ReaderEmailInfo> readers, string company)
         {
             string body = "<html><body>";
-            body += $"<h3>{company} RFID Reader Notification</h3>";
+            body += string.Format("<h3>{0} RFID Reader Notification</h3>", company);
             body += "<table border='1' cellpadding='5' cellspacing='0'>";
             body += "<tr><th>Device Name</th><th>IP Address</th><th>Location</th><th>Time</th><th>Message</th></tr>";
 
@@ -956,7 +1195,8 @@ namespace FILM_Sparepart_MVC.Services
             {
                 foreach (var r in readers)
                 {
-                    body += $"<tr><td>{r.DeviceName}</td><td>{r.IPAddress}</td><td>{r.LocationDesc}</td><td>{r.TimeOccured:yyyy-MM-dd HH:mm:ss}</td><td>{r.Message}</td></tr>";
+                    body += string.Format("<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3:yyyy-MM-dd HH:mm:ss}</td><td>{4}</td></tr>",
+                        r.DeviceName, r.IPAddress, r.LocationDesc, r.TimeOccured, r.Message);
                 }
             }
 
@@ -973,7 +1213,8 @@ namespace FILM_Sparepart_MVC.Services
 
             foreach (var t in tags)
             {
-                body += $"<tr><td>{t.Location}</td><td>{t.AntennaID}</td><td>{t.TagID}</td><td>{t.TimeOccured:yyyy-MM-dd HH:mm:ss}</td></tr>";
+                body += string.Format("<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3:yyyy-MM-dd HH:mm:ss}</td></tr>",
+                    t.Location, t.AntennaID, t.TagID, t.TimeOccured);
             }
 
             body += "</table></body></html>";
@@ -998,9 +1239,26 @@ namespace FILM_Sparepart_MVC.Services
                     readerName = reader.HostName
                 });
             }
+            catch { }
+        }
+
+        /// <summary>
+        /// Returns the actual SDK-level connection state, independent of the tracked IsConnected flag.
+        /// Useful for diagnosing stale connection states.
+        /// </summary>
+        public bool IsReaderSDKConnected(string ipAddress)
+        {
+            RfidReaderItem reader;
+            if (!_readerList.TryGetValue(ipAddress, out reader))
+                return false;
+
+            try
+            {
+                return reader.ReaderAPI != null && reader.ReaderAPI.IsConnected;
+            }
             catch
             {
-                // SignalR may not be initialized yet
+                return false;
             }
         }
 
@@ -1018,10 +1276,7 @@ namespace FILM_Sparepart_MVC.Services
                     time = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
                 });
             }
-            catch
-            {
-                // SignalR may not be initialized yet
-            }
+            catch { }
         }
 
         #endregion
@@ -1044,10 +1299,7 @@ namespace FILM_Sparepart_MVC.Services
 
             foreach (var kvp in _readerList)
             {
-                try
-                {
-                    DisconnectReaderHardware(kvp.Value);
-                }
+                try { DisconnectReaderHardware(kvp.Value); }
                 catch { }
             }
         }
@@ -1058,7 +1310,7 @@ namespace FILM_Sparepart_MVC.Services
 
         private void LogMessage(string message)
         {
-            System.Diagnostics.Debug.WriteLine($"[RFIDService] {DateTime.Now:yyyy-MM-dd HH:mm:ss} - {message}");
+            System.Diagnostics.Debug.WriteLine(string.Format("[RFIDService] {0:yyyy-MM-dd HH:mm:ss} - {1}", DateTime.Now, message));
         }
 
         #endregion
@@ -1082,7 +1334,8 @@ namespace FILM_Sparepart_MVC.Services
         public string Status { get; set; }
         public ConcurrentDictionary<string, bool> TagDetected { get; set; }
         public ConcurrentDictionary<string, DateTime> TagTime { get; set; }
-        // When using SDK: public Symbol.RFID3.RFIDReader ReaderAPI { get; set; }
+        // Replicates: Friend m_ReaderAPI As RFIDReader
+        public Symbol.RFID3.RFIDReader ReaderAPI { get; set; }
     }
 
     public class ReaderViewModel

@@ -1,8 +1,9 @@
-using System;
-using System.Threading.Tasks;
-using System.Web.Mvc;
 using FILM_Sparepart_MVC.Services;
 using Newtonsoft.Json;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Web.Mvc;
 
 namespace FILM_Sparepart_MVC.Controllers
 {
@@ -105,6 +106,33 @@ namespace FILM_Sparepart_MVC.Controllers
                 message = result.Message,
                 readers = _rfidService.GetReaderList()
             });
+        }
+
+        public JsonResult GetStatus()
+        {
+            var readers = RFIDService.Instance.GetReaderList();
+            return Json(readers, JsonRequestBehavior.AllowGet);
+        }
+
+        public JsonResult Diagnostic()
+        {
+            var readers = RFIDService.Instance.GetReaderList();
+            var result = readers.Select(r => new
+            {
+                r.IPAddress,
+                r.Location,
+                r.ReaderName,
+                r.Status,
+                r.IsConnected,
+                SDKIsConnected = GetSDKConnectionState(r.IPAddress)
+            });
+            return Json(result, JsonRequestBehavior.AllowGet);
+        }
+
+        private bool GetSDKConnectionState(string ipAddress)
+        {
+            // Access internal state via a new public method on RFIDService
+            return RFIDService.Instance.IsReaderSDKConnected(ipAddress);
         }
     }
 }
