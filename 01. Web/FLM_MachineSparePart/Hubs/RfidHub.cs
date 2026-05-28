@@ -1,6 +1,8 @@
-﻿using FILM_Sparepart_MVC.Models;
+using System;
+using System.Threading.Tasks;
+using FILM_Sparepart_MVC.Models;
 using FILM_Sparepart_MVC.Services;
-using Microsoft.AspNetCore.SignalR;
+using Microsoft.AspNet.SignalR;
 
 namespace FILM_Sparepart_MVC.Hubs
 {
@@ -8,12 +10,12 @@ namespace FILM_Sparepart_MVC.Hubs
     {
         private readonly RFIDService _rfidService;
 
-        public RfidHub(RFIDService rfidService)
+        public RfidHub()
         {
-            _rfidService = rfidService;
+            _rfidService = RFIDService.Instance;
         }
 
-        public override async Task OnConnectedAsync()
+        public override Task OnConnected()
         {
             // Replay current state to this newly connected client
             var statuses = _rfidService.GetReaderStatuses();
@@ -21,22 +23,22 @@ namespace FILM_Sparepart_MVC.Hubs
             {
                 string status  = s.IsConnected ? "Connected"    : "Disconnected";
                 string message = s.IsConnected ? "Connected successfully." : "Disconnected.";
-                await Clients.Caller.SendAsync("OnReaderStatus", s.HostName, status, message);
+                Clients.Caller.OnReaderStatus(s.HostName, status, message);
             }
 
-            await base.OnConnectedAsync();
+            return base.OnConnected();
         }
 
-        public async Task GetReaders()
+        public void GetReaders()
         {
             var readers = _rfidService.GetDefaultReaders();
-            await Clients.Caller.SendAsync("OnReadersLoaded", readers);
+            Clients.Caller.OnReadersLoaded(readers);
         }
 
-        public async Task GetReaderStatuses()
+        public void GetReaderStatuses()
         {
             var statuses = _rfidService.GetReaderStatuses();
-            await Clients.Caller.SendAsync("OnReaderStatuses", statuses);
+            Clients.Caller.OnReaderStatuses(statuses);
         }
 
         /// <summary>
@@ -46,7 +48,7 @@ namespace FILM_Sparepart_MVC.Hubs
         public async Task ConnectReader(string ip)
         {
             var result = await _rfidService.ConnectReaderByIpAsync(ip);
-            await Clients.Caller.SendAsync("OnConnectResult", new
+            Clients.Caller.OnConnectResult(new
             {
                 ipAddress = result.IpAddress,
                 status = result.Status.ToString(),   // "AlreadyConnected" | "Connected" | "Failed"
@@ -54,16 +56,14 @@ namespace FILM_Sparepart_MVC.Hubs
             });
         }
 
-        public async Task DisconnectReader(string ip)
+        public void DisconnectReader(string ip)
         {
             _rfidService.DisconnectReaderByIp(ip);
-            await Task.CompletedTask;
         }
 
-        public async Task DisconnectAll()
+        public void DisconnectAll()
         {
             _rfidService.DisconnectAllReaders();
-            await Task.CompletedTask;
         }
 
         public async Task ConnectAll()
@@ -71,9 +71,9 @@ namespace FILM_Sparepart_MVC.Hubs
             await _rfidService.ConnectAllReadersAsync();
         }
 
-        public async Task Ping()
+        public void Ping()
         {
-            await Clients.Caller.SendAsync("OnPong", "MVC-RFID-SERVICE",
+            Clients.Caller.OnPong("MVC-RFID-SERVICE",
                 DateTime.Now.ToString("HH:mm:ss"));
         }
     }
